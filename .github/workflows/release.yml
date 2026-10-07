@@ -26,8 +26,9 @@ jobs:
             ext: ""
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: "1.97.0" }
       - name: compilar e testar
         working-directory: engine
         shell: bash

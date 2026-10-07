@@ -6,22 +6,26 @@ jobs:
   rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with: { components: clippy }
-      - name: engine (biblioteca + ferramentas)
+      - uses: actions/checkout@v5
+      # versão fixa: o mesmo Rust do desenvolvimento (lints novos não quebram a CI de surpresa)
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: "1.97.0", components: clippy }
+      - name: compilar (engine)
         working-directory: engine
-        run: |
-          cargo build --release --locked
-          cargo clippy --release -- -D warnings
-          cargo test --release
+        run: cargo build --release --locked
+      - name: clippy (engine)
+        working-directory: engine
+        run: cargo clippy --release -- -D warnings
+      - name: testes (engine)
+        working-directory: engine
+        run: cargo test --release
       - name: exemplo mínimo
         working-directory: exemplos/rust-minimo
         run: cargo test --release
   c-e-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: compilar as funções em C
         run: make -C decomp build/test_hash build/test_language && ./decomp/build/test_language
       - name: sintaxe dos scripts
