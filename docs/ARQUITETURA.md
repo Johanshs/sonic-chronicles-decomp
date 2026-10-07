@@ -28,16 +28,19 @@ formato (GFF4/GDA/TLK) interpreta.
 ## Este repositório
 
 ```
-engine/                       Rust (workspace)
+engine/                       Rust (workspace) — o que se usa no dia a dia
   crates/sonic-formats/       biblioteca: todos os formatos, leitura E escrita
   crates/sonic-dump/          CLI: extrai assets para PNG/CSV/JSON
   crates/sonic-mod/           CLI: unpack (projeto editável) / pack (ROM modificada)
-tools/                        Python: análise (RTTI, xref, HERF, GFF4, emulador)
-ghidra_scripts/               preparação do Ghidra + decompilação em massa
-src/ include/ tests/          funções do jogo reescritas em C + testes contra o jogo
-rust/                         versão didática mínima (HERF + LZ10)
+analise/                      pipeline de engenharia reversa
+  run_all.sh                  ROM -> funções, nomes, assembly, dados, pseudo-C
+  tools/                      Python: RTTI, xref, HERF, GFF4, GDA, diálogos, emulador
+  ghidra_scripts/             preparação do Ghidra + decompilação em massa
+  symbols_manual.txt          nomes dados à mão, com a evidência
+decomp/                       funções do jogo reescritas em C + testes contra o jogo
+exemplos/rust-minimo/         versão didática mínima (HERF + LZ10)
 docs/                         esta documentação
-run_all.sh                    pipeline de análise completo
+work/                         (não versionado) tudo que é gerado a partir da ROM
 ```
 
 ### Princípios
@@ -53,6 +56,6 @@ run_all.sh                    pipeline de análise completo
 ```
 cd engine && cargo test --release                                 # unitários
 SONIC_ROM=rom.nds cargo test --release -- --nocapture             # ida e volta com a ROM real
-make test MANIFEST=saida/herf/_manifesto.json                     # funções em C contra o jogo
-SDL_VIDEODRIVER=dummy python3 tools/emu_run.py rom.nds out "w 600; s tela"   # no emulador
+make -C decomp test MANIFEST=$PWD/saida/herf/_manifesto.json        # funções em C contra o jogo
+SDL_VIDEODRIVER=dummy python3 analise/tools/emu_run.py rom.nds out "w 600; s tela"   # no emulador
 ```

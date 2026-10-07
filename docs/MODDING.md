@@ -80,7 +80,8 @@ referências quebradas.
 ### Personagens novos
 Um personagem novo **jogável** precisa de modelo 3D, animações, golpes e
 retratos, e o código do jogo pode limitar o número de personagens. Isso depende
-da decompilação (veja `docs/PLANO-DECOMPILACAO.md` no repositório). O que já dá
+da decompilação (veja `docs/PLANO-DECOMPILACAO.md` no repositório
+https://github.com/Johanshs/sonic-chronicles-decomp). O que já dá
 para fazer é uma **variação**: mudar nome, atributos, golpes e retratos de um
 personagem existente ou de um inimigo em `creatures.csv`.
 

@@ -15,10 +15,10 @@ diante, as partes podem ser feitas em paralelo, e de forma incremental para semp
 
 | Ativo | Situação |
 |---|---|
-| Funções do ARM9 | 6.820 delimitadas pelo `dsd` (`config/` gerado por `run_all.sh`) |
-| Nomes | ~2.230 por RTTI (classes, métodos virtuais, construtores, destrutores) + manuais em `symbols_manual.txt` |
+| Funções do ARM9 | 6.820 delimitadas pelo `dsd` (`work/config/` gerado por `analise/run_all.sh`) |
+| Nomes | ~2.230 por RTTI (classes, métodos virtuais, construtores, destrutores) + manuais em `analise/symbols_manual.txt` |
 | Classes | 290, com herança (`docs/hierarquia_classes.md`) |
-| Pseudo-C | Ghidra headless (`ghidra_scripts/`) para todas as funções |
+| Pseudo-C | Ghidra headless (`analise/ghidra_scripts/`) para todas as funções |
 | Funções já reescritas | `HashResourceName`, `CExoString::CStr`, escolha do TLK por idioma (`src/`), validadas contra o jogo |
 | Formatos de dados | todos os principais lidos **e escritos** byte a byte (`engine/`) |
 | Bibliotecas embutidas | NitroSDK 4.2 (`0x04027531`), NitroSystem (`NNS_Tga`, `G3D`), MSL C++ da Metrowerks (iostreams) |
@@ -52,7 +52,7 @@ Sem o compilador certo, nenhum C sai igual ao original.
 - **1.1 Candidatos.** Pelo SDK (NitroSDK 4.2, 2008), os candidatos são as versões
   mwccarm 2.0 (service packs sp1 a sp2) e 1.2. Verificar quais o decomp.me oferece
   para `nds_arm9`.
-- **1.2 Teste com funções conhecidas.** Compilar `src/resource_hash.c` (função
+- **1.2 Teste com funções conhecidas.** Compilar `decomp/src/resource_hash.c` (função
   `0x02009b78`, 64 bytes) com cada candidato e combinação de flags (`-O4,p`/`-O4,s`,
   `-proc arm946e`, `-thumb`, `-interworking`, `-enum int`, `-char signed`...).
   Comparar com o `objdiff`. A função é Thumb, então `-thumb` deve estar ativo.
@@ -138,7 +138,7 @@ e uma camada nova as implementa no PC.
 ## Como trabalhar numa função (o ciclo diário)
 
 1. Escolher uma função no relatório do `objdiff` (comece pelas pequenas, com classe conhecida).
-2. Ler o assembly (`asm/`) e o pseudo-C do Ghidra lado a lado.
+2. Ler o assembly (`work/asm/`) e o pseudo-C do Ghidra lado a lado.
 3. Escrever o C/C++ no arquivo da TU certa, com nomes e tipos de verdade.
 4. Compilar e comparar no `objdiff` até dar 100%. Se travar, criar um *scratch* no
    decomp.me (o `dsd objdiff --scratch` gera os links) e pedir ajuda à comunidade.

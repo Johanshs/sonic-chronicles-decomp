@@ -1,0 +1,30 @@
+# CI: compila e testa tudo que não precisa da ROM.
+# (Os testes com a ROM real rodam localmente: SONIC_ROM=rom.nds cargo test.)
+name: ci
+on: [push, pull_request]
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy }
+      - name: engine (biblioteca + ferramentas)
+        working-directory: engine
+        run: |
+          cargo build --release --locked
+          cargo clippy --release -- -D warnings
+          cargo test --release
+      - name: exemplo mínimo
+        working-directory: exemplos/rust-minimo
+        run: cargo test --release
+  c-e-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: compilar as funções em C
+        run: make -C decomp build/test_hash build/test_language && ./decomp/build/test_language
+      - name: sintaxe dos scripts
+        run: |
+          python3 -m py_compile analise/tools/*.py
+          bash -n analise/run_all.sh

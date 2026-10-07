@@ -6,7 +6,7 @@ MANIFEST ?= $(HERF_DIR)/_manifest.json
 
 test: build/test_hash build/test_language
 	./build/test_language
-	python3 -I tools/manifest_pairs.py $(MANIFEST) | ./build/test_hash
+	python3 -I ../analise/tools/manifest_pairs.py $(MANIFEST) | ./build/test_hash
 
 build/test_hash: src/resource_hash.c src/exo_string.c tests/test_hash.c | build
 	$(CC) $(CFLAGS) $^ -o $@

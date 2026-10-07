@@ -1,0 +1,124 @@
+# Diário das descobertas
+
+A história do projeto, em ordem, com as hipóteses que deram certo e as que deram errado.
+Cada entrada diz **como** a coisa foi descoberta e **como** foi confirmada.
+
+---
+
+## 1. Abrindo a ROM
+- Código do jogo `YWSE`, ARM9 de 1,1 MB **sem compressão e sem overlays** (raro: facilita
+  muito), NitroSDK 4.2 (`0x04027531`, achado no bloco de parâmetros do módulo, assinatura
+  `0xDEC00621`).
+- 303 arquivos na raiz do NitroFS. As extensões `2DA`, `GFF`, `TLK` denunciaram o motor:
+  **Aurora, da BioWare**, o mesmo de NWN/KotOR/Dragon Age, adaptado para o DS.
+- O xoreos (reimplementação livre dos motores BioWare) já tinha estudado o jogo, mas só
+  como visualizador.
+
+## 2. Mapeando o código
+- O `dsd` (ds-decomp) achou as funções seguindo as chamadas. Travou em `0x020ecc3c`: uma
+  função **escrita à mão em assembly** que salva todos os registradores (estilo
+  `setjmp`), logo após outra que termina num incomum `bx r2`. Solução: permitir
+  chamadas para funções desconhecidas. Resultado: **6.820 funções**.
+- Tentativa que não deu em nada: uma tabela com **98 tags de profiling**
+  (`"Creat:UpdtGamepl"`, `"BG:SetFocusPoint"`...). Procurei a função `Begin` do profiler
+  estatisticamente e não achei: o profiler foi **desligado** na versão final (a função de
+  relatório, `0x020660c4`, não tem chamador). Ainda assim, os nomes revelam os subsistemas.
+
+## 3. O RTTI: os nomes reais das classes
+- Strings como `13CGameCreature` são nomes C++ "mangled", guardados para
+  `dynamic_cast` e exceções. Seguindo `nome → typeinfo → vtable → funções`:
+  **290 classes com herança, 351 vtables**.
+- **Erro nº 1:** marquei como construtor toda função que lia o endereço de uma vtable.
+  O assembly mostrou funções que só *registravam um singleton* (`static` local com o
+  construtor inlinado). Correção: construtor é quem **grava** a vtable no offset 0, e
+  quem faz isso dentro de outra tarefa vira `constructs_<Classe>`.
+- **Erro nº 2:** supus o layout da ABI Itanium (destrutores nos slots 0 e 1 da vtable).
+  O pseudo-C do Ghidra mostrou que os slots 0 e 1 eram métodos comuns. No CodeWarrior,
+  o destrutor fica na ordem em que foi declarado. Correção: destrutor é **o método
+  virtual que grava a vtable da própria classe em `this`**. 151 encontrados.
+
+## 4. Uma função do começo ao fim: o hash dos nomes
+O pacote `test.herf` guarda só hashes dos nomes. Testei candidatos (DJB2, CRC32, FNV) e
+o DJB2 do nome em minúsculas bateu. Depois achei **a função do jogo** que calcula isso,
+pela constante 5381 (`0x1505`):
+
+```asm
+ldr   r4, =0x1505          ; hash = 5381          <- assinatura do DJB2
+bl    CExoString__CStr     ; s = name.CStr()
+ldrsb r5, [r0, r1]         ; c = (signed char)*s   <- COM sinal!
+ldrb  r5, [r0, r5]         ; se 0<=c<0x80: c = tabela_minusculas[c]
+lsl   r7, r4, #5 ; add r4, r7 ; add r4, r5, r4      ; hash = hash*33 + c
+```
+Reescrita em C (`decomp/src/resource_hash.c`) e em Rust. Detalhe que só o assembly
+revela: o caractere é lido **com sinal**. O teste em C recalcula todos os nomes do jogo.
+
+**Erro nº 3:** o teste em C pegou **4 nomes falsos** que o ataque de dicionário tinha
+aceitado: colisões de hash com "palavras" tiradas de bytes aleatórios.
+
+## 5. Os formatos de dados
+- **`.small`**: primeiro achei só LZ10 (byte `0x10`). Sobravam 185 arquivos começando com
+  `00 28 02 00`. O cabeçalho é `tipo | tamanho << 8`, e o **tipo 0 é sem compressão**.
+- **GFF4**: o mesmo do Dragon Age, mas o TLK usa texto de **8 bits** (no PC é UTF-16),
+  enquanto os diálogos usam UTF-16. Há dois tipos de campo só do Sonic: 18 (ponto fixo
+  20.12 do DS) e 20 (ASCII inline).
+- **GDA**: os nomes de coluna são `CRC32(nome.lower() em UTF-16)`. 534 de 845 são
+  conhecidos (os mesmos 63% do xoreos).
+- **Diálogos**: o campo "quem fala" vale sempre `PLAYER`. Quem fala de verdade, e com
+  que **emoção**, está no nome do retrato: `tailssca` = Tails assustado.
+
+## 6. Os cenários (formato que ninguém tinha decifrado)
+1. `.pal` com 136.192 bytes = 1.064 × 128? Primeira hipótese: paleta de 64 cores por
+   tile. Os índices chegavam a 215, então estava errada.
+2. Os tiles são LZ10 de 4.096 bytes (64×64). Desenhados linha a linha, saíam listrados;
+   em **blocos de 8×8**, apareceram folhas e pedras.
+3. Ainda havia ruído: 136.192 = 266 × 512 = **266 paletas de 256 cores**, e
+   38 × 28 tiles / 4 = 266. Ou seja, uma paleta por bloco de 2×2 tiles.
+4. A posição dos tiles ainda estava errada. Em vez de chutar, **medi** a diferença de
+   cor nas bordas entre vizinhos para cada hipótese de ordem. A melhor deu 35, ainda
+   ruim. O `.2da` da área era um **mapa de paletas** (paletas numeradas coluna a coluna).
+   Com ele: **4,8**. Green Hill apareceu inteira.
+5. Profundidade (`.cdpth`): mesmo índice, mas valores de 16 bits em ordem **linear**
+   (diferente da cor!), com `0x7FFF` = vazio. Ela mostra os pilares e as estátuas que
+   ficam na frente dos personagens.
+
+## 7. O dicionário oficial
+Dentro do próprio pacote havia um `erf.dict` com **todos os nomes** dos recursos. Ele
+levou a recuperação a 100% e revelou mais **12 nomes falsos** do ataque de dicionário
+(ex.: `1_c.emit`, que na verdade é `BTN_PUZZ_ON.NCGR`). Lição: um método esperto que
+acerta 91% ainda erra; a fonte oficial, quando existe, vale mais.
+
+## 8. Paletas dos sprites
+**Erro nº 4:** a regra "paleta mais comum do mesmo prefixo" pintou **555 retratos com a
+paleta do Tails**. Correção: as tabelas dizem a paleta de cada personagem
+(`creatures.gda`: `PRTL_TAILS` → `PRTL_Tal.nclr`), e as telas `.gui` dizem a de cada
+elemento. 1.747 imagens passaram a ter a paleta confirmada pelo jogo.
+
+## 9. Escrevendo de volta: o caminho do modding
+Para modificar, é preciso **escrever** os formatos. O critério foi ler e reescrever sem
+mudanças e obter o arquivo original byte a byte:
+- GDA: 137 de 229 na primeira tentativa. O preenchimento entre textos é `0xFF`, não
+  zero. Depois disso, 229 de 229.
+- HERF: faltava alinhar também o fim do arquivo. Depois, 6 de 6 (incluindo o de 49 MB).
+- **TLK: é uma tabela hash.** Das 18.845 entradas, 4.711 estavam vazias (id
+  `0xFFFFFFFF`) e os ids não tinham ordem. Hashes comuns não explicavam as posições.
+  Fui ao **código do jogo**: a função `0x020989fc` (a busca de textos) mostrou a fórmula,
+  uma variante do hash de inteiros de Thomas Wang, com sondagem linear. Conferida:
+  14.134 de 14.134 posições corretas. Sem isso, um texto novo ficaria numa posição
+  onde o jogo nunca o procuraria.
+- Compressor LZ10 **sem referências de distância 1**: a rotina da BIOS que escreve na
+  VRAM grava 16 bits por vez e quebraria com elas.
+
+## 10. No emulador
+- O DeSmuME roda sem janela (`py-desmume` com `SDL_VIDEODRIVER=dummy`) a ~110 fps. Um
+  roteiro de toques chega à tela de título e à citação de abertura.
+- Teste 1: trocar o texto da citação (TLK). Funcionou.
+- Teste 2, pelo `sonic-mod`: editar a tabela `Chapter0` para apontar para um **texto novo**
+  (id 990001) que não existia. A tela mostrou o texto novo. Isso prova a edição de
+  tabela, a inserção na tabela hash do TLK e a gravação de arquivo maior no fim do
+  cartucho, tudo ao mesmo tempo.
+
+## O que ainda não sabemos
+Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
+colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
+itens, de personagens) e a versão exata do compilador. Os próximos passos estão no
+[plano](PLANO-DECOMPILACAO.md).

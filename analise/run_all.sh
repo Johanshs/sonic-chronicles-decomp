@@ -8,8 +8,9 @@ set -euo pipefail
 
 ROM="${1:?uso: ./run_all.sh rom.nds [--sem-ghidra]}"
 SKIP_GHIDRA="${2:-}"
-HERE="$(cd "$(dirname "$0")" && pwd)"
-WORK="${WORK:-$HERE/work}"
+HERE="$(cd "$(dirname "$0")" && pwd)"     # analise/
+REPO="$(dirname "$HERE")"                  # raiz do repositório
+WORK="${WORK:-$REPO/work}"
 T="$HERE/tools"
 mkdir -p "$WORK"
 
@@ -42,7 +43,7 @@ echo "== 4. assembly completo com os nomes"
 rm -rf "$WORK/asm"
 dsd dis --config-path "$WORK/config/arm9/config.yaml" --asm-path "$WORK/asm"
 
-echo "== 5. extrair o pacote HERF (8691 arquivos, recupera ~91% dos nomes)"
+echo "== 5. extrair o pacote HERF (8691 arquivos; nomes pelo erf.dict oficial + dicionário)"
 python3 "$T/herf.py" "$WORK/extracted/files/test.herf" "$WORK/herf" \
         "$WORK/extracted/arm9.bin" "$WORK/extracted/files"
 
@@ -52,10 +53,10 @@ python3 "$T/dump_dialogs.py" "$WORK/herf" "$WORK/extracted/files/strings.tlk" "$
 python3 "$T/gda.py" "$WORK/herf" "$WORK/output/tabelas" "$WORK/extracted/arm9.bin" "$WORK"/extracted/files/*.2da
 
 echo "== 7. validar a decompilação manual contra o jogo (C)"
-make -C "$HERE" test HERF_DIR="$WORK/herf"
+make -C "$REPO/decomp" test HERF_DIR="$WORK/herf"
 
-echo "== 8. ferramenta em Rust (mesma lógica, testada)"
-(cd "$HERE/rust" && cargo test --release -q)
+echo "== 8. testes da biblioteca Rust (engine/)"
+(cd "$REPO/engine" && cargo test --release -q)
 
 if [ "$SKIP_GHIDRA" != "--sem-ghidra" ] && [ -n "${GHIDRA_HOME:-}" ]; then
     echo "== 9. pseudo-C de todas as funções (Ghidra headless, ~15-20 min)"

@@ -11,7 +11,7 @@ mod unpack;
 
 use std::process;
 
-pub const PROJECT_README: &str = include_str!("../PROJETO-LEIA-ME.md");
+pub const PROJECT_README: &str = include_str!("../../../../docs/MODDING.md");
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
