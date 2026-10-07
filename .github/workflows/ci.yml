@@ -4,9 +4,9 @@ name: ci
 on: [push, pull_request]
 jobs:
   rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # versão fixa: o mesmo Rust do desenvolvimento (lints novos não quebram a CI de surpresa)
       - uses: dtolnay/rust-toolchain@master
         with: { toolchain: "1.97.0", components: clippy }
@@ -23,9 +23,9 @@ jobs:
         working-directory: exemplos/rust-minimo
         run: cargo test --release
   c-e-python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: compilar as funções em C
         run: make -C decomp build/test_hash build/test_language && ./decomp/build/test_language
       - name: sintaxe dos scripts
