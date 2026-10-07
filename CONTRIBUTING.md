@@ -12,8 +12,22 @@ Obrigado pelo interesse! Leia antes o [espírito do projeto](docs/ESPIRITO.md).
    captura do emulador). Nome dado à mão vai em `analise/symbols_manual.txt` com um
    comentário dizendo por quê.
 
+## Branches
+- **`main`**: estável. Só recebe código pronto, por pull request vindo da `dev`, com a CI verde.
+  As releases saem daqui.
+- **`dev`**: onde o trabalho do dia a dia acontece. Para algo maior, crie uma branch a partir
+  dela (`dev` → `fase0/delink`, `modding/item-novo`...) e abra o PR de volta para a `dev`.
+
+```
+git switch dev && git pull
+git switch -c fase0/delink        # opcional, para tarefas maiores
+# ... trabalho, commits ...
+git push -u origin fase0/delink   # PR para a dev; quando a dev estiver pronta, PR dev -> main
+```
+
 ## Fluxo
 - Escolha uma *issue* (o backlog segue o [plano](docs/PLANO-DECOMPILACAO.md)).
+- Mencione a issue no commit ou no PR (`#12`), e use `Closes #12` quando ele a concluir.
 - Um PR por assunto, pequeno. Descreva o que mudou e como verificou.
 - Antes do PR:
   ```
