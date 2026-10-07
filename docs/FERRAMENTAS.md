@@ -148,6 +148,7 @@ de uma vez, sem a estrutura da biblioteca completa.
 ```
 git tag v0.3.0 && git push origin v0.3.0
 ```
+ou, sem linha de comando: aba **Actions → release → Run workflow**, informando a versão.
 O workflow `.github/workflows/release.yml` compila no Windows e no Linux (máquinas do
 GitHub), roda os testes e publica a release com `sonic-tools-windows.zip` e
 `sonic-tools-linux.tar.gz`. A CI normal (`ci.yml`) roda em todo push.

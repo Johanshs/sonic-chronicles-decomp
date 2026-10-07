@@ -1,9 +1,16 @@
-# Publica uma release quando uma tag "v*" é enviada:  git tag v0.3.0 && git push origin v0.3.0
+# Publica uma release de duas formas:
+#   1. enviando uma tag:  git tag v0.3.0 && git push origin v0.3.0
+#   2. manualmente: aba Actions > release > "Run workflow", informando a versão (cria a tag)
 # Compila nativamente no Windows e no Linux, roda os testes e anexa os pacotes.
 name: release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      versao:
+        description: "Versão (ex.: v0.3.0)"
+        required: true
 permissions:
   contents: write
 jobs:
@@ -47,11 +54,14 @@ jobs:
         with: { merge-multiple: true }
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.versao || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ inputs.versao || github.ref_name }}
           files: |
             sonic-tools-windows.zip
             sonic-tools-linux.tar.gz
           body: |
             Ferramentas do Sonic Chronicles (DS): **sonic-mod** (modding por planilhas) e **sonic-dump** (extração de assets).
-            Compiladas e testadas pelo GitHub Actions a partir da tag `${{ github.ref_name }}`.
+            Compiladas e testadas pelo GitHub Actions a partir da versão `${{ inputs.versao || github.ref_name }}`.
             Guia: https://github.com/${{ github.repository }}/blob/main/docs/MODDING.md
             Use com uma cópia do jogo que você possui. Nenhum dado do jogo está incluído.
