@@ -115,6 +115,7 @@ Outras ferramentas:
 | `tools/emu_run.py rom.nds pasta "roteiro"` | roda a ROM no DeSmuME sem janela e executa ações: `w N` espera, `p TECLA` aperta, `t X Y` toca a tela, `s nome` captura, `save`/`load` estado. Precisa de `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` |
 | `tools/ghidra_symbols.py` | converte os símbolos do dsd para o Ghidra |
 | `tools/manifest_pairs.py` | lista hash/nome de um manifesto (para os testes em C) |
+| `tools/combate_tabelas.py projeto [saida]` | lê um projeto do `sonic-mod unpack` e gera em Markdown os golpes, efeitos (`.SPL`), itens (`.ITM`), criaturas e regras de combate, já decodificados (ver [COMBATE.md](COMBATE.md)) |
 
 Exemplo de teste de mod no emulador (chega à tela da citação de abertura):
 ```

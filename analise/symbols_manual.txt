@@ -6,3 +6,33 @@
 0x020ec9d4 __register_global_object         # runtime C++ (Metrowerks): encadeia destrutor de objeto estático
 0x020660c4 Profiler_PrintReport             # usa tabela de 98 tags "Classe:Metodo"; sem chamadores (profiler desligado)
 0x020148c8 Game_InitSingletonsAndLanguage   # escolhe strings*.tlk pelo idioma; inicializa CRules, CTlkTable...
+# --- Combate (docs/COMBATE.md) ---
+0x02008550 Rules_RollDice                   # soma de n x (rand % lados + 1); executada no Unicorn
+0x020083d0 StatsRedirect_Map                # atributo lógico -> coluna (StatRedirect.gda: n -> n+1)
+0x02007ab0 Stats_GetInt                     # lê um atributo (3o arg: 1 = valor base, 0 = atual)
+0x020d5cfc FX_Div                           # divisor de hardware 0x4000280: (a << 12) / b
+0x020ea840 Float_FromInt                    # int -> float; executada no Unicorn
+0x020ea7cc Float_ToInt                      # float -> int (trunca); executada no Unicorn
+0x020ea390 Float_Div                        # executada no Unicorn
+0x020ea8d0 Float_Mul                        # executada no Unicorn
+0x020e9e14 Float_Add                        # executada no Unicorn
+0x020eaf5c IntDivMod                        # r0 = quociente, r1 = resto; executada no Unicorn
+0x0201f270 CRules_LoadCombatRules           # copia as 74 linhas de combatrules.gda para globais
+0x020448c0 Combat_BuildTurnQueue            # iniciativa: max(0, R1 - Speed*R3) + 1dR2 por ação (NumMoves)
+0x0204516c ActionQueue_InsertByTime         # inserção ordenada crescente; empate fica depois
+0x0200f804 Combat_ResolveAttack             # Phased/Agile/Inescapable, rolagem de acerto, contra-ataque (texto 22696)
+0x02013740 Combat_RollToHit                 # acerta se Defense_alvo <= Attack + 1d20
+0x0200fcdc Combat_BasicAttackDamage         # 0,9P + k/100*(3dP/3) - Grit; crítico por Luck; KO; Blast
+0x02010810 Combat_PowDamage                 # dano dos POW: colunas Damage1..3, Spell1..3, chances
+0x02011ac4 Combat_ApplyDamage               # redução % (habilidade 14), leech, drenagem de PP (28)
+0x0200e4d0 Effect_ElementResistance         # média das resistências dos elementos da máscara, /100
+0x0200e640 Effect_ApplyResistance           # modo 2: x(1-R); modo 3: resiste se rand < R
+0x02005fcc EffectFn_ModifyAttribute         # EffectId 1: flags bit0 = define, bits1-2 = base do %
+0x020065bc EffectFn_ModifyAttributeResist   # EffectId 1 com resistência: valor x (1 - R)
+0x020076f0 EffectList_Add                   # aplica a resistência e guarda efeitos com duração
+0x02033df4 Squad_SumAbility                 # soma uma habilidade especial entre os membros do esquadrão
+0x02019414 Difficulty_AdjustPower           # regra 58 (+) / 67 (-) x nível/2
+0x02019468 Difficulty_AdjustDefense         # regra 57 (+) / 66 (-) x nível/2
+0x020194bc Difficulty_AdjustAttack          # regra 59 (+) / 68 (-) x nível/2
+0x02019510 Difficulty_AdjustGrit            # regra 60 (+) / 69 (-) x nível/2
+0x02019564 Difficulty_AdjustMaxHp           # regra 61 (+) / 70 (-) x nível/2, aplicado ao HP máximo

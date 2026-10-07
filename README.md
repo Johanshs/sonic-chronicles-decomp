@@ -67,6 +67,7 @@ docs/                toda a documentação (abaixo)
 | [`docs/MODDING.md`](docs/MODDING.md) | guia de modding com receitas (vai junto em cada projeto do `sonic-mod`) |
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | como o jogo e este repositório estão organizados |
 | [`docs/FORMATOS.md`](docs/FORMATOS.md) | referência de todos os formatos decifrados |
+| [`docs/COMBATE.md`](docs/COMBATE.md) | **o combate por dentro**: fórmulas, golpes, status, itens, Chao, dificuldade |
 | [`docs/DIARIO.md`](docs/DIARIO.md) | a história das descobertas, incluindo os erros e as correções |
 | [`docs/PLANO-DECOMPILACAO.md`](docs/PLANO-DECOMPILACAO.md) | o plano da decompilação real, fase por fase |
 | [`docs/hierarquia_classes.md`](docs/hierarquia_classes.md) | as 290 classes C++ do jogo |

@@ -117,8 +117,38 @@ mudanças e obter o arquivo original byte a byte:
   tabela, a inserção na tabela hash do TLK e a gravação de arquivo maior no fim do
   cartucho, tudo ao mesmo tempo.
 
+## 11. O combate
+O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
+
+- **Das regras para o código.** `combatrules.gda` tem 74 números sem nome. A função que
+  a carrega (0x0201f270) copia cada linha para uma variável global; cruzando cada global
+  com as funções que a leem, cada regra ganhou um "dono" (ex.: as regras 7, 8 e 11 só
+  aparecem no `Defend`). Foi assim que as fórmulas foram achadas: pelos números que elas
+  usam, não pelos nomes.
+- **Funções pequenas executadas de verdade.** O dano usa ponto flutuante por software
+  (`0x020ea840`, `0x020ea8d0`...). Em vez de adivinhar pelo nome, cada uma foi executada
+  no Unicorn com entradas conhecidas (`3 → 3.0`, `6.0 / 4.0 → 1.5`). O mesmo para o
+  `RollDice` (0x02008550).
+- **Erro nº 5:** o Ghidra mostrou `func_020d5cfc(x)` com **um** argumento e eu a tratei
+  como uma função de uma entrada (raiz? inverso?). No Unicorn ela travava. O assembly
+  mostrou que é o **divisor de hardware** do DS (registradores 0x4000280) e que o segundo
+  argumento (`r1 = 0x64000`, ou 100,0 em ponto fixo) existe, só o Ghidra o perdeu. Lição:
+  quando o pseudo-C parece estranho, o assembly decide.
+- **Os nomes das colunas mentem às vezes.** A coluna `GUITypeAggressive` de `combo.gda`
+  (nome vindo do dicionário do xoreos) guarda 0,3/0,5/0,8: a chance do status por nível.
+- **O texto do próprio jogo como prova.** As habilidades especiais têm só um código
+  numérico. As descrições dos Chao e dos acessórios ("Increases the team's chances of
+  Ambushing...") deram o significado de cada código, e o código da emboscada confirmou
+  os de número 21 e 22. O diário de regras do jogo (`journalrules.gda`) confirmou a
+  ligação entre Armor/Grit, Power/dano e os pares de status e curas.
+- **Uma descoberta que contradiz o texto.** O diário do jogo diz que o Clover Juice cura
+  Cursed; o `.ITM` dele não tem a linha de remoção. Ficou registrado como está.
+- O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
+  efeito em Markdown legível, para conferir tudo isto na sua cópia.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
-itens, de personagens) e a versão exata do compilador. Os próximos passos estão no
+itens, de personagens), a versão exata do compilador e as partes do combate listadas em
+[COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
 [plano](PLANO-DECOMPILACAO.md).
