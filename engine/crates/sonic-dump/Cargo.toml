@@ -1,0 +1,11 @@
+[package]
+name = "sonic-dump"
+description = "Extrai todos os assets do Sonic Chronicles para formatos abertos"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sonic-formats = { path = "../sonic-formats" }
+serde_json = { version = "1", features = ["preserve_order"] }
+rayon = "1"

@@ -1,0 +1,15 @@
+# nunca versionar nada do jogo
+*.nds
+*.sav
+work/
+saida/
+dump/
+modproj/
+# builds
+build/
+target/
+rust/target/
+engine/target/
+__pycache__/
+*.pyc
+bin/

@@ -1,0 +1,11 @@
+[package]
+name = "sonic-chronicles-tools"
+version = "0.1.0"
+edition = "2021"
+description = "Leitura dos formatos do Sonic Chronicles (HERF, LZ10) — reimplementação a partir da engenharia reversa"
+
+[[bin]]
+name = "herf"
+path = "src/main.rs"
+
+[dependencies]

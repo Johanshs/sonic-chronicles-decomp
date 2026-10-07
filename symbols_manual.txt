@@ -1,0 +1,8 @@
+# Nomes identificados manualmente (endereco nome  # evidência)
+# Aplicados por cima dos nomes automáticos por tools/apply_names.py
+0x020052f0 CExoString__CStr                 # devolve [r0+4] ou "" — ver src/exo_string.c
+0x02009b78 HashResourceName                 # DJB2 (0x1505, *33) c/ tabela de minúsculas — validado em 7893 hashes
+0x020d9894 OS_GetOwnerInfo                  # NitroSDK: lê config. do usuário (idioma nos 3 bits baixos)
+0x020ec9d4 __register_global_object         # runtime C++ (Metrowerks): encadeia destrutor de objeto estático
+0x020660c4 Profiler_PrintReport             # usa tabela de 98 tags "Classe:Metodo"; sem chamadores (profiler desligado)
+0x020148c8 Game_InitSingletonsAndLanguage   # escolhe strings*.tlk pelo idioma; inicializa CRules, CTlkTable...

@@ -1,0 +1,10 @@
+[package]
+name = "sonic-formats"
+description = "Leitura dos formatos do Sonic Chronicles (NDS, HERF, LZ10, GFF4, TLK, GDA, gráficos Nitro, cenários)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json = { version = "1", features = ["preserve_order"] }
+png = "0.17"

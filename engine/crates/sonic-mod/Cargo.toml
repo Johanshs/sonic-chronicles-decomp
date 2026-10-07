@@ -1,0 +1,9 @@
+[package]
+name = "sonic-mod"
+description = "Desempacota o Sonic Chronicles num projeto editável e reempacota numa ROM modificada"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+sonic-formats = { path = "../sonic-formats" }
