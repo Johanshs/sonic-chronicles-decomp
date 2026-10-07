@@ -143,6 +143,15 @@ Uma crate de ~150 linhas com o essencial (hash, HERF, LZ10) e uma CLI `herf list
 É o melhor ponto de partida para quem está aprendendo Rust e quer ver o formato inteiro
 de uma vez, sem a estrutura da biblioteca completa.
 
+## Publicar uma versão
+
+```
+git tag v0.3.0 && git push origin v0.3.0
+```
+O workflow `.github/workflows/release.yml` compila no Windows e no Linux (máquinas do
+GitHub), roda os testes e publica a release com `sonic-tools-windows.zip` e
+`sonic-tools-linux.tar.gz`. A CI normal (`ci.yml`) roda em todo push.
+
 ## Compilar para Windows a partir do Linux
 
 ```

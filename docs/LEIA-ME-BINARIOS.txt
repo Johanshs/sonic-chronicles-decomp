@@ -1,0 +1,18 @@
+Ferramentas do Sonic Chronicles: The Dark Brotherhood (DS)
+https://github.com/Johanshs/sonic-chronicles-decomp
+
+MODIFICAR O JOGO (sonic-mod)
+  1. Coloque os executáveis e a sua ROM (.nds) numa pasta e abra um terminal nela
+     (Windows: Shift + clique direito > "Abrir janela do PowerShell aqui").
+  2. sonic-mod unpack "Sonic Chronicles.nds" meu_mod
+  3. Edite meu_mod/tabelas/test/*.csv e meu_mod/textos/en.csv
+     (use LibreOffice Calc ou VS Code; evite o Excel — veja GUIA-DE-MODDING.md)
+  4. sonic-mod pack "Sonic Chronicles.nds" meu_mod rom_modificada.nds
+  5. Abra rom_modificada.nds no melonDS (https://melonds.kuribo64.net) ou DeSmuME.
+
+EXTRAIR ASSETS (sonic-dump)
+  sonic-dump "Sonic Chronicles.nds" saida
+
+No Windows, chame como .\sonic-mod.exe e .\sonic-dump.exe. Guarde sempre a ROM
+original intacta. Os executáveis não têm assinatura digital: o Windows pode avisar
+na primeira execução.

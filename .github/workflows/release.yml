@@ -1,0 +1,57 @@
+# Publica uma release quando uma tag "v*" é enviada:  git tag v0.3.0 && git push origin v0.3.0
+# Compila nativamente no Windows e no Linux, roda os testes e anexa os pacotes.
+name: release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            pacote: sonic-tools-windows.zip
+            ext: .exe
+          - os: ubuntu-latest
+            pacote: sonic-tools-linux.tar.gz
+            ext: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: compilar e testar
+        working-directory: engine
+        shell: bash
+        run: |
+          cargo test --release --locked
+          cargo build --release --locked -p sonic-mod -p sonic-dump
+      - name: empacotar
+        shell: bash
+        run: |
+          mkdir -p sonic-tools
+          cp engine/target/release/sonic-mod${{ matrix.ext }} engine/target/release/sonic-dump${{ matrix.ext }} sonic-tools/
+          cp docs/MODDING.md sonic-tools/GUIA-DE-MODDING.md
+          cp docs/LEIA-ME-BINARIOS.txt sonic-tools/LEIA-ME.txt
+          if [ "${{ runner.os }}" = "Windows" ]; then 7z a ${{ matrix.pacote }} sonic-tools; else tar czf ${{ matrix.pacote }} sonic-tools; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.pacote }}
+          path: ${{ matrix.pacote }}
+  publicar:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            sonic-tools-windows.zip
+            sonic-tools-linux.tar.gz
+          body: |
+            Ferramentas do Sonic Chronicles (DS): **sonic-mod** (modding por planilhas) e **sonic-dump** (extração de assets).
+            Compiladas e testadas pelo GitHub Actions a partir da tag `${{ github.ref_name }}`.
+            Guia: https://github.com/${{ github.repository }}/blob/main/docs/MODDING.md
+            Use com uma cópia do jogo que você possui. Nenhum dado do jogo está incluído.
