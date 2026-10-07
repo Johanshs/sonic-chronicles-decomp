@@ -57,21 +57,40 @@ roda por cima dele e tem **suporte a cheats**: lê `/_pico/usrcheat.dat` (o mesm
 de banco de cheats dos kernels de R4/Wood). Os cheats são abertos com **Y** sobre o jogo,
 e liga-se cada código com **A**.
 
-**Ponto a confirmar antes de tudo (fase 0):** "R4 SDHC" é um nome usado por vários
-fabricantes de clones. O Pico Loader é compilado **por plataforma**
-(`make PICO_PLATFORM=...`), e cada clone precisa da versão certa. O site impresso no
-cartão ou na tela inicial do kernel diz qual é. Se o seu modelo não estiver na lista, o
-caminho A ainda funciona pelo **motor de cheats do próprio kernel do R4** (o mesmo
-`usrcheat.dat`), e o caminho B não depende de cartão nenhum.
+### O cartão do projeto: R4i-SDHC Gold Pro (r4isdhc.com)
+O Pico Loader é compilado **por plataforma**, e muitos clones de R4 se comportam como
+outro cartão mais antigo. Na tabela de plataformas do Pico Loader, os cartões **`r4isdhc.com` de
+2014 em diante** usam a plataforma **`DSTT`**, a mesma do DSTT e do SuperCard DSONE
+SDHC (ou seja, o loader fala com eles do mesmo jeito), **com** suporte a leitura por DMA. Sem DMA, alguns jogos têm problemas de
+cache; não é o nosso caso. O Gold Pro é dessa família, então:
 
-Instalação prevista (a conferir com o seu cartão):
+- **Pico Loader**: baixar `Pico_Loader_DSTT.zip` da
+  [última release](https://github.com/LNH-team/pico-loader/releases) (v1.7.1, de
+  28/06/2026, quando este plano foi escrito).
+- **Pico Launcher**: `LAUNCHER.nds` da
+  [release dele](https://github.com/LNH-team/pico-launcher/releases).
+
+**O que ainda não está confirmado:** a documentação do Pico Launcher só descreve a
+instalação no DSpico. Num R4, quem abre o `LAUNCHER.nds` é o kernel do cartão, e o
+launcher precisa ler o SD. Kernels de R4i costumam aplicar o patch DLDI automaticamente
+ao abrir homebrew, o que resolveria isso, mas só um teste no aparelho confirma. Por isso a
+fase A0 tem um plano B.
+
+Instalação a testar:
 ```
-SD:/_pico/picoLoader7.bin
-SD:/_pico/picoLoader9.bin      ← a versão da plataforma do seu R4
+SD:/_pico/picoLoader7.bin      ← do Pico_Loader_DSTT.zip
+SD:/_pico/picoLoader9.bin      ← do Pico_Loader_DSTT.zip (a versão DSTT)
 SD:/_pico/aplist.bin, savelist.bin, patchlist.bin
 SD:/_pico/usrcheat.dat         ← cheats (gerado pela fase A3)
 SD:/LAUNCHER.nds               ← aberto pelo menu do kernel do R4
 ```
+(Os arquivos do kernel original do cartão continuam no SD; o Pico só se soma a eles.)
+
+**Plano B, se o Pico Launcher não abrir pelo kernel:** o próprio kernel do R4i-SDHC tem
+um motor de cheats que também lê `usrcheat.dat` (a pasta depende da versão do kernel).
+Outra opção conhecida para esses cartões é o TWiLight Menu++ com o nds-bootstrap, que
+também lê `usrcheat.dat`. Os códigos Action Replay são os mesmos em qualquer um deles, e o
+caminho B (o menu) não depende de cartão.
 
 ## 3. Caminho A: cheats Action Replay
 
@@ -120,7 +139,7 @@ desligável sem gerar outra ROM.
 
 | Fase | O que | Pronto quando | Dias |
 |---|---|---|---|
-| **A0** | identificar o modelo do R4; instalar o Pico Loader certo (ou usar o kernel do R4); abrir o jogo original por ele | o jogo roda no DS pelo cartão | 1 |
+| **A0** | montar o SD com o Pico Loader DSTT + Pico Launcher (seção 2); abrir o `LAUNCHER.nds` pelo kernel; abrir o jogo original por ele; ligar um cheat trivial do banco público para provar o motor. Se falhar: plano B | o jogo roda no DS pelo cartão e um cheat conhecido funciona | 1 |
 | **A1** | `analise/tools/ar_codes.py`: aplica uma lista de códigos AR no py-desmume a cada quadro (as escritas e condições básicas); validar os 4 cheats acima numa batalha real | dano muda como a fórmula prevê, com captura de tela | 2–3 |
 | **A2** | `analise/tools/ram_busca.py`: busca de valores na RAM no estilo Cheat Engine (valor exato → mudou → não mudou), com estados salvos; achar HP/PP/atributos do grupo, anéis e inventário, e a **cadeia de ponteiros** a partir de uma global fixa | cada endereço confirmado em 2 momentos diferentes do jogo (o ponteiro tem que sobreviver a trocar de área e recarregar o save) | 3–5 |
 | **A3** | `cheats/YWSE.txt` (texto, no repositório: só endereços e valores, nada do jogo) e um gerador de `usrcheat.dat` (ou instruções para o editor R4CCE) | o Pico Launcher lista os cheats e eles funcionam no DS | 2 |
@@ -197,7 +216,8 @@ mesmo modificada.
 
 ## 7. Perguntas em aberto
 
-- Qual é o modelo exato do R4 (o site impresso no cartão)? Isso decide a fase A0.
+- ~~Qual é o modelo do R4?~~ R4i-SDHC Gold Pro (r4isdhc.com) → plataforma DSTT.
+- O Pico Launcher abre pelo kernel do Gold Pro e lê o SD? (teste da fase A0)
 - O formato exato do `usrcheat.dat` (cabeçalho, identificação do jogo por código + CRC) e
   quais tipos de código AR o Pico Launcher aceita: conferir na fase A3, no código-fonte
   do launcher.
