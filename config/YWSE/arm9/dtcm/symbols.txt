@@ -26,5 +26,5 @@ data_027e09a8 kind:data(any) addr:0x027e09a8
 data_027e09c0 kind:data(any) addr:0x027e09c0
 data_027e0ae0 kind:data(any) addr:0x027e0ae0
 data_027e0fce kind:data(any) addr:0x027e0fce
-OS_IRQTable kind:data(any) addr:0x027e0fe0
-OSi_IrqThreadQueue kind:bss addr:0x027e1040
+OS_IRQTable kind:data(byte[0x58]) addr:0x027e0fe0
+OSi_IrqThreadQueue kind:bss(size=0x8) addr:0x027e1040

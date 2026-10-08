@@ -15,6 +15,8 @@ Como funciona:
      arquivo começa em 0x0216abc0. Os bytes de .data e .rodata são conferidos.
   3. Grava cada arquivo em delinks.txt como `complete` (o build liga o .o) e dá a cada
      símbolo do jogo o nome que o .o usa, marcando os `static` como `local`.
+As funções que o SDK põe no ITCM (.itcm) e as variáveis do DTCM (.dtcm, .dtcm.bss)
+seguem o mesmo caminho e vão para itcm/ e dtcm/ com o apelido "x.itcm.c"/"x.dtcm.c".
 
 Uso: python3 ligar_bibliotecas.py NOME FONTE OBJ DE ATE [--aplicar]
   NOME   prefixo dos arquivos em delinks.txt (NitroSystem ou NitroSDK)
@@ -36,8 +38,16 @@ SIMBOLOS_DTCM = os.path.join(REPO, "config/YWSE/arm9/dtcm/symbols.txt")
 DELINKS = os.path.join(REPO, "config/YWSE/arm9/delinks.txt")
 RELOCS = os.path.join(REPO, "config/YWSE/arm9/relocs.txt")
 BASE = 0x02000000
-arm9 = open(os.path.join(REPO, "work/extract/arm9/arm9.bin"), "rb").read()
-DADOS = {".rodata": (0x020ef814, 0x020f4ff0), ".data": (0x020f5260, 0x021090e0)}
+ITCM = (0x01ff8000, 0x01ffedd0)                     # o código que roda no ITCM
+DTCM = 0x027e0000
+# os três módulos do ARM9: (endereço, bytes)
+MEMORIA = [(BASE, open(os.path.join(REPO, "work/extract/arm9/arm9.bin"), "rb").read()),
+           (ITCM[0], open(os.path.join(REPO, "work/extract/arm9/itcm.bin"), "rb").read()),
+           (DTCM, open(os.path.join(REPO, "work/extract/arm9/dtcm.bin"), "rb").read())]
+DADOS = {".rodata": (0x020ef814, 0x020f4ff0), ".data": (0x020f5260, 0x021090e0),
+         ".dtcm": (DTCM, 0x027e1040)}
+# as partes de um arquivo que moram no ITCM/DTCM: seção do .o -> (módulo, seção lá)
+OUTROS_MODULOS = {".itcm": ("itcm", ".text"), ".dtcm": ("dtcm", ".data"), ".dtcm.bss": ("dtcm", ".bss")}
 ENDERECOS, THUMB, TODOS, FUNCOES = {}, set(), set(), []   # nome -> endereço; Thumb; com símbolo
 NOMES_TODOS = set()
 # os símbolos que montar_rom.sh define no .lcf (SDK_SYS_STACKSIZE...)
@@ -49,13 +59,12 @@ for _f in (SIMBOLOS, SIMBOLOS_ITCM, SIMBOLOS_DTCM):
             _e = int(_m.group(3), 16)
             TODOS.add(_e)
             NOMES_TODOS.add(_m.group(1))
-            if _f == SIMBOLOS:
-                ENDERECOS.setdefault(_m.group(1), _e)
-                _t = re.match(r"function\((arm|thumb),size=(0x[0-9a-f]+)", _m.group(2))
-                if _t:
-                    FUNCOES.append((_e, _e + int(_t.group(2), 16)))
-                    if _t.group(1) == "thumb":
-                        THUMB.add(_e)
+            ENDERECOS.setdefault(_m.group(1), _e)
+            _t = re.match(r"function\((arm|thumb),size=(0x[0-9a-f]+)", _m.group(2))
+            if _t:
+                FUNCOES.append((_e, _e + int(_t.group(2), 16)))
+                if _t.group(1) == "thumb":
+                    THUMB.add(_e)
 FUNCOES.sort()
 
 
@@ -80,12 +89,12 @@ class Objeto:
         elf = ELFFile(io.BytesIO(dados))
         self.secoes = {}            # índice -> (nome, tamanho, bytes ou None)
         for i, s in enumerate(elf.iter_sections()):
-            if s.name in (".data", ".rodata", ".bss", ".sdata", ".sbss") and s.data_size:
+            if s.name in (".data", ".rodata", ".bss", ".sdata", ".sbss", ".dtcm", ".dtcm.bss") and s.data_size:
                 corpo = None if s.header.sh_type == "SHT_NOBITS" else s.data()
                 self.secoes[i] = (s.name, s.data_size, corpo)
-        # seções que vão para outro módulo (ITCM, DTCM) ou que o linker trata à parte
-        self.especiais = sorted({s.name for s in elf.iter_sections()
-                                 if s.name in (".itcm", ".dtcm", ".dtcm.bss", ".version")})
+        self.nomes_sec = [s.name for s in elf.iter_sections()]
+        # seções que o linker trata à parte
+        self.especiais = sorted({s.name for s in elf.iter_sections() if s.name == ".version"})
         self.simbolos = list(elf.get_section_by_name(".symtab").iter_symbols())
         self.rels = {}              # índice da seção -> [(offset, tipo, símbolo, addend)]
         for s in elf.iter_sections():
@@ -101,13 +110,15 @@ class Objeto:
                                      escopo(s))
 
 
-def dividir(objs, de, ate, conhecidos):
-    """Passo 1: [(endereço, objeto, nome da função no .o)] para cada função da região."""
+def dividir(objs, de, ate, conhecidos, secao=".text"):
+    """Passo 1: [(endereço, objeto, nome da função no .o)] para cada função da região.
+    Só valem as funções do .o que estão na `secao` (.text no ARM9, .itcm no ITCM)."""
     jogo = sorted(f for fs in af.funcoes_jogo().values() for f in fs if de <= f[0] < ate)
     por_tam = {}
     for o in objs:
         for i, (n, c, m) in enumerate(o.funcoes):
-            por_tam.setdefault(len(c), []).append((o, i, n, c, m))
+            if o.nomes_sec[o.onde[n][0]] == secao:
+                por_tam.setdefault(len(c), []).append((o, i, n, c, m))
     cand = [[(o, i, n) for o, i, n, c, m in por_tam.get(len(b), [])
              if all(b[k] == c[k] for k in range(len(c)) if k not in m)] for _, _, b in jogo]
 
@@ -184,14 +195,22 @@ def apontam(o, ini, fim, conhecidos):
     return pontos
 
 
+def ler(end, n):
+    """n bytes do jogo a partir de `end`, no módulo onde o endereço cai."""
+    for base, b in MEMORIA:
+        if base <= end and end + n <= base + len(b):
+            return b[end - base:end - base + n]
+    raise ValueError(f"{end:#x} não está em nenhum módulo do ARM9")
+
+
 def palavra(end):
-    return struct.unpack_from("<I", arm9, end - BASE)[0]
+    return struct.unpack("<I", ler(end, 4))[0]
 
 
 def destino(tipo, end):
     """Para onde aponta a relocação no endereço `end` do jogo (bl Thumb, bl ARM, ponteiro)."""
     if tipo == 10:                                  # R_ARM_THM_CALL
-        alto, baixo = struct.unpack_from("<HH", arm9, end - BASE)
+        alto, baixo = struct.unpack("<HH", ler(end, 4))
         desl = ((alto & 0x7ff) << 12) | ((baixo & 0x7ff) << 1)
         desl -= 0x800000 if desl & 0x400000 else 0
         alvo = end + 4 + desl
@@ -318,10 +337,10 @@ def achar_dados(o, funcs, conhecidos):
             struct.pack_into("<I", esperado, off, alvo + add + thumb)
         if not ok:
             continue
-        faixa = DADOS[".rodata" if nome == ".rodata" else ".data"]
-        achados = [m.start() + BASE for m in re.finditer(re.escape(bytes(esperado)),
-                                                        arm9[faixa[0] - BASE:faixa[1] - BASE])]
-        achados = [a + faixa[0] - BASE for a in achados if (a + faixa[0] - BASE) % 4 == 0]
+        faixa = DADOS[nome if nome in DADOS else ".data"]
+        achados = [m.start() + faixa[0] for m in re.finditer(re.escape(bytes(esperado)),
+                                                            ler(faixa[0], faixa[1] - faixa[0]))]
+        achados = [a for a in achados if a % 4 == 0]
         if len(achados) == 1:
             bases[sec] = achados[0]
         elif len(achados) > 1:
@@ -350,7 +369,7 @@ def achar_dados(o, funcs, conhecidos):
         mascara = set()
         for off, tipo, _, _ in o.rels.get(sec, []):
             mascara.update(range(off, off + 4))
-        jogo = arm9[base - BASE:base - BASE + tam]
+        jogo = ler(base, tam)
         if any(jogo[i] != corpo[i] for i in range(tam) if i not in mascara):
             problemas.append(f"{nome} em {base:#x}: bytes diferentes")
         # e os ponteiros cujo alvo já sabemos onde está
@@ -363,6 +382,28 @@ def achar_dados(o, funcs, conhecidos):
     return bases, problemas
 
 
+def entre_modulos(o):
+    """Símbolos "static" que uma parte do arquivo usa de outro módulo (OS_ResetSystem, no
+    ARM9, chama OSi_DoResetSystem, no ITCM). Para o linker é o mesmo .o, mas o dsd corta
+    cada módulo à parte e não deixa um módulo usar um símbolo local do outro: esses
+    ficam globais em symbols.txt."""
+    def mod(sec):
+        return OUTROS_MODULOS.get(o.nomes_sec[sec], ("main",))[0] if isinstance(sec, int) else None
+    nomes = set()
+    for sec, rl in o.rels.items():
+        for _, _, sym, _ in rl:
+            alvo = o.simbolos[sym]
+            if mod(alvo["st_shndx"]) in (None, mod(sec)):
+                continue
+            if alvo["st_info"]["type"] == "STT_SECTION":
+                # "a .bss + 8": vale para as variáveis daquela seção
+                nomes.update(s.name for s in o.simbolos if s["st_shndx"] == alvo["st_shndx"]
+                             and s.name and s["st_info"]["type"] != "STT_SECTION")
+            else:
+                nomes.add(alvo.name)
+    return nomes
+
+
 def nome_fonte(fonte_dir, nome_lib):
     """De 'libraries_fnd_src_list.o' para 'NitroSystem/libraries/fnd/src/list.c'."""
     mapa = {}
@@ -372,18 +413,21 @@ def nome_fonte(fonte_dir, nome_lib):
     return mapa
 
 
-def segmentos(seq, fontes, quebrados):
+def segmentos(seqs, fontes, quebrados):
     """As faixas de cada arquivo e o que eles usam de fora (MSL, SDK, dados globais de
     outros arquivos), com o endereço tirado da própria instrução do jogo. Os arquivos
-    que não podem ser ligados ficam de fora: continuam vindo do assembly."""
-    arquivos = []                                   # (fonte, objeto, {nome: end}, faixas)
-    for end, tam, o, n in seq:
-        if o is None or id(o) in quebrados:
-            continue
-        if not arquivos or arquivos[-1][1] is not o:
-            arquivos.append([fontes[os.path.basename(o.caminho)], o, {}, [end, end]])
-        arquivos[-1][2][n] = end
-        arquivos[-1][3][1] = (end + tam + 3) & ~3
+    que não podem ser ligados ficam de fora: continuam vindo do assembly.
+    `seqs`: [(seção, divisão)], a do ARM9 (.text) e a do ITCM (.itcm)."""
+    por_obj = {}                                    # id -> [fonte, objeto, {nome: end}, {seção: faixa}]
+    for secao, seq in seqs:
+        for end, tam, o, n in seq:
+            if o is None or id(o) in quebrados:
+                continue
+            a = por_obj.setdefault(id(o), [fontes[os.path.basename(o.caminho)], o, {}, {}])
+            a[2][n] = end
+            faixa = a[3].setdefault(secao, [end, end])
+            faixa[1] = (end + tam + 3) & ~3
+    arquivos = list(por_obj.values())
     fora = {}
     for fonte, o, funcs, _ in arquivos:
         for end, nomes in externos(o, funcs).items():
@@ -403,12 +447,17 @@ def main():
     conhecidos = dict(ENDERECOS)
     for volta in (1, 2):
         seq, problemas, quebrados = dividir(objs, de, ate, conhecidos)
-        arquivos, fora = segmentos(seq, fontes, quebrados)
+        # as funções que o SDK põe no ITCM (OS_IrqHandler): o mesmo, na região do ITCM
+        seq_itcm, _, q = dividir(objs, *ITCM, conhecidos, ".itcm")
+        for k, v in q.items():
+            quebrados.setdefault(k, v)
+        seqs = [(".text", seq), (".itcm", seq_itcm)]
+        arquivos, fora = segmentos(seqs, fontes, quebrados)
         for end, nomes in fora.items():
             for n in nomes:
                 conhecidos.setdefault(n, end)
-    # um arquivo com funções no ITCM ou dados no DTCM teria de ser ligado em dois
-    # módulos ao mesmo tempo; por enquanto continua vindo do assembly
+    # a seção .version (a "assinatura" da biblioteca) o linker da Nintendo punha num
+    # lugar próprio; por enquanto esses arquivos continuam vindo do assembly
     for o in objs:
         if o.especiais:
             quebrados.setdefault(id(o), f"tem partes em {', '.join(o.especiais)}")
@@ -422,7 +471,7 @@ def main():
             fora_do_arm9 = not BASE <= end < 0x027e0000 and end not in TODOS
             if fora_do_arm9 or end not in TODOS and not no_meio_de_funcao(end) and end < 0x020f5260:
                 quebrados.setdefault(id(o), f"usa algo sem símbolo no jogo ({', '.join(sorted(nomes))})")
-    arquivos, fora = segmentos(seq, fontes, quebrados)
+    arquivos, fora = segmentos(seqs, fontes, quebrados)
 
     por_nome = {}
     for end, nomes in fora.items():
@@ -447,32 +496,34 @@ def main():
 
     saida, tamanhos = [], {}                        # tamanhos: o do .o, para o dsd não esticar
     internos = {}                                   # de -> (símbolo, alvo): ponteiros com deslocamento
-    for fonte, o, funcs, (ini, fim) in arquivos:
+    for fonte, o, funcs, codigo in arquivos:
         bases, probs = achar_dados(o, funcs, conhecidos)
         problemas += [f"{fonte}: {p}" for p in probs]
-        faixas = {".text": (ini, fim)}
+        faixas = {sec: tuple(f) for sec, f in codigo.items()}
         for sec, base in bases.items():
             nome, tam, _ = o.secoes[sec]
             a, b = faixas.get(nome, (base, base + tam))
             # o enchimento até o próximo múltiplo de 4 é do arquivo: o linker o põe depois dele
             faixas[nome] = (min(a, base), (max(b, base + tam) + 3) & ~3)
         semdados = [o.secoes[s][0] for s in o.secoes if s not in bases]
+        ini, fim = faixas.get(".text", (0, 0))
         print(f"{ini:#010x}-{fim:#010x} {len(funcs):3d} funções  {fonte}"
               + "".join(f"  {n} {a:#x}-{b:#x}" for n, (a, b) in faixas.items() if n != ".text")
               + (f"  (descartadas pelo linker: {', '.join(semdados)})" if semdados else ""))
         saida.append((fonte, faixas))
+        cruzados = entre_modulos(o)
         for nome, end in funcs.items():
-            renomear[end] = (nome, o.onde[nome][3], ".text")
+            renomear[end] = (nome, "" if nome in cruzados else o.onde[nome][3], ".text")
         for sec, base in bases.items():
             nome_sec, tam_sec, _ = o.secoes[sec]
             objetos = sorted((s["st_value"], s) for s in o.simbolos if s["st_shndx"] == sec
                              and s.name and s["st_info"]["type"] == "STT_OBJECT")
             for off, s in objetos:
-                renomear[base + off] = (s.name, escopo(s), nome_sec)
+                renomear[base + off] = (s.name, "" if s.name in cruzados else escopo(s), nome_sec)
                 tamanhos[base + off] = s["st_size"]
             # o dsd corta os dados nos símbolos: o começo de cada seção precisa de um
             if base not in renomear:
-                renomear[base] = (f"{nome_sec[1:]}_{base:08x}", "local", nome_sec)
+                renomear[base] = (f"{nome_sec[1:].replace('.', '_')}_{base:08x}", "local", nome_sec)
                 tamanhos[base] = objetos[0][0] if objetos else tam_sec
         internos.update(apontam_para_dentro(o, funcs, bases))
     sem_par = [f"{e:#x} {n}" for e, _, o, n in seq if o is None]
@@ -488,17 +539,37 @@ def main():
         gravar(saida, renomear, apelidos, tamanhos, internos)
 
 
+def modulo(caminho, mod):
+    """O arquivo de config do módulo: arm9/x.txt, arm9/itcm/x.txt, arm9/dtcm/x.txt."""
+    return caminho if mod == "main" else os.path.join(os.path.dirname(caminho), mod, os.path.basename(caminho))
+
+
 def gravar(saida, renomear, apelidos, tamanhos, internos):
-    # delinks.txt: tira entradas antigas destes arquivos e acrescenta as novas
-    texto = open(DELINKS).read().rstrip("\n")
-    for fonte, _ in saida:
-        texto = re.sub(rf"\n\n{re.escape(fonte)}:\n(    .*\n?)*", "\n", texto)
+    # delinks.txt de cada módulo: tira entradas antigas destes arquivos e acrescenta as
+    # novas. A parte no ITCM/DTCM leva outro nome ("x.itcm.c"), porque o dsd não aceita
+    # o mesmo arquivo em dois módulos; montar_rom.sh a liga com o mesmo x.o
     ordem = [".text", ".rodata", ".data", ".bss"]
+    entradas = {"main": [], "itcm": [], "dtcm": []}
     for fonte, faixas in saida:
-        texto += f"\n\n{fonte}:\n    complete\n"
-        texto += "\n".join(f"    {n:<11} start:{a:#010x} end:{b:#010x}"
-                           for n, (a, b) in sorted(faixas.items(), key=lambda x: ordem.index(x[0])))
-    open(DELINKS, "w").write(re.sub(r"\n{3,}", "\n\n", texto).rstrip("\n") + "\n")
+        for mod in entradas:
+            nome = fonte if mod == "main" else f"{fonte[:-2]}.{mod}.c"
+            secs = {}
+            for sec, faixa in faixas.items():
+                destino_mod, destino_sec = OUTROS_MODULOS.get(sec, ("main", sec))
+                if destino_mod == mod:
+                    secs[destino_sec] = faixa
+            entradas[mod].append((nome, secs))
+    for mod, lista in entradas.items():
+        caminho = modulo(DELINKS, mod)
+        texto = open(caminho).read().rstrip("\n")
+        for nome, secs in lista:
+            texto = re.sub(rf"\n\n{re.escape(nome)}:\n(    .*\n?)*", "\n", texto)
+        for nome, secs in lista:
+            if secs:
+                texto += f"\n\n{nome}:\n    complete\n"
+                texto += "\n".join(f"    {n:<11} start:{a:#010x} end:{b:#010x}"
+                                   for n, (a, b) in sorted(secs.items(), key=lambda x: ordem.index(x[0])))
+        open(caminho, "w").write(re.sub(r"\n{3,}", "\n\n", texto).rstrip("\n") + "\n")
     # symbols.txt: o nome do .o em cada endereço; os static ficam "local"
     automatico = re.compile(r"(func|data)_[0-9a-f]{8}$|.*__vfunc\d+_[0-9a-f]{8}$")
     vistos, trocados = set(), 0
@@ -509,26 +580,27 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
         if sec in (".text", "fora") and atual or (atual and atual.startswith(("kind:function", "kind:label"))):
             return atual
         t = tamanhos.get(end)
-        if sec == ".bss" or 0x021090e0 <= end < 0x027e0000:
+        if sec in (".bss", ".dtcm.bss") or 0x021090e0 <= end < DTCM:
             return f"kind:bss(size={t:#x})" if t else "kind:bss"
         return f"kind:data(byte[{t:#x}])" if t else (atual or "kind:data(any)")
     # os símbolos que caem DENTRO de um arquivo ligado e que o .o não tem (data_021ade58,
     # um campo no meio de NNS_G3dGlb) saem: o dsd passa a apontar para o símbolo que
     # contém o endereço, mais o deslocamento, e o linker acha esse no .o
     faixas = [(a, b) for _, f in saida for (a, b) in f.values()]
-    codigo = [f[".text"] for _, f in saida]
+    codigo = [f[s] for _, f in saida for s in (".text", ".itcm") if s in f]
     def dentro(end):
         if any(a < end < b for a, b in codigo):
             # um ponteiro para função Thumb tem o bit 0 ligado: conta como a função
             return end & ~1 not in renomear
         return any(a < end < b for a, b in faixas) and end not in renomear
-    removidos = 0
+    removidos, arquivos = 0, {}
     for caminho in (SIMBOLOS_ITCM, SIMBOLOS_DTCM, SIMBOLOS):
         linhas = open(caminho).read().rstrip("\n").split("\n")
         antes = len(linhas)
         linhas = [l for l in linhas if not (re.search(r"addr:(0x[0-9a-f]+)", l)
                                            and dentro(int(re.search(r"addr:(0x[0-9a-f]+)", l).group(1), 16)))]
         removidos += antes - len(linhas)
+        arquivos[caminho] = linhas
         for i, linha in enumerate(linhas):
             m = re.match(r"(\S+) (kind:\S+(?: \S+)*?) addr:(0x[0-9a-f]+)( local| weak)?$", linha)
             if not m:
@@ -545,8 +617,6 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
                 if novo != linha:
                     linhas[i] = novo
                     trocados += 1
-        if caminho != SIMBOLOS:
-            open(caminho, "w").write("\n".join(linhas) + "\n")
     for end, a in apelidos:
         print(f"   apelido: {a} em {end:#x}")
     # os símbolos de dados que o jogo não tinha: entram na ordem dos endereços
@@ -559,7 +629,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
             print(f"   AVISO: {nome} em {end:#x} não tem símbolo no jogo; não foi criado")
         elif end not in vistos:
             novos.append((end, f"{nome} {tipo(end, sec, None)} addr:{end:#010x}" + (f" {local}" if local else "")))
-    existentes = set(linhas)
+    existentes = {l for ls in arquivos.values() for l in ls}
     for end, a in apelidos:
         linha = f"{a} kind:label({'thumb' if end in THUMB else 'arm'}) addr:{end:#010x}"
         if linha not in existentes:
@@ -567,15 +637,29 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
     def endereco(l):
         m = re.search(r"addr:(0x[0-9a-f]+)", l)
         return int(m.group(1), 16) if m else 0
-    chaves = [endereco(l) for l in linhas]
-    for end, linha in sorted(novos, reverse=True):
-        linhas.insert(bisect.bisect_right(chaves, end), linha)
-    open(SIMBOLOS, "w").write("\n".join(linhas) + "\n")
+    for caminho, linhas in arquivos.items():
+        # cada símbolo novo vai para o arquivo do módulo onde o endereço cai
+        de, ate = {SIMBOLOS_ITCM: (0, BASE), SIMBOLOS_DTCM: (DTCM, 1 << 32), SIMBOLOS: (BASE, DTCM)}[caminho]
+        chaves = [endereco(l) for l in linhas]
+        for end, linha in sorted(novos, reverse=True):
+            if de <= end < ate:
+                linhas.insert(bisect.bisect_right(chaves, end), linha)
+        open(caminho, "w").write("\n".join(linhas) + "\n")
     # relocs.txt: quem aponta para o meio de um arquivo ligado passa a apontar para o
     # símbolo do .o que contém o endereço, com o deslocamento ("add")
     simbolos_ok = sorted(e for e in renomear if any(a <= e < b for a, b in faixas))
-    texto, ajustadas, falsas = [], 0, []
-    for linha in open(RELOCS).read().rstrip("\n").split("\n"):
+    ajustadas, falsas = 0, []
+    for caminho in (RELOCS, modulo(RELOCS, "itcm"), modulo(RELOCS, "dtcm")):
+        ajustadas += ajustar_relocs(caminho, renomear, internos, simbolos_ok, faixas, dentro, falsas)
+    print(f"# {ajustadas} relocações apontam agora para símbolo + deslocamento")
+    for f in falsas:
+        print(f"   relocação falsa removida: {f}")
+    print(f"# delinks.txt atualizado; {trocados} símbolos renomeados, {len(novos)} novos, {removidos} removidos")
+
+
+def ajustar_relocs(caminho, renomear, internos, simbolos_ok, faixas, dentro, falsas):
+    texto, ajustadas = [], 0
+    for linha in open(caminho).read().rstrip("\n").split("\n"):
         m = re.match(r"from:(0x[0-9a-f]+) kind:\S+ to:(0x[0-9a-f]+)( module:.*)$", linha)
         de = int(m.group(1), 16) if m else None
         if m and de in internos and internos[de][1] == int(m.group(2), 16) and internos[de][0] not in (internos[de][1],):
@@ -600,11 +684,8 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
             linha = linha.replace(f"to:{m.group(2)}", f"to:{base:#010x} add:{alvo - base:#x}")
             ajustadas += 1
         texto.append(linha)
-    open(RELOCS, "w").write("\n".join(texto) + "\n")
-    print(f"# {ajustadas} relocações apontam agora para símbolo + deslocamento")
-    for f in falsas:
-        print(f"   relocação falsa removida: {f}")
-    print(f"# delinks.txt atualizado; {trocados} símbolos renomeados, {len(novos)} novos, {removidos} removidos")
+    open(caminho, "w").write("\n".join(texto) + "\n")
+    return ajustadas
 
 
 if __name__ == "__main__":

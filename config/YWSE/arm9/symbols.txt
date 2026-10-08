@@ -5573,11 +5573,11 @@ GX_BeginLoadClearImage kind:function(thumb,size=0x60) addr:0x020d792c
 GX_EndLoadClearImage kind:function(thumb,size=0x2c) addr:0x020d798c
 GX_SendFifo48B kind:function(arm,size=0x24) addr:0x020d79b8
 OS_WaitIrq kind:function(arm,size=0x74) addr:0x020d79dc
-func_020d7a50 kind:function(thumb,size=0x2) addr:0x020d7a50
+OS_IrqDummy kind:function(thumb,size=0x2) addr:0x020d7a50
 OSi_IrqCallback kind:function(thumb,size=0x58) addr:0x020d7a54
-func_020d7aac kind:function(thumb,size=0xc) addr:0x020d7aac
-func_020d7ab8 kind:function(thumb,size=0xc) addr:0x020d7ab8
-func_020d7ac4 kind:function(thumb,size=0xc) addr:0x020d7ac4
+OSi_IrqDma0 kind:function(thumb,size=0xc) addr:0x020d7aac
+OSi_IrqDma1 kind:function(thumb,size=0xc) addr:0x020d7ab8
+OSi_IrqDma2 kind:function(thumb,size=0xc) addr:0x020d7ac4
 OSi_IrqDma3 kind:function(thumb,size=0xc) addr:0x020d7ad0
 OSi_IrqTimer0 kind:function(thumb,size=0xc) addr:0x020d7adc
 OSi_IrqTimer1 kind:function(thumb,size=0xc) addr:0x020d7ae8
@@ -5718,8 +5718,8 @@ OS_GetProcMode kind:function(arm,size=0xc) addr:0x020d96e4
 OS_SpinWait kind:function(arm,size=0xc) addr:0x020d96f0
 OS_WaitVBlankIntr kind:function(thumb,size=0x12) addr:0x020d96fc
 OS_InitReset kind:function(arm,size=0x54) addr:0x020d9710
-OSi_CommonCallback kind:function(arm,size=0x34) addr:0x020d9764
-OSi_SendToPxi kind:function(arm,size=0x2c) addr:0x020d9798
+OSi_CommonCallback kind:function(arm,size=0x34) addr:0x020d9764 local
+OSi_SendToPxi kind:function(arm,size=0x2c) addr:0x020d9798 local
 OS_ResetSystem kind:function(arm,size=0xbc) addr:0x020d97c4
 OS_GetMacAddress kind:function(thumb,size=0x14) addr:0x020d9880
 OS_GetOwnerInfo kind:function(thumb,size=0x58) addr:0x020d9894
@@ -5740,10 +5740,10 @@ MI_StopDma kind:function(thumb,size=0x50) addr:0x020d9c10
 MIi_CheckAnotherAutoDMA kind:function(thumb,size=0x88) addr:0x020d9c60
 MIi_CheckDma0SourceAddress kind:function(thumb,size=0x46) addr:0x020d9ce8
 MI_SendGXCommandAsync kind:function(thumb,size=0xb0) addr:0x020d9d30
-MIi_FIFOCallback kind:function(thumb,size=0x78) addr:0x020d9de0
-MIi_DMACallback kind:function(thumb,size=0x44) addr:0x020d9e58
+MIi_FIFOCallback kind:function(thumb,size=0x78) addr:0x020d9de0 local
+MIi_DMACallback kind:function(thumb,size=0x44) addr:0x020d9e58 local
 MI_SendGXCommandAsyncFast kind:function(thumb,size=0x74) addr:0x020d9e9c
-MIi_DMAFastCallback kind:function(thumb,size=0x18) addr:0x020d9f10
+MIi_DMAFastCallback kind:function(thumb,size=0x18) addr:0x020d9f10 local
 MIi_CpuClear16 kind:function(arm,size=0x28) addr:0x020d9f28
 MIi_CpuCopy16 kind:function(arm,size=0x34) addr:0x020d9f50
 MIi_CpuClear32 kind:function(arm,size=0x1c) addr:0x020d9f84
@@ -9345,7 +9345,7 @@ calcTexMtx_ kind:data(byte[0x20]) addr:0x021081f4 local
 calcTexMtx_ kind:data(byte[0x20]) addr:0x02108214 local
 sIsDispOn kind:data(byte[0x2]) addr:0x02108234 local
 GXi_DmaId kind:data(byte[0x4]) addr:0x02108238
-data_0210823c kind:data(any) addr:0x0210823c
+OSi_IrqCallbackInfoIndex kind:data(byte[0x10]) addr:0x0210823c local
 OSi_ConsoleTypeCache kind:data(byte[0x4]) addr:0x0210824c local
 @9187 kind:data(byte[0x3]) addr:0x02108250 local
 @8637 kind:data(byte[0x4]) addr:0x02108254 local
@@ -10323,12 +10323,7 @@ sClrImgLCDCBlk kind:bss(size=0x4) addr:0x021b500c local
 sTex kind:bss(size=0x4) addr:0x021b5010 local
 sTexLCDCBlk2 kind:bss(size=0x4) addr:0x021b5014 local
 sSzTexBlk1 kind:bss(size=0x4) addr:0x021b5018 local
-OSi_IrqCallbackInfo kind:bss addr:0x021b501c
-data_021b5020 kind:bss addr:0x021b5020
-data_021b5024 kind:bss addr:0x021b5024
-data_021b504c kind:bss addr:0x021b504c
-data_021b5050 kind:bss addr:0x021b5050
-data_021b5054 kind:bss addr:0x021b5054
+OSi_IrqCallbackInfo kind:bss(size=0x60) addr:0x021b501c
 isInitialized$8477 kind:bss(size=0x4) addr:0x021b507c local
 OSi_SystemCallbackInSwitchThread kind:bss(size=0x4) addr:0x021b5080
 OSi_RescheduleCount kind:bss(size=0x4) addr:0x021b5084
@@ -10361,10 +10356,11 @@ OSi_UseVAlarm kind:bss(size=0x2) addr:0x021b53f4 local
 OSi_PreviousVCount kind:bss(size=0x4) addr:0x021b53f8 local
 OSi_VFrameCount kind:bss(size=0x4) addr:0x021b53fc local
 OSi_VAlarmQueue kind:bss(size=0x8) addr:0x021b5400 local
-data_021b5408 kind:bss addr:0x021b5408
+OSi_IsResetOccurred kind:bss(size=0x2) addr:0x021b5408
+OSi_IsInitReset kind:bss(size=0x2) addr:0x021b540a
 OSi_vramExclusive kind:bss(size=0x4) addr:0x021b540c local
 OSi_vramLockId kind:bss(size=0x12) addr:0x021b5410 local
-data_021b5424 kind:bss addr:0x021b5424
+MIi_GXDmaParams kind:bss(size=0x20) addr:0x021b5424 local
 initialized$8453 kind:bss(size=0x4) addr:0x021b5444 local
 sSndMutex kind:bss(size=0x18) addr:0x021b5448 local
 sFreeList kind:bss(size=0x4) addr:0x021b5460 local

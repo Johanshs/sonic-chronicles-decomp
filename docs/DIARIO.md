@@ -257,6 +257,13 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   `SDK_SECTION_ARENA_EX_START` = `0x023e0000`) e entraram em `simbolos_linker.lcf`.
   A prova de que estão certos é a ROM: um valor errado mudaria esses bytes. Agora são 78 arquivos do SDK, 92 KB (9,7% do ARM9) de C, e
   a ROM idêntica. A configuração gerada do zero sai igual à versionada.
+- **ITCM e DTCM.** Seis arquivos do SDK têm partes fora do ARM9 principal. Primeiro um
+  teste à mão com `os_irqHandler.c` (o `dsd` recusou o mesmo nome em dois módulos; com
+  o apelido `os_irqHandler.itcm.c` aceitou, e o mapa do linker mostrou `OS_IrqHandler`
+  vindo do `.o` compilado). Depois `ligar_bibliotecas.py` aprendeu a dividir o ITCM e a
+  achar os dados do DTCM como faz com o resto. Dois arquivos (`os_cache.c`,
+  `mi_dma_gxcommand.c`) nem precisavam disso: as funções deles no ITCM não estão no
+  jogo, o linker as descartou. Ficaram 84 de 87.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

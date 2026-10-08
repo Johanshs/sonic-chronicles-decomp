@@ -107,21 +107,21 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 
 ## As bibliotecas da Nintendo, ligadas do fonte
 
-A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 78 dos 87
+A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 84 dos 87
 arquivos do NitroSDK que o jogo usa não vêm mais do assembly cortado: o build compila
 os `.c` do fonte público (veja [COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida))
-e liga os `.o`, e a ROM continua idêntica. São 92 KB, **9,7% do código do ARM9**. Na
+e liga os `.o`, e a ROM continua idêntica. São 95 KB, **9,8% do código do ARM9** (com o ITCM). Na
 primeira vez, `montar_rom.sh` baixa e compila as bibliotecas sozinho (`nitrosdk.sh` e
 `nitrosystem.sh`, para `work/bibliotecas/`).
 
-Os 9 arquivos do SDK que ainda vêm do assembly, e por quê:
+Os 3 arquivos do SDK que ainda vêm do assembly, e por quê:
 
 | Motivo | Arquivos |
 |---|---|
 | uma função no meio não bate com o fonte | `card_backup.c`, `gx_vramcnt.c` |
-| têm funções no ITCM ou dados no DTCM (seriam ligados em dois módulos) | `mi_dma.c`, `mi_dma_gxcommand.c`, `os_cache.c`, `os_irqHandler.c`, `os_irqTable.c`, `os_reset.c`, `os_china.c` (seção `.version`) |
+| têm a seção `.version`, que o linker da Nintendo punha num lugar próprio | `os_china.c` |
 
-Três coisas no link que só apareceram com o SDK:
+Quatro coisas no link que só apareceram com o SDK:
 
 - **Funções que ninguém chama.** O jogo tem `OS_DisableProtectionUnit`, que nada chama.
   O linker original a manteve; o nosso, com `-dead`, joga fora. `montar_rom.sh` põe um
@@ -136,6 +136,15 @@ Três coisas no link que só apareceram com o SDK:
   em nenhum `.c`: o `.lcf` da Nintendo os definia. Estão em
   `config/YWSE/arm9/simbolos_linker.lcf`, que `montar_rom.sh` cola no `.lcf` gerado
   pelo `dsd`, com valores conferidos contra os que o jogo tem gravados no código.
+- **Um arquivo em três módulos.** `os_irqHandler.c` tem `OS_WaitIrq` no ARM9,
+  `OS_IrqHandler` no ITCM (a memória rápida, para a interrupção) e uma variável no
+  DTCM. É um `.o` só, mas o `dsd` corta cada módulo à parte e não aceita o mesmo nome
+  em dois. Então a parte do ITCM aparece em `itcm/delinks.txt` como
+  `os_irqHandler.itcm.c` (e a do DTCM como `.dtcm.c`), e `montar_rom.sh` troca no
+  `.lcf` `os_irqHandler.itcm.o(.text)` por `os_irqHandler.o(.itcm)`. Os `static` que uma
+  parte usa da outra (`OSi_DoResetSystem`) ficam globais em `symbols.txt`, senão o
+  `dsd` recusa; o `dsd check symbols` aponta essa diferença e `montar_rom.sh` deixa
+  passar só ela.
 
 Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.py`:
 

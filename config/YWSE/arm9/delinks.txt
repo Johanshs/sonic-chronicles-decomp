@@ -350,6 +350,16 @@ NitroSDK/libraries/gx/src/gxasm.c:
     complete
     .text       start:0x020d79b8 end:0x020d79dc
 
+NitroSDK/libraries/os/src/os_irqHandler.c:
+    complete
+    .text       start:0x020d79dc end:0x020d7a50
+
+NitroSDK/libraries/os/src/os_irqTable.c:
+    complete
+    .text       start:0x020d7a50 end:0x020d7b0c
+    .data       start:0x0210823c end:0x0210824c
+    .bss        start:0x021b501c end:0x021b507c
+
 NitroSDK/libraries/os/src/os_interrupt.c:
     complete
     .text       start:0x020d7b0c end:0x020d7cec
@@ -380,6 +390,10 @@ NitroSDK/libraries/os/src/os_message.c:
 NitroSDK/libraries/os/src/os_mutex.c:
     complete
     .text       start:0x020d8864 end:0x020d89ac
+
+NitroSDK/libraries/os/src/os_cache.c:
+    complete
+    .text       start:0x020d89ac end:0x020d8aa8
 
 NitroSDK/libraries/os/src/os_init.c:
     complete
@@ -436,6 +450,11 @@ NitroSDK/libraries/os/src/os_system.c:
     complete
     .text       start:0x020d966c end:0x020d9710
 
+NitroSDK/libraries/os/src/os_reset.c:
+    complete
+    .text       start:0x020d9710 end:0x020d9880
+    .bss        start:0x021b5408 end:0x021b540c
+
 NitroSDK/libraries/os/src/os_ownerInfo.c:
     complete
     .text       start:0x020d9880 end:0x020d98ec
@@ -452,6 +471,15 @@ NitroSDK/libraries/os/src/os_terminate_proc.c:
 NitroSDK/libraries/mi/src/mi_wram.c:
     complete
     .text       start:0x020d9984 end:0x020d9990
+
+NitroSDK/libraries/mi/src/mi_dma.c:
+    complete
+    .text       start:0x020d9990 end:0x020d9d30
+
+NitroSDK/libraries/mi/src/mi_dma_gxcommand.c:
+    complete
+    .text       start:0x020d9d30 end:0x020d9f28
+    .bss        start:0x021b5424 end:0x021b5444
 
 NitroSDK/libraries/mi/src/mi_memory.c:
     complete
