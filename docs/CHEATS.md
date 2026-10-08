@@ -170,6 +170,7 @@ bate mais forte; com "−4", cai mais rápido e erra mais. O "neutro" serve de r
 | Anéis sempre 999999 | ponteiro `0x02160C18` → objeto → esquadrão, `+0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
 | Itens não acabam | patch de código em `0x0202DB4C` | usar um item não gasta | [média] |
 | Pegar todos os anéis da área (de longe) | patch de código em `0x02017A56` e `0x02017A88` | todo anel da área é pego na hora | [média] |
+| Loja: comprar sem gastar anéis | patch de código em `0x020B3AD0` | comprar não confere nem gasta anéis | [baixa] |
 
 Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. A
 global `0x02160C18` (na área de variáveis fixas do programa, a BSS) aponta para um objeto
@@ -254,6 +255,22 @@ Sem os dois testes, todo coletável válido da área é pego no primeiro quadro.
 **Conferido no emulador:** no Green Hill a carteira foi de 8 para 183 e o HUD de "8/185"
 para "183/185" (o outro contador, de 0/11 para 10/11); no Nocturne, mais 24 anéis. Os que
 sobram ficam fora da lista dessa área (atrás de uma porta ou de um evento, por exemplo).
+
+**Loja: comprar sem gastar anéis.** A compra na loja (`0x020B3AB0`) pega o item escolhido,
+lê o preço (um número de 16 bits em `+0x48` do item), confere `carteira >= preço`, grava
+`carteira − preço` e põe o item na mochila. O cheat troca as duas instruções do meio:
+
+| Endereço | Original | Quer dizer | Com o cheat |
+|---|---|---|---|
+| 0x020B3AD0 | `DB15` | `blt`: sem anéis suficientes, não compra | `46C0` (não faz nada) |
+| 0x020B3AD2 | `1A51` | `subs r1, r2, r1`: carteira − preço | `1C11` = `adds r1, r2, #0`: carteira igual |
+
+[baixa] porque ainda não achei uma loja num estado do emulador: as do jogo ficam em Central
+City, Station Square, na Kron Colony ("Kron Quartermaster") e em mais dois lugares, e o
+mapa do mundo do Capítulo 10 não deixa viajar tocando nas ilhas. O que foi conferido: a
+função é a da tela da loja (ela fica junto do código que carrega `stores.gda` e as telas
+`Store*.gui`), e as instruções originais estão na RAM em todos os estados testados, então a
+trava do código funciona. Teste no DS: entre numa loja com poucos anéis e compre algo caro.
 
 ### Pasta "Projeto: multiplicador de anéis", escolha 1
 
@@ -430,6 +447,8 @@ pulam as duas. A vtable é o
 | Grupo: Speed 60 | posição 37 = 60 | 1ª ação em `max(0, 60 − 60) + 1d2`: o grupo age primeiro | [média] |
 | Grupo: Power 99 | posição 41 = 99 | dano bem maior | [média] |
 | Grupo: PP 99 | posição 46 = 99 e posição 44 = `0x63000` | PP cheio sempre: POW à vontade | [média] |
+| Grupo: 5 ações por rodada | posição 114 = 5 | cada personagem age 5 vezes por rodada | [média] |
+| Grupo: imune aos 6 elementos | posições 20 a 25 = 100 (`0x64000`) | ataques de Fogo, Água, Terra, Vento, Raio e Gelo dão 0 de dano | [média] |
 
 [média] aqui quer dizer: no emulador, com o seu save, os valores mudaram, a tela de perfil
 mostrou os números novos e, menos o Speed e o PP, o efeito foi medido numa batalha (veja
@@ -439,6 +458,42 @@ as medições abaixo). Ainda não foram testados no DS.
 PP máximo é inteiro. O Action Replay não sabe multiplicar, então não dá para copiar um no
 outro como no HP. A saída é escrever valores prontos: máximo 99 e atual
 99 × 4096 = `0x63000`. Na batalha, os 4 retratos mostraram "99 PP".
+
+**O mapa do vetor.** O vetor tem 115 posições, e o [COMBATE.md](COMBATE.md#2-atributos)
+numera os atributos de outro jeito (o número "lógico"). O jogo converte um no outro com a
+tabela `StatRedirect.gda`: o atributo lógico *n* fica na posição dada pela coluna *n + 1*.
+As que os cheats usam:
+
+| Posição | Lógico | Atributo |
+|---|---|---|
+| 3 a 18 | 3 a 18 | resistência aos efeitos com os bits 0 a 15 (status) |
+| 20 a 25 | 75 a 80 | resistência a Fogo, Água, Terra, Vento, Raio, Gelo (%, ×4096) |
+| 37 a 43 | 21 a 27 | Speed, Attack, Defense, HP máximo, Power, Grit, Luck |
+| 44, 46 | 28, 36 | PP atual (×4096), PP máximo |
+| 48 a 63 | 39 a 54 | marcas dos 16 status (`> 0` = ativo) |
+| 68 | 61 | nível |
+| 69 a 75 | 62 a 68 | níveis dos 6 golpes POW e pontos de POW |
+| 77 | 70 | classe |
+| 98 a 103 | 107 a 112 | dano elemental do ataque (`> 0` liga o elemento) |
+| 114 | 123 | ações por rodada |
+
+**5 ações por rodada.** No começo de cada rodada, `Combat_BuildTurnQueue` (`0x020448C0`)
+põe na fila uma entrada por ação de cada combatente, lendo a posição 114. No Capítulo 10, o
+Sonic tem 3, a Rouge e o Tails 2, o Omega 1. **Conferido no emulador:** contei as chamadas
+da função que insere na fila (`0x0204516C`) na primeira rodada da batalha: 16 sem o cheat
+(8 do grupo e 8 dos 4 Decurion, que têm 2 cada) e 28 com ele (20 do grupo, 5 para cada).
+A fila na tela também ficou maior.
+
+**Imune aos 6 elementos.** Quando um ataque tem elemento, o dano é multiplicado por
+`1 − R/100`, em que R é a resistência do alvo àquele elemento (`Effect_ElementResistance`,
+`0x0200E4D0`; resistência negativa é fraqueza). A resistência fica em ponto fixo: 50% é
+`50 × 4096`. O cheat escreve 100% (`0x64000`) nas 6. **Conferido no emulador:** os
+Decurion batem sem elemento, então pus 1 no dano elemental deles (posições 98 a 103, um
+elemento por vez) e repeti a mesma batalha. Sem o cheat, o mesmo golpe na Rouge deu 47
+(sem elemento), 59 (Fogo, ela tem −25%), 24 (Água, +50%), 36 (Terra, +25%) e 52 (Vento,
+Raio e Gelo, −10%). Com o cheat, os golpes com elemento continuaram vindo (um vigia na
+função mostrou 4 deles, com a máscara do Fogo) e nenhum tirou HP; os golpes sem elemento
+deram exatamente os mesmos 47, 41, 41 e 44 de antes, então o cheat não muda o resto.
 
 **Correção (v3):** a primeira versão só cobria as posições 1 a 4, achando que eram os 4
 da batalha. Na batalha do Capítulo 10 o Omega (posição 10) tomou 164 de dano com o "HP
@@ -688,7 +743,8 @@ coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lug
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Inventário | conferir a loja com "Itens não acabam"; cheat para ganhar itens novos | teste na loja; ler a função que cria itens |
-| Loja | compra de graça: a compra (`0x020B3AB0`) confere `carteira >= preço` e faz `carteira − preço` em `0x020B3AD0` | achar uma loja num estado do emulador para conferir |
+| Loja | conferir "Loja: comprar sem gastar anéis" [baixa] | numa loja, no DS ou num estado do emulador |
+| Status | imunidade a status: resistência 100 nas posições 3 a 18 | achar um inimigo que causa status e conferir que só bloqueia os ruins |
 | POW | usar numa batalha um golpe que estava em 0 e foi para III | batalha com "todos no nível III" |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |

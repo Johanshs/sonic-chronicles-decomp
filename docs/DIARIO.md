@@ -284,6 +284,13 @@ assembly e rodados no emulador. Nenhum deles faz exatamente o que o nome diz.
   índice 75. Lição: quando um valor está "em lugares diferentes" em cada personagem (aqui,
   `+0x3CC` no Sonic e um ponteiro no Eggman), o mais provável é que ele esteja numa
   estrutura alocada à parte, e o caminho certo é o ponteiro para ela.
+- **Testar uma defesa sem o ataque certo.** Os inimigos da batalha de teste batem sem
+  elemento, então a resistência do grupo nunca entrava na conta. A saída foi mudar o
+  inimigo: um 1 no dano elemental dele (um elemento por vez) e a mesma batalha de novo.
+  Sem o cheat, os números bateram com as resistências da Rouge (Fogo −25%: 47 virou 59);
+  com ele, os golpes com elemento continuaram vindo e deram 0. Lição: quando o jogo não
+  oferece o caso de teste, dá para montá-lo, desde que a mudança seja só no lado que não
+  está sendo testado.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

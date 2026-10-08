@@ -226,7 +226,9 @@ batalha, sem encontros, nível dos POW no máximo.
   rodadas no emulador (tabela acima). Novos, todos conferidos pelo interpretador AR no
   emulador: multiplicador de anéis na carteira (×2, ×5, ×10), pegar todos os anéis da
   área, e a pasta POW (compra sem gastar pontos, 99 pontos, todos os golpes no nível III).
-  Os pontos e níveis de POW são os atributos 75 e 69 a 74 do personagem.
+  Os pontos e níveis de POW são os atributos 75 e 69 a 74 do personagem. Depois:
+  "5 ações por rodada" e "imune aos 6 elementos" (conferidos numa batalha) e "Loja:
+  comprar sem gastar anéis" ([baixa]: falta uma loja no emulador).
 
 ## 4. Caminho B: o mod menu
 
