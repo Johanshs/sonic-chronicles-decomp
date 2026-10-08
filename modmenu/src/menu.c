@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.4"
+#define VERSAO "0.5"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -451,6 +451,53 @@ static void desenhar_grupo(int sel, int topo) {
     rodape("A abre   B volta", "START fecha");
 }
 
+/* O nome de um item, pelo jogo: o mesmo caminho da mensagem "você ganhou um item".
+ * 0x020c2cfc monta um "ItemInfo" (0x8C bytes) a partir da linha de Items.gda; o nome é
+ * o primeiro campo, um texto localizado {número no TLK, CExoString, marcas}; 0x0201cad0
+ * busca o texto no TLK (lê do cartão, se preciso) e devolve o CExoString, que é
+ * {vtable, ponteiro para as letras, tamanho}; 0x020c2d48 libera tudo. Como ler do
+ * cartão é lento, guardamos os últimos 16 nomes. Os primeiros bytes das três funções
+ * são conferidos antes, como em dar_item(). */
+#define NOMES_GUARDADOS 16
+#define NOME_MAX 14
+static s16 nome_id[NOMES_GUARDADOS];
+static char nome_txt[NOMES_GUARDADOS][NOME_MAX + 1];
+static int nome_prox;
+
+static void esquecer_nomes(void) {
+    for (int i = 0; i < NOMES_GUARDADOS; i++) nome_id[i] = -1;
+}
+
+static const char *nome_item(int id) {
+    for (int i = 0; i < NOMES_GUARDADOS; i++)
+        if (nome_id[i] == id) return nome_txt[i];
+    if (*(volatile u16 *)0x020C2CFC != 0xB538 || *(volatile u16 *)0x020C2D48 != 0xB510 ||
+        *(volatile u16 *)0x0201CAD0 != 0xB510)
+        return "?";
+    void (*montar)(u32 *, int) = (void (*)(u32 *, int))0x020C2CFDu;
+    u32 *(*texto)(u32 *) = (u32 * (*)(u32 *))0x0201CAD1u;
+    void (*desmontar)(u32 *) = (void (*)(u32 *))0x020C2D49u;
+    u32 info[40]; /* 160 bytes; o ItemInfo usa 0x8C */
+    montar(info, id);
+    u32 *cexo = texto(info);
+    int slot = nome_prox;
+    nome_prox = (nome_prox + 1) % NOMES_GUARDADOS;
+    char *dst = nome_txt[slot];
+    int n = 0;
+    u32 letras = cexo ? cexo[1] : 0;
+    if (letras >= 0x02000000u && letras < 0x023FFFF0u)
+        while (n < NOME_MAX) {
+            char ch = *(volatile char *)(letras + n);
+            if (ch < 0x20 || ch > 0x7E) break;
+            dst[n++] = ch;
+        }
+    if (!n) { const char *s = "(sem nome)"; while (s[n]) { dst[n] = s[n]; n++; } }
+    dst[n] = 0;
+    desmontar(info);
+    nome_id[slot] = (s16)id;
+    return dst;
+}
+
 /* Página de itens: a linha 0 dá um item pelo número; as outras são as pilhas. */
 static int id_dar = 0;
 static const char *aviso_item = "";
@@ -459,27 +506,32 @@ static void desenhar_itens(int sel, int topo) {
     cabecalho("Itens (inventario)");
     u32 inv = inventario();
     int n = inv ? n_pilhas(inv) : 0;
-    con_texto(1, 3, COR_CINZA, "item                 qtd");
+    con_texto(1, 3, COR_CINZA, "item            num  qtd");
     for (int i = topo; i <= n && i < topo + VISIVEIS; i++) {
         int lin = LINHA_1 + i - topo;
         int cor = i == sel ? COR_AMARELO : COR_BRANCO;
         con_texto(0, lin, cor, i == sel ? ">" : " ");
         if (i == 0) {
-            con_texto(1, lin, cor, "Dar 1 do item n.");
+            con_texto(1, lin, cor, "Dar 1 (A), item");
             con_numero(17, lin, cor, id_dar, 3);
-            con_texto(21, lin, COR_CINZA, "(A)");
             continue;
         }
         u32 p = pilha(inv, i - 1);
         if (!p) { con_texto(1, lin, COR_CINZA, "?"); continue; }
-        con_texto(1, lin, cor, "item n.");
-        con_numero(8, lin, cor, *(volatile s16 *)(p + 0xB8), 3);
+        s16 id = *(volatile s16 *)(p + 0xB8);
+        con_texto(1, lin, cor, nome_item(id));
+        con_numero(17, lin, cor, id, 3);
         con_numero(20, lin, cor, *(volatile u8 *)(p + 0xBB), 4);
     }
     if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
     if (topo + VISIVEIS < n + 1) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
     if (!inv) con_texto(1, 20, COR_CINZA, "(inventario nao achado)");
-    else con_texto(1, 20, COR_VERDE, aviso_item);
+    else {
+        con_texto(1, 20, COR_CINZA, "item");
+        con_numero(5, 20, COR_CINZA, id_dar, 3);
+        con_texto(9, 20, COR_BRANCO, nome_item(id_dar));
+        con_texto(24, 20, COR_VERDE, aviso_item);
+    }
     rodape("<> -1/+1  L R -10/+10  A da", "B volta   START fecha");
 }
 
@@ -494,7 +546,7 @@ static void teclas_itens(u16 t, int sel) {
         id_dar += d;
         if (id_dar < 0) id_dar = 0;
         if (id_dar > ID_MAXIMO) id_dar = ID_MAXIMO;
-        if (t & TECLA_A) aviso_item = dar_item(id_dar) ? "item dado" : "o jogo recusou o item";
+        if (t & TECLA_A) aviso_item = dar_item(id_dar) ? "dado!" : "recusou";
         else if (d) aviso_item = "";
         return;
     }
@@ -537,7 +589,7 @@ static void painel(void) {
             if (t & TECLA_B) return;
             mover(t, &sel_inicio, &topo, N_PAGINAS);
             topo = 0;
-            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; aviso_item = ""; }
+            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; aviso_item = ""; esquecer_nomes(); }
         } else if (tela >= 0 && paginas[tela].tipo == P_ITENS) {
             if (t & TECLA_B) tela = TELA_INICIO;
             u32 inv = inventario();

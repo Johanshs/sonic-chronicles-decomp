@@ -227,7 +227,7 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.4, e **roda dentro do jogo
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.5, e **roda dentro do jogo
 no emulador**, inclusive numa batalha. Falta o teste no DS.
 
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
@@ -249,11 +249,12 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   tela de perfil e da tela de save; mudar o HP do Sonic numa batalha mudou o HP na tela
   da batalha. A v0.2 tinha dois erros que a sessão dos cheats achou: os anéis eram o
   contador do HUD (0x02160EB0), não a carteira, e o grupo tinha só 4 posições.
-- **B5, itens: feito no emulador (v0.4).** O inventário é um `CGameObjectInventory`
+- **B5, itens: feito no emulador (v0.4 e v0.5).** O inventário é um `CGameObjectInventory`
   apontado pelo esquadrão (+0x40), com uma lista de `CGameItem`. O painel dá itens
   chamando a função do próprio jogo (0x0202dc6c, a das recompensas) e muda a
   quantidade de cada pilha. Conferido: o item dado aparece no Inventário do jogo
-  ("POW Candy (2)"). Falta mostrar o nome do item no painel.
+  ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
+  jogo (as funções da mensagem "você ganhou um item").
 - **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 16 KB
   do heap (0x023DC000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
   v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que

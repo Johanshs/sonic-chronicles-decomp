@@ -5,7 +5,7 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.4:**
+**Situação (08/10/2026), versão 0.5:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
@@ -14,8 +14,9 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
   jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
   Power, Grit, Luck).
-- **Itens**: dar qualquer item pelo número (a linha de `Items.gda`), usando a função do
-  próprio jogo, e mudar a quantidade de cada pilha do inventário.
+- **Itens**: o inventário com o nome de cada item (o jogo dá o nome), dar qualquer item
+  pelo número (a linha de `Items.gda`) usando a função do próprio jogo, e mudar a
+  quantidade de cada pilha.
 - **Compatível com os cheats**: o painel mora no fim do heap do jogo, então os objetos
   do jogo ficam nos mesmos endereços da ROM original (a v0.2 os deslocava).
 
@@ -32,7 +33,7 @@ jogo/painel.ld                  onde o painel mora na memória do jogo (0x023DC0
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM
 ferramentas/testar.py           testa o painel na ROM de teste (21 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (11 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (12 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -68,7 +69,7 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 
 ```bash
 make testar                        # ROM de teste, sem precisar do jogo (21 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (11 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagens)
 ```
 
 ## Como funciona
@@ -124,6 +125,11 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (11 checagen
    argumentos foram lidos no assembly de quem já a chama: (inventário, número do item,
    um vetor onde ela anota o que mexeu, marcar como novo, 1). Antes de chamar, o painel
    confere os primeiros bytes da função; se não baterem (outra versão), ele recusa.
+9. **O nome do item também vem do jogo.** O painel não guarda nenhum texto do jogo: ele
+   chama as funções que montam a mensagem "você ganhou um item" (0x020c2cfc monta as
+   informações do item, 0x0201cad0 busca o nome no texto do jogo, 0x020c2d48 libera) e
+   copia as letras. Como buscar o texto pode ler o cartão, ele guarda os últimos 16
+   nomes.
 
 ## Como foi testado
 
@@ -149,6 +155,8 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (11 checagen
   nela; o Inventário do jogo, em "Consumables", mostrou **POW Candy (2)**. As outras
   quantidades do painel batem com as da tela (Med Emitter 87, Health Root 4, Refresher
   Wave 90). Num jogo novo, com o inventário vazio, também funciona (teste automático).
+  Os nomes que o painel mostra batem com os do Inventário (item 5 Health Root, 6 Med
+  Emitter, 8 POW Drink, 9 Refresher Wave, 10 Revival Ring, 11 Ring of Life).
 
 ## Descobertas e erros pelo caminho
 
@@ -180,11 +188,9 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (11 checagen
 ## Limites conhecidos
 
 - **DS real ainda não testado.**
-- **Itens: só o número, sem o nome** (o nome está no texto do jogo; a lista de números
-  e nomes está no [COMBATE.md](../docs/COMBATE.md#12-itens) e no `Items.gda` da sua
-  cópia). Prefira consumíveis, equipamentos e Chao: dar itens de história (esmeraldas,
-  objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287) pode
-  confundir o jogo.
+- **Itens:** prefira consumíveis, equipamentos e Chao. Dar itens de história
+  (esmeraldas, objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287)
+  pode confundir o jogo. Os nomes aparecem cortados em 14 letras.
 - A quantidade de uma pilha vai de 1 a 99 no painel. Que 99 é o limite do jogo é uma
   suposição (o maior número visto no save foi 98).
 - O painel mostra todos os personagens, sem marcar quais 4 estão no time da batalha.

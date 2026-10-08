@@ -150,6 +150,12 @@ def main(rom, pasta):
     depois = inventario()
     confere(depois.get(3, 0) == antes.get(3, 0) + 1,
             f'POW Candy: {antes.get(3, 0)} -> {depois.get(3, 0)} (esperado +1); pilhas {len(antes)} -> {len(depois)}')
+    # O texto do painel está no mapa da BG0 do motor B (0x06207800): cada posição guarda
+    # o número do caractere menos 0x20 nos 12 bits de baixo. A linha 20 mostra o nome que
+    # o JOGO deu ao item escolhido (lido do texto do jogo, não do nosso código).
+    def linha(n):
+        return ''.join(chr((m.read_short(0x06207800 + 2 * (32 * n + c)) & 0xFFF) + 0x20) for c in range(32))
+    confere('POW Candy' in linha(20), f'nome do item 3 pelo jogo: "{linha(20).strip()}"')
     captura('3b_itens')
 
     print('4. relógio')
