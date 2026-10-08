@@ -69,7 +69,10 @@ partem de endereços fixos do programa (as regras, a dificuldade, a lista do gru
 heap. Por isso eles também devem funcionar com a ROM do painel de controle, que muda a
 arrumação do heap na v0.2 (na v0.3 o painel vai para o fim do heap e os endereços voltam
 a bater com a ROM original). Cheats públicos que escrevem direto no heap, como o de anéis
-`022262F4`, não têm essa garantia.
+`022262F4`, não têm essa garantia. **Conferido no emulador com a ROM do painel v0.3** e o seu save
+(Capítulo 10): com os cheats de anéis, itens, XP, Chao e grupo ligados, todos escreveram
+nos lugares certos (carteira 999999, XP 2700000, patch dos itens, Chao 44, os 11
+personagens com Defense e PP 99).
 
 Confiança:
 - **[DS]**: testado no DS real em 08/10/2026, a olho (ligou, o jogo rodou e o efeito foi o
