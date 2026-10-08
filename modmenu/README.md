@@ -157,6 +157,10 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
   Wave 90). Num jogo novo, com o inventário vazio, também funciona (teste automático).
   Os nomes que o painel mostra batem com os do Inventário (item 5 Health Root, 6 Med
   Emitter, 8 POW Drink, 9 Refresher Wave, 10 Revival Ring, 11 Ring of Life).
+- **O item sobrevive a salvar e carregar** (critério da fase B5): depois de dar um POW
+  Candy, salvei pelo menu do jogo no slot do Capítulo 10 (no save do emulador, não no
+  seu arquivo), reiniciei o emulador e carreguei o slot: o POW Candy continuava lá, e o
+  inventário tinha as mesmas 62 pilhas.
 
 ## Descobertas e erros pelo caminho
 

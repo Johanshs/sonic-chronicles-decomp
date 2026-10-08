@@ -254,7 +254,8 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   chamando a função do próprio jogo (0x0202dc6c, a das recompensas) e muda a
   quantidade de cada pilha. Conferido: o item dado aparece no Inventário do jogo
   ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
-  jogo (as funções da mensagem "você ganhou um item").
+  jogo (as funções da mensagem "você ganhou um item"). Critério cumprido no emulador: o item
+  dado continuou no inventário depois de salvar pelo menu do jogo, reiniciar e carregar.
 - **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 16 KB
   do heap (0x023DC000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
   v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que
