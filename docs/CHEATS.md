@@ -246,6 +246,36 @@ de todos. **Conferido no emulador:** com o cheat, uma vitória levou o Sonic do 
 **Cuidado:** subir de nível não tem volta. Se salvar depois, os níveis ficam no save.
 Faça backup do `.sav` antes.
 
+### Pasta "Projeto: Chao"
+
+| Cheat | Escreve | Efeito | Confiança |
+|---|---|---|---|
+| Chao: todos no nível Max | nível 3 nos 45 Chao | os Chao que você tem ficam no nível máximo | [média] |
+| Chao: os 5 de troca sem fio | Chao 40 a 44: nível 3 e 1 cópia | aparecem os 5 que só vinham por troca | [média] |
+
+O jogo tem 45 Chao (`Chaos.gda`). Os 5 últimos (40 a 44, como o Pooki e o Farfinkle) têm
+`Hatchable = 0` e `Viral = 1`: não nascem no jardim, só chegam por troca sem fio com outro
+DS. Por isso a tela de save mostra "40/40" mesmo com a coleção "completa".
+
+Cada Chao ocupa 10 bytes a partir de esquadrão `+0x424`, na ordem do número:
+
+| Byte | O que é | Como foi conferido |
+|---|---|---|
+| 0 | número do Chao (0 a 44) | igual à posição, nos dois saves |
+| 1 | nível: 0 = não tem, 3 = Max | todos os 40 do Capítulo 10 estão em 3 e aparecem como "Max!" |
+| 2 | cópias | o Seeri foi de 6 para 7 quando um ovo chocou, e a tela mostrou "Copies: 7" |
+
+A pista pública dizia "passo de 9 a partir de `0x02226605`"; o passo é 10, e
+`0x02226605` é o nível do Chao 0 (esquadrão `0x022261E0` + `0x425`).
+
+**Conferido no emulador:** no save do Green Hill (nenhum Chao), só o nível não basta: o
+jardim mostrou "0/40", porque ele conta quem tem cópias. Com nível 3 e 1 cópia, mostrou
+"45/45, Maxed: 45". No save do Capítulo 10, com os dois cheats, o jardim mostrou
+"45/45, Maxed: 45" e os Chao continuaram com as cópias que tinham.
+
+**Cuidado:** os Chao ficam no save se salvar. O efeito dos 5 de troca na batalha ainda não
+foi testado.
+
 ### Pasta "Projeto: grupo"
 
 Cada personagem é um objeto `CGamePlayerCreature` no heap. O endereço muda, mas o jogo
@@ -539,7 +569,7 @@ coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lug
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Grupo | PP cheio (o PP atual é ponto fixo e o máximo é inteiro: o AR não converte), XP, nível | XP: ainda não está no vetor de atributos |
-| Inventário | Chao (bytes em esquadrão + `0x425`, de 9 em 9), conferir a loja com "Itens não acabam" | busca na RAM e teste na loja |
+| Inventário | conferir a loja com "Itens não acabam"; cheat para ganhar itens novos | teste na loja; ler a função que cria itens |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |
 

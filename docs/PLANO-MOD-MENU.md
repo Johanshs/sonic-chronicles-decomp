@@ -166,7 +166,7 @@ batalha, sem encontros, nível dos POW no máximo.
   |---|---|---|
   | `0x022604A0` | HP (escreve 9999) | heap, mas em posição fixa |
   | `0x022262F4` | anéis | heap: é a carteira, esquadrão `0x022261E0` + `0x114` (conferido) |
-  | `0x02226605`/`06` + 9×n | nível e posse dos Chao | laço do AR com passo 9 |
+  | `0x02226605`/`06` + 9×n | nível e posse dos Chao | o passo é 10: nível e cópias em esquadrão `+0x425`/`+0x426` (conferido) |
   | `0x021D10AC` (ponteiro) +0x114 | dinheiro | aponta para o esquadrão, mas fica no heap; o caminho fixo é `0x02160C18` (conferido) |
   | `0x021D10EE`, `0x021D10F8` | EXP | `0x021D10F8` é o XP do grupo (esquadrão `+0x48` → `+0x50`, conferido) |
   | `0x02160EB0` | anéis do tabuleiro | BSS: soma 1 por anel, mas não é a carteira (conferido) |
@@ -218,8 +218,8 @@ batalha, sem encontros, nível dos POW no máximo.
   previsto. Duas correções: o cheat de anéis agora usa a carteira (`0x02160C18` →
   esquadrão `+0x114`, conferida no Inventário), e os do grupo cobrem as posições 0 a 11
   da lista de personagens. Novos: XP no máximo e "Itens não acabam" (patch de código).
-  As cadeias valem nos dois saves testados (Green Hill e Nocturne). Faltam: testar no
-  DS e Chao.
+  Chao: nível Max e os 5 de troca sem fio. As cadeias valem nos dois saves testados
+  (Green Hill e Nocturne). Falta: testar no DS.
 
 ## 4. Caminho B: o mod menu
 

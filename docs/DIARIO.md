@@ -251,6 +251,9 @@ mesmos toques sorteia os mesmos dados; só o valor do cheat muda. Resultados em
   `CGameItem`, com a quantidade no byte `+0xBB`. Para achar quem gasta, pus um "vigia" de
   escrita do emulador nesse byte e usei um item: ele apontou a função que tira itens da
   mochila. Duas instruções trocadas por "não faz nada" e o item deixou de acabar.
+- **Chao.** A pista pública falava em passo de 9 bytes; olhando a memória lado a lado
+  (save novo e save do Capítulo 10) o passo é 10: número, nível (3 = Max) e cópias. Um
+  ovo que chocou ao abrir o jardim confirmou o byte das cópias (6 → 7 na tela).
 - **Erro nº 11: `0x021D10AC` não é uma global fixa.** Eu tinha escrito que era, porque o
   endereço era sempre o mesmo. Ele fica dentro do heap; só se repete porque o jogo aloca
   tudo na mesma ordem a cada boot. Quem achou foi a conversa do painel de controle, cuja
