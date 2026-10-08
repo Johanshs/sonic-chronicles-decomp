@@ -1,0 +1,26 @@
+{
+  "name": "Chaos Energy",
+  "blend_mode": "additive",
+  "max_particles": 24,
+  "lifespan_frames": 30,
+  "emission_rate": 2.0,
+  "color_start": [
+    0,
+    255,
+    200,
+    31
+  ],
+  "color_end": [
+    0,
+    100,
+    255,
+    0
+  ],
+  "velocity_range": [
+    -1.5,
+    1.5
+  ],
+  "gravity": 0.05,
+  "texture": "VFX_ChaosOrb",
+  "description": "Explosão de partículas de energia do Chaos pulsante e brilhante."
+}

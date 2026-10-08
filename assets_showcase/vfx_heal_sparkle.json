@@ -1,0 +1,26 @@
+{
+  "name": "Heal Sparkle",
+  "blend_mode": "additive",
+  "max_particles": 18,
+  "lifespan_frames": 35,
+  "emission_rate": 1.2,
+  "color_start": [
+    120,
+    255,
+    120,
+    31
+  ],
+  "color_end": [
+    255,
+    255,
+    180,
+    0
+  ],
+  "velocity_range": [
+    -0.8,
+    0.8
+  ],
+  "gravity": -0.08,
+  "texture": "VFX_Star",
+  "description": "Estrelas e brilhos ascendentes de cura e restauração de PP."
+}
