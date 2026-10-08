@@ -7,7 +7,7 @@ A ROM original não é alterada. O que muda na cópia (todos os endereços são 
 1. O código do painel vira um bloco de "autoload" novo. Autoload é a lista que o
    próprio início do programa (crt0 do NitroSDK) percorre para copiar blocos do
    arquivo do ARM9 para outros lugares da memória; o jogo já a usa para o ITCM e o
-   DTCM. Acrescentamos uma terceira entrada: "copie o painel para 0x023DC000".
+   DTCM. Acrescentamos uma terceira entrada: "copie o painel para 0x023D8000".
 2. O heap do jogo ia até 0x023E0000 (OS_GetInitArenaHi, literal em 0x020d8c9c). Ele
    passa a terminar onde o painel começa, para o jogo nunca usar a nossa memória. O
    começo do heap não muda, então os objetos do heap ficam nos mesmos endereços do

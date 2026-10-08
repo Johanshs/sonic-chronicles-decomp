@@ -21,6 +21,7 @@ CONTADOR = 0x02100000
 R44, R45, R7, R71, NIVEL = 0x020F64C0, 0x020F64BC, 0x020F6470, 0x021A57C0, 0x02160E54
 CARTEIRA = 0x02111000 + 0x114             # o esquadrão de mentira da ROM de teste
 ATRIB_SONIC, ATRIB_AMY = 0x02110200, 0x02110600  # os atributos dos dois personagens
+HP_INIMIGO = 0x02112200                      # o inimigo de mentira
 
 TECLAS = {
     'A': Keys.KEY_A, 'B': Keys.KEY_B, 'L': Keys.KEY_L, 'R': Keys.KEY_R,
@@ -170,6 +171,24 @@ def main(rom, pasta):
             'só o HP do Sonic e o PP da Amy mudaram (nada escrito no "não criatura" nem no lixo)')
     e.apertar('B')                       # volta à lista do grupo
     e.apertar('B')                       # volta à tela inicial
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Inimigos"
+    e.apertar('A')                       # o primeiro (e único)
+    e.apertar('L')                       # HP 340 -> 330
+    confere(e.s32(HP_INIMIGO) == 330, f'HP do inimigo = {e.s32(HP_INIMIGO)} (esperado 330)')
+    e.captura(pasta, '4d_inimigo')
+    e.apertar('B')
+    e.apertar('B')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Acoes rapidas"
+    e.apertar('A')                       # curar o grupo
+    confere((e.s32(ATRIB_SONIC), e.s32(ATRIB_SONIC + 0xB0), e.s32(ATRIB_AMY), e.s32(ATRIB_AMY + 0xB0))
+            == (33, 9 << 12, 23, 9 << 12), 'curar: HP e PP cheios no Sonic e na Amy')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # inimigos com HP 1
+    confere(e.s32(HP_INIMIGO) == 1, f'inimigos com HP 1: {e.s32(HP_INIMIGO)}')
+    e.captura(pasta, '4e_acoes')
+    e.apertar('B')
     e.apertar('BAIXO')
     e.apertar('A')                       # "Itens"
     c_antes = e.u32(CONTADOR)

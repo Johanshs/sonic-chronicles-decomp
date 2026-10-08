@@ -227,7 +227,7 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.5, e **roda dentro do jogo
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.6, e **roda dentro do jogo
 no emulador**, inclusive numa batalha. Falta o teste no DS.
 
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
@@ -256,8 +256,12 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
   jogo (as funções da mensagem "você ganhou um item"). Critério cumprido no emulador: o item
   dado continuou no inventário depois de salvar pelo menu do jogo, reiniciar e carregar.
-- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 16 KB
-  do heap (0x023DC000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
+- **B6, combate: começada (v0.6).** Página dos inimigos da batalha (lista fixa em
+  0x02160AF8) e ações rápidas: curar o grupo e inimigos com HP 1, conferidas numa
+  batalha. Pôr HP 0 não nocauteia (o inimigo continua lutando); vencer e nocautear
+  precisam da função de dano ou de nocaute do jogo, ainda não achada.
+- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 32 KB
+  do heap (0x023D8000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
   v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que
   quebrava os cheats que usam endereços do heap; na v0.3 eles ficam nos mesmos
   endereços da ROM original (conferido num boot do zero).

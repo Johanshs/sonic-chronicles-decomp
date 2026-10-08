@@ -5,7 +5,7 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.5:**
+**Situação (08/10/2026), versão 0.6:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
@@ -14,6 +14,8 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
   jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
   Power, Grit, Luck).
+- **Batalha**: os inimigos da luta atual (nome, HP e atributos, editáveis) e duas
+  ações rápidas: curar o grupo (HP e PP cheios) e deixar os inimigos com HP 1.
 - **Itens**: o inventário com o nome de cada item (o jogo dá o nome), dar qualquer item
   pelo número (a linha de `Items.gda`) usando a função do próprio jogo, e mudar a
   quantidade de cada pilha.
@@ -29,10 +31,10 @@ src/menu.c                      o painel: páginas, campos, teclado, pausa
 src/console.c                   texto na tela, salvando e restaurando tudo o que toca
 src/fonte.c                     fonte 8x8 de domínio público (font8x8, de Daniel Hepper)
 jogo/gancho.s                   a ponte entre o laço principal do jogo e o painel
-jogo/painel.ld                  onde o painel mora na memória do jogo (0x023DC000)
+jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D8000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM
-ferramentas/testar.py           testa o painel na ROM de teste (21 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (24 checagens)
 ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (12 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
@@ -68,7 +70,7 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (21 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (24 checagens)
 make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagens)
 ```
 
@@ -78,8 +80,8 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
    vira um bloco novo de *autoload*: a lista que o início do programa (crt0 do NitroSDK)
    percorre para copiar blocos do ARM9 para a memória (o jogo já a usa para o ITCM e o
    DTCM). O heap do jogo vai de 0x021B9500 a 0x023E0000. O bloco vai para os últimos
-   16 KB (0x023DC000), e o fim do heap (`OS_GetInitArenaHi`, literal em 0x020d8c9c)
-   baixa para 0x023DC000. Assim o jogo nunca usa a nossa memória. É a técnica do
+   32 KB (0x023D8000), e o fim do heap (`OS_GetInitArenaHi`, literal em 0x020d8c9c)
+   baixa para 0x023D8000. Assim o jogo nunca usa a nossa memória. É a técnica do
    NCPatcher, feita à mão em Python.
 
    **Por que no fim do heap.** O jogo aloca os objetos a partir do começo do heap, um
@@ -112,8 +114,12 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
    - **grupo**: `0x02160B28` aponta para a lista de todos os personagens que já
      entraram (vtable `0x020F9200`); cada um tem os atributos em `+0x1C` e o nome em
      `+0x98`. As posições variam (num jogo novo o Sonic é a 0; num save carregado, a 1),
-     e depois do último vem lixo, então o painel percorre 16 posições e fica só com as
-     que passam na conferência;
+     e depois do último vem lixo, então o painel usa o "quantos" da lista (8 bytes
+     antes do vetor, em `0x02160B20`) e confere cada posição;
+   - **inimigos**: a lista da batalha atual fica em `0x02160AF8` (quantos em
+     `0x02160AF0`; 0 fora da batalha), com `CGameCreature` (vtable `0x020F5D20`) no
+     mesmo formato de atributos e nome. As duas listas são `CGameObjectStorageList` do
+     jogo: {vtable, tipo, −1, quantos, capacidade, vetor};
    - **inventário**: esquadrão `+0x40` aponta para o `CGameObjectInventory` (vtable
      `0x020F93DC`); ele tem a lista de pilhas (quantas em `+0x2C`, o vetor em `+0x34`), e
      cada pilha é um `CGameItem` (vtable `0x020F6120`) com o número do item em `+0xB8`
@@ -151,6 +157,14 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
   ao acaso pelo mapa): o gancho roda 30 vezes por segundo também na batalha; o painel
   abre na tela de cima; baixar o HP do Sonic de 311 para 301 no painel mudou o número
   na tela da batalha; ao fechar, a batalha seguiu para o menu de ações.
+- **Inimigos e ações rápidas** (a mesma batalha): a página lista os 4 Nocturne
+  Decurion com o HP certo (340, 293, 305, 340). "Curar o grupo" encheu HP e PP, e a
+  tela da batalha mostrou os números cheios. "Inimigos com HP 1" funcionou, e o golpe
+  que acertou derrubou o inimigo ("KO!"). **Erro meu que o teste pegou:** havia uma
+  ação "HP 0 (nocaute)". Com HP 0 os inimigos continuaram lutando (e até se curaram),
+  porque o nocaute do jogo não é só o HP. Num inimigo nocauteado de verdade, o atributo
+  36 vale 2, os atributos 20 a 25 ficam zerados e o objeto solta dois ponteiros. A ação
+  saiu do painel.
 - **Itens** (Capítulo 10): dar o item 3 duas vezes criou uma pilha nova e depois somou 1
   nela; o Inventário do jogo, em "Consumables", mostrou **POW Candy (2)**. As outras
   quantidades do painel batem com as da tela (Med Emitter 87, Health Root 4, Refresher
@@ -192,6 +206,8 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
 ## Limites conhecidos
 
 - **DS real ainda não testado.**
+- Não há "vencer a batalha" nem "nocautear": para isso o painel teria que chamar a
+  função de dano ou de nocaute do jogo, que ainda não foi achada.
 - **Itens:** prefira consumíveis, equipamentos e Chao. Dar itens de história
   (esmeraldas, objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287)
   pode confundir o jogo. Os nomes aparecem cortados em 14 letras.

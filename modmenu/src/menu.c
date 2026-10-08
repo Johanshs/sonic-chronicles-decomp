@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.5"
+#define VERSAO "0.6"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -39,7 +39,8 @@ enum {
     P_FIXO,      /* endereço absoluto: o campo mora sempre no mesmo lugar */
     P_ESQUADRAO, /* deslocamento dentro do esquadrão (CGamePlayerSquad), que mora no heap */
     P_MEMBRO,    /* deslocamento no vetor de atributos do personagem escolhido */
-    P_GRUPO,     /* não tem campos: é a lista de personagens, para escolher um */
+    P_GRUPO,     /* não tem campos: é a lista de personagens (n = qual lista: FONTE_*) */
+    P_ACOES,     /* ações rápidas de batalha */
     P_ITENS,     /* não tem campos fixos: "dar item" e as pilhas do inventário */
 };
 
@@ -164,7 +165,9 @@ static const Pagina paginas[] = {
     {"Regras de combate (74)", campos_regras, N(campos_regras), P_FIXO},
     {"Dificuldade dinamica", campos_dificuldade, N(campos_dificuldade), P_FIXO},
     {"Aneis", campos_carteira, N(campos_carteira), P_ESQUADRAO},
-    {"Grupo (personagens)", 0, 0, P_GRUPO},
+    {"Grupo (personagens)", 0, 0 /* FONTE_GRUPO */, P_GRUPO},
+    {"Inimigos (batalha)", 0, 1 /* FONTE_INIMIGOS */, P_GRUPO},
+    {"Acoes rapidas", 0, 0, P_ACOES},
     {"Itens (inventario)", 0, 0, P_ITENS},
 };
 #define N_PAGINAS ((int)N(paginas))
@@ -173,8 +176,6 @@ static const Pagina pagina_membro = {"", campos_membro, N(campos_membro), P_MEMB
 
 /* ---- Achar o endereço de um campo ---- */
 
-#define LISTA_DO_GRUPO 0x02160B28u
-#define VTABLE_JOGADOR 0x020F9200u   /* todo CGamePlayerCreature começa com isto */
 #define GLOBAL_ESQUADRAO 0x02160C18u /* aponta para um ponteiro para o esquadrão */
 #define VTABLE_ESQUADRAO 0x020F9C08u /* todo CGamePlayerSquad começa com isto */
 #define MAX_MEMBROS 16
@@ -194,28 +195,53 @@ static u32 esquadrao(void) {
     return s;
 }
 
-/* Os personagens do grupo, na ordem da lista. 0x02160B28 aponta para um vetor de
- * ponteiros com TODOS os que já entraram no grupo (11 no fim do jogo), não só os 4 da
- * batalha. As posições variam: num jogo novo o Sonic está na posição 0; num save
- * carregado, a 0 fica vazia e o Sonic vai para a 1. Depois do último vem lixo (pedaços
- * de texto). Por isso percorremos as primeiras posições e ficamos só com os ponteiros
- * válidos que apontam para um CGamePlayerCreature (o primeiro campo é a vtable da
- * classe), sem repetir. Um ponteiro errado faria o painel escrever em lugar aleatório. */
+/* As listas de criaturas. O jogo guarda, em endereços fixos, listas do tipo
+ * CGameObjectStorageList: {vtable, tipo, -1, quantos, capacidade, ponteiro para o vetor}.
+ * Duas nos interessam:
+ * - a do grupo (vetor em 0x02160B28, quantos em 0x02160B20): TODOS os que já entraram no
+ *   grupo (11 no fim do jogo), não só os 4 da batalha. As posições variam: num jogo novo
+ *   o Sonic está na posição 0 e a lista tem 1; num save carregado, a 0 fica vazia, o
+ *   Sonic vai para a 1 e a lista tem 12. Cada um é um CGamePlayerCreature (0x020F9200);
+ * - a dos inimigos (vetor em 0x02160AF8, quantos em 0x02160AF0): os da batalha atual (4
+ *   Nocturne Decurion no teste); fora da batalha, quantos = 0. Cada um é um
+ *   CGameCreature (0x020F5D20), com os atributos no mesmo formato.
+ * Achadas no emulador (a dos inimigos, procurando quem aponta para um inimigo). Usamos o
+ * "quantos" do jogo (depois dele há lixo ou criaturas de batalhas antigas, já
+ * liberadas) e conferimos cada ponteiro e a vtable antes de usar: um ponteiro errado
+ * faria o painel escrever em lugar aleatório. */
+typedef struct {
+    u32 vetor;  /* endereço fixo do ponteiro para o vetor; "quantos" fica 8 bytes antes */
+    u32 vtable; /* a classe que cada criatura da lista tem que ter */
+    const char *titulo, *prefixo;
+} Fonte;
+enum { FONTE_GRUPO, FONTE_INIMIGOS };
+static const Fonte fontes[] = {
+    {0x02160B28u, 0x020F9200u, "Grupo: escolha o personagem", "Grupo: "},
+    {0x02160AF8u, 0x020F5D20u, "Inimigos da batalha", "Inimigo: "},
+};
+
 static u32 membros[MAX_MEMBROS];
 static int n_membros;
+static int fonte_atual;
 
-static void achar_membros(void) {
-    n_membros = 0;
-    u32 lista = *(volatile u32 *)LISTA_DO_GRUPO;
-    if (!ponteiro_ok(lista)) return;
-    for (int i = 0; i < MAX_MEMBROS && lista + 4u * i < 0x02400000u; i++) {
+static int achar_criaturas(int fonte, u32 *saida) {
+    const Fonte *f = &fontes[fonte];
+    int n = 0;
+    u32 lista = *(volatile u32 *)f->vetor;
+    s32 quantos = *(volatile s32 *)(f->vetor - 8);
+    if (!ponteiro_ok(lista) || quantos <= 0) return 0;
+    if (quantos > MAX_MEMBROS) quantos = MAX_MEMBROS;
+    for (int i = 0; i < quantos; i++) {
         u32 c = *(volatile u32 *)(lista + 4u * i);
-        if (!ponteiro_ok(c) || *(volatile u32 *)c != VTABLE_JOGADOR) continue;
+        if (!ponteiro_ok(c) || *(volatile u32 *)c != f->vtable) continue;
         int repetido = 0;
-        for (int j = 0; j < n_membros; j++) repetido |= membros[j] == c;
-        if (!repetido) membros[n_membros++] = c;
+        for (int j = 0; j < n; j++) repetido |= saida[j] == c;
+        if (!repetido) saida[n++] = c;
     }
+    return n;
 }
+
+static void achar_membros(void) { n_membros = achar_criaturas(fonte_atual, membros); }
 
 static s32 *atributos_de(u32 criatura) {
     u32 a = *(volatile u32 *)(criatura + 0x1C);
@@ -429,7 +455,7 @@ static void desenhar_pagina(const Pagina *p, const char *titulo, int sel, int to
 
 /* A lista de personagens: nome e HP de cada um, para escolher qual abrir. */
 static void desenhar_grupo(int sel, int topo) {
-    cabecalho("Grupo: escolha o personagem");
+    cabecalho(fontes[fonte_atual].titulo);
     con_texto(1, 3, COR_CINZA, "nome             HP / max");
     for (int i = topo; i < n_membros && i < topo + VISIVEIS; i++) {
         int lin = LINHA_1 + i - topo;
@@ -447,7 +473,9 @@ static void desenhar_grupo(int sel, int topo) {
     }
     if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
     if (topo + VISIVEIS < n_membros) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
-    if (!n_membros) con_texto(1, 20, COR_CINZA, "(nenhum: fora do jogo?)");
+    if (!n_membros)
+        con_texto(1, 20, COR_CINZA, fonte_atual == FONTE_INIMIGOS ? "(nenhum: fora da batalha?)"
+                                                                   : "(nenhum: fora do jogo?)");
     rodape("A abre   B volta", "START fecha");
 }
 
@@ -559,6 +587,55 @@ static void teclas_itens(u16 t, int sel) {
     *(volatile u8 *)(p + 0xBB) = (u8)q;
 }
 
+/* ---- Ações rápidas ----
+ * Escrevem nos mesmos atributos das páginas do grupo e dos inimigos, em todos de uma
+ * vez. Quem está nocauteado (HP <= 0) não é mexido: no jogo, o nocaute não é só o HP.
+ * Visto numa batalha no emulador: um inimigo nocauteado de verdade tem o atributo 36
+ * (+0x90) = 2, os atributos 20 a 25 zerados e dois ponteiros do objeto soltos; e um
+ * inimigo com HP posto em 0 pelo painel CONTINUA lutando (e até se cura). Por isso não
+ * há "nocautear": a ação útil é deixar os inimigos com HP 1, e o primeiro golpe que
+ * acertar os derruba pelo caminho normal do jogo (conferido: "KO!").
+ * Para reviver alguém do grupo, dê um Revival Ring ou um Ring of Life (página Itens). */
+static const char *const acoes[] = {
+    "Curar o grupo (HP e PP cheios)",
+    "Inimigos com HP 1",
+};
+#define N_ACOES ((int)(sizeof acoes / sizeof acoes[0]))
+static const char *aviso_acao = "";
+
+static void fazer_acao(int a) {
+    u32 cs[MAX_MEMBROS];
+    int n = achar_criaturas(a == 0 ? FONTE_GRUPO : FONTE_INIMIGOS, cs);
+    int feitos = 0;
+    for (int i = 0; i < n; i++) {
+        s32 *at = atributos_de(cs[i]);
+        if (!at || at[0] <= 0) continue;
+        if (a == 0) {
+            at[0] = at[0xA0 / 4];              /* HP = HP máximo */
+            at[0xB0 / 4] = at[0xB8 / 4] << 12; /* PP (ponto fixo) = PP máximo */
+        } else {
+            at[0] = 1;
+        }
+        feitos++;
+    }
+    aviso_acao = feitos ? "feito" : "ninguem para mudar";
+}
+
+static void desenhar_acoes(int sel) {
+    cabecalho("Acoes rapidas");
+    for (int i = 0; i < N_ACOES; i++) {
+        int cor = i == sel ? COR_AMARELO : COR_BRANCO;
+        con_texto(0, LINHA_1 + i, cor, i == sel ? ">" : " ");
+        con_texto(1, LINHA_1 + i, cor, acoes[i]);
+    }
+    con_texto(1, LINHA_1 + N_ACOES + 1, COR_VERDE, aviso_acao);
+    con_texto(0, 16, COR_CINZA, "Nocauteados nao sao curados:");
+    con_texto(0, 17, COR_CINZA, "use um item de reviver.");
+    con_texto(0, 18, COR_CINZA, "Inimigos com HP 1: o primeiro");
+    con_texto(0, 19, COR_CINZA, "golpe que acertar derruba.");
+    rodape("A faz", "B volta   START fecha");
+}
+
 /* ---- Laço do painel ---- */
 
 /* Sobe/desce `sel` numa lista de n itens (dando a volta) e acerta a rolagem. */
@@ -589,12 +666,25 @@ static void painel(void) {
             if (t & TECLA_B) return;
             mover(t, &sel_inicio, &topo, N_PAGINAS);
             topo = 0;
-            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; aviso_item = ""; esquecer_nomes(); }
+            if (t & TECLA_A) {
+                tela = sel_inicio;
+                sel = topo = 0;
+                aviso_item = aviso_acao = "";
+                esquecer_nomes();
+                if (paginas[tela].tipo == P_GRUPO) {
+                    fonte_atual = paginas[tela].n;
+                    sel_grupo = topo_grupo = 0;
+                }
+            }
         } else if (tela >= 0 && paginas[tela].tipo == P_ITENS) {
             if (t & TECLA_B) tela = TELA_INICIO;
             u32 inv = inventario();
             mover(t, &sel, &topo, 1 + (inv ? n_pilhas(inv) : 0));
             teclas_itens(t, sel);
+        } else if (tela >= 0 && paginas[tela].tipo == P_ACOES) {
+            if (t & TECLA_B) tela = TELA_INICIO;
+            mover(t, &sel, &topo, N_ACOES);
+            if (t & TECLA_A) fazer_acao(sel);
         } else if (tela >= 0 && paginas[tela].tipo == P_GRUPO) {
             if (t & TECLA_B) tela = TELA_INICIO;
             mover(t, &sel_grupo, &topo_grupo, n_membros);
@@ -622,13 +712,16 @@ static void painel(void) {
         if (tela == TELA_INICIO) desenhar_inicio(sel_inicio);
         else if (tela == TELA_MEMBRO) {
             /* "Grupo: " + o nome, montado à mão (sem biblioteca C não há strcpy) */
-            char titulo[28];
-            const char *g = "Grupo: ";
-            for (int i = 0; i < 8; i++) titulo[i] = g[i];
-            if (membro_sel < n_membros) nome_de(membros[membro_sel], titulo + 7, 20);
+            char titulo[32];
+            const char *g = fontes[fonte_atual].prefixo;
+            int k = 0;
+            while (g[k]) { titulo[k] = g[k]; k++; }
+            titulo[k] = 0;
+            if (membro_sel < n_membros) nome_de(membros[membro_sel], titulo + k, 20);
             desenhar_pagina(&pagina_membro, titulo, sel, topo);
         } else if (paginas[tela].tipo == P_GRUPO) desenhar_grupo(sel_grupo, topo_grupo);
         else if (paginas[tela].tipo == P_ITENS) desenhar_itens(sel, topo);
+        else if (paginas[tela].tipo == P_ACOES) desenhar_acoes(sel);
         else desenhar_pagina(&paginas[tela], paginas[tela].titulo, sel, topo);
     }
 }

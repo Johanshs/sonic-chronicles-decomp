@@ -78,8 +78,24 @@ void teste_main(void) {
         atributos[0] = 33 - 10 * k;          /* HP */
         atributos[0xA0 / 4] = 33 - 10 * k;   /* HP máximo */
         atributos[0xB0 / 4] = (7 + k) << 12; /* PP, em ponto fixo */
+        atributos[0xB8 / 4] = 9;             /* PP máximo */
     }
     *(volatile u32 *)0x02160B28 = (u32)lista;
+    *(volatile s32 *)0x02160B20 = 5; /* quantos: posições 0 a 4 (o lixo fica dentro) */
+
+    /* Os inimigos de mentira: a lista da batalha (vetor em 0x02160AF8, quantos em
+     * 0x02160AF0) com um CGameCreature (vtable 0x020F5D20) de 340 de HP. */
+    volatile u32 *inimigos = (volatile u32 *)0x02112000;
+    volatile u32 *inimigo = (volatile u32 *)0x02112100;
+    volatile s32 *atrib_inimigo = (volatile s32 *)0x02112200;
+    inimigos[0] = (u32)inimigo;
+    inimigo[0] = 0x020F5D20;
+    inimigo[0x1C / 4] = (u32)atrib_inimigo;
+    inimigo[0x98 / 4] = (u32)"Decurion";
+    atrib_inimigo[0] = 340;
+    atrib_inimigo[0xA0 / 4] = 340;
+    *(volatile u32 *)0x02160AF8 = (u32)inimigos;
+    *(volatile s32 *)0x02160AF0 = 1;
 
     /* O esquadrão de mentira: 0x02160C18 aponta para um objeto cujo primeiro campo é o
      * esquadrão; o esquadrão começa com a vtable de CGamePlayerSquad e tem a carteira

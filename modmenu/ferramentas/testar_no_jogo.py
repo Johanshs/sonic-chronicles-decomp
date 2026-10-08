@@ -23,7 +23,7 @@ import sys
 from desmume.controls import Keys, keymask
 from desmume.emulator import DeSmuME
 
-GANCHO = 0x023DC000                # o painel mora no fim do heap (jogo/painel.ld)
+GANCHO = 0x023D8000                # o painel mora no fim do heap (jogo/painel.ld)
 LITERAL_ARENA_INICIO = 0x020D8D10  # OS_GetInitArenaLo
 LITERAL_ARENA_FIM = 0x020D8C9C     # OS_GetInitArenaHi
 GLOBAL_ESQUADRAO = 0x02160C18
@@ -142,7 +142,8 @@ def main(rom, pasta):
     antes = inventario()
     apertar('B')
     apertar('B')                           # tela inicial
-    apertar('BAIXO')
+    for _ in range(3):
+        apertar('BAIXO')                   # Inimigos, Acoes rapidas, Itens
     apertar('A')                           # "Itens"
     for _ in range(3):
         apertar('DIR')                     # item 3
