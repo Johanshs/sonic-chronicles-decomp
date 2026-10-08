@@ -1,0 +1,16 @@
+newmtl body
+Ka 0.5647059 0.5647059 0.5647059
+Kd 0.5647059 0.5647059 0.5647059
+d 1
+Tr 1
+map_Ka GenSonN_AA_1.png
+map_Kd GenSonN_AA_1.png
+map_d GenSonN_AA_1.png
+newmtl body_1
+Ka 0.5647059 0.5647059 0.5647059
+Kd 0.5647059 0.5647059 0.5647059
+d 1
+Tr 1
+map_Ka GenSonN_AA_2.png
+map_Kd GenSonN_AA_2.png
+map_d GenSonN_AA_2.png

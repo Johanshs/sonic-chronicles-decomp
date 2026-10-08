@@ -51,20 +51,39 @@ class NSBMDInspector:
 
         file_len, header_len, num_sections = struct.unpack_from("<IHH", self.data, 0x8)
 
-        # Itera pelas seções (MDL0, TEX0, etc.)
-        pos = header_len
-        for _ in range(num_sections):
-            if pos + 8 > len(self.data):
-                break
-            sec_magic = self.data[pos:pos+4]
-            sec_len, = struct.unpack_from("<I", self.data, pos+4)
+        section_offsets = [
+            struct.unpack_from("<I", self.data, header_len + 4 * i)[0]
+            for i in range(num_sections)
+            if header_len + 4 * i + 4 <= len(self.data)
+        ]
 
-            if sec_magic == b"MDL0":
-                self._parse_mdl0(self.data[pos:pos+sec_len])
-            elif sec_magic == b"TEX0":
-                self._parse_tex0(self.data[pos:pos+sec_len])
+        valid_table = False
+        if section_offsets and section_offsets[0] + 4 <= len(self.data):
+            if self.data[section_offsets[0]:section_offsets[0]+4] in (b"MDL0", b"TEX0"):
+                valid_table = True
 
-            pos += sec_len
+        if valid_table:
+            for off in section_offsets:
+                if off + 8 > len(self.data):
+                    continue
+                sec_magic = self.data[off:off+4]
+                sec_len, = struct.unpack_from("<I", self.data, off+4)
+                if sec_magic == b"MDL0":
+                    self._parse_mdl0(self.data[off:off+sec_len])
+                elif sec_magic == b"TEX0":
+                    self._parse_tex0(self.data[off:off+sec_len])
+        else:
+            pos = header_len
+            for _ in range(num_sections):
+                if pos + 8 > len(self.data):
+                    break
+                sec_magic = self.data[pos:pos+4]
+                sec_len, = struct.unpack_from("<I", self.data, pos+4)
+                if sec_magic == b"MDL0":
+                    self._parse_mdl0(self.data[pos:pos+sec_len])
+                elif sec_magic == b"TEX0":
+                    self._parse_tex0(self.data[pos:pos+sec_len])
+                pos += sec_len
 
         self._validate_limits()
 
