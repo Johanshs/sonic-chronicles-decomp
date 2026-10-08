@@ -1,0 +1,5 @@
+# SHA-1 dos bytes de cada função do jogo (relocações zeradas).
+# Gerado por: python3 decomp/tools/conferir_sem_rom.py --gerar arm9.bin
+_ZNK10CExoString4CStrEv ebd46a96f08638b1a32aed7d3e3e44c812d1747c
+_Z16HashResourceNameRK10CExoString 8ceea4ddb41466d3bb2c157f98cf42a8c75b322a
+_Z20Lista_Par16_RemoveAtP5ListaI5Par16Ei 1a63e8b3f2f40ee839c8bd7fc46a4d089aad5728

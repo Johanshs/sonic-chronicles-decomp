@@ -48,7 +48,9 @@ desmontadas** e sair idêntica. É a rede de segurança de todo o resto.
 - **0.4 CI.** Uma GitHub Action que roda o build, compara o SHA-1 e publica o
   progresso. A ROM não pode ir para o repositório: o CI só roda com a ROM num
   segredo, ou em uma máquina própria. **Pronto quando:** o build quebrado deixa o PR vermelho.
-  ⏳ em aberto: um segredo do GitHub tem no máximo 48 KB e a ROM tem 128 MB.
+  🟡 parcial: sem a ROM, o CI confere o SHA-1 de cada função decompilada
+  (`conferir_sem_rom.py`). O build completo no CI segue em aberto: um segredo do GitHub
+  tem no máximo 48 KB e a ROM tem 128 MB.
 
 ## Fase 1: identificar o compilador e as flags (semana 2) ✅ 1.1 e 1.2
 

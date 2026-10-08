@@ -100,4 +100,6 @@ decomp/tools/testar_compilador.sh             # a matriz acima (~50 s)
 
 Para tentar uma função nova: escreva o C++, compile com `compilar.sh` e compare com
 `comparar.py` (exemplos em [BUILD.md](BUILD.md#quando-o-build-falha)). Quando bater,
-acrescente a linha em `decomp/compilador/casos.txt`: ela passa a fazer parte do teste.
+acrescente a linha em `decomp/compilador/casos.txt` e regrave `esperado.txt` com
+`conferir_sem_rom.py --gerar` (veja [BUILD.md](BUILD.md#o-que-falta-da-fase-0)): ela passa a
+fazer parte do teste e do CI.

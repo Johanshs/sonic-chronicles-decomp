@@ -120,6 +120,13 @@ binário da release 0.12.1 não tem o problema.
 
 ## O que falta da Fase 0
 
-**0.4, o CI.** O build precisa da ROM, e a ROM não pode ir para o GitHub (nem como
-segredo: o limite de um segredo é 48 KB). As opções estão em aberto; até lá, rode
-`montar_rom.sh` antes de cada PR que mexa em `src/` ou `config/`.
+**0.4, o CI com a ROM.** O build completo precisa da ROM, e ela não pode ir para o
+GitHub (nem como segredo: o limite de um segredo é 48 KB). Rode `montar_rom.sh`
+antes de cada PR que mexa em `src/` ou `config/`.
+
+Enquanto isso, o CI já confere a parte que mais quebra, **sem a ROM**: o job
+`decomp-matching` compila cada função de `decomp/compilador/casos.txt` e compara o
+SHA-1 dos bytes (com as relocações zeradas) com `decomp/compilador/esperado.txt`.
+Só o hash fica no repositório. Se o C++ de uma função deixar de bater, o PR fica
+vermelho. Ao igualar uma função nova, acrescente-a em `casos.txt` e rode
+`python3 decomp/tools/conferir_sem_rom.py --gerar work/extract/arm9/arm9.bin`.
