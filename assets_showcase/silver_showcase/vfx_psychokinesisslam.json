@@ -1,0 +1,26 @@
+{
+  "name": "VFX_PsychokinesisSlam",
+  "blend_mode": "additive",
+  "max_particles": 28,
+  "lifespan_frames": 25,
+  "emission_rate": 2.2,
+  "color_start": [
+    0,
+    229,
+    255,
+    31
+  ],
+  "color_end": [
+    0,
+    100,
+    180,
+    0
+  ],
+  "velocity_range": [
+    -1.8,
+    1.8
+  ],
+  "gravity": -0.05,
+  "texture": "VFX_PsychicGlow",
+  "description": "Aura de telecinese e partículas de levitação psicocinética do Silver."
+}

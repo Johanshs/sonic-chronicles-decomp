@@ -1,0 +1,7 @@
+2DA V2.0
+
+Label	ID	EffectId	Data	SData1	SData2	SData3	Pulse
+SpellData	0	2	****	****	****	****	****
+CollectionData	1	0	0	0	****	****	****
+VisualEffect	2	5	25	****	****	****	****
+ApplyStatus	3	1	1	9	0	****	****

@@ -79,6 +79,71 @@ VFX_PRESETS = {
         "texture": "VFX_Star",
         "description": "Estrelas e brilhos ascendentes de cura e restauração de PP."
     },
+    "psychic_cyan": {
+        "name": "Psychic Cyan Spark",
+        "blend_mode": "additive",
+        "max_particles": 28,
+        "lifespan_frames": 25,
+        "emission_rate": 2.2,
+        "color_start": [0, 229, 255, 31],   # Ciano vibrante do Silver
+        "color_end": [0, 100, 180, 0],      # Azul turquesa suave
+        "velocity_range": [-1.8, 1.8],
+        "gravity": -0.05,                   # Flutua para cima (levitação)
+        "texture": "VFX_PsychicGlow",
+        "description": "Aura de telecinese e partículas de levitação psicocinética do Silver."
+    },
+    "stasis_shockwave": {
+        "name": "ESP Stasis Shockwave",
+        "blend_mode": "additive",
+        "max_particles": 36,
+        "lifespan_frames": 30,
+        "emission_rate": 3.0,
+        "color_start": [0, 255, 220, 31],   # Turquesa claro
+        "color_end": [30, 80, 180, 0],      # Azul vácuo
+        "velocity_range": [-2.5, 2.5],
+        "gravity": 0.0,
+        "texture": "VFX_RingWave",
+        "description": "Onda de choque em anel desacelerando a iniciativa dos inimigos."
+    },
+    "psycho_shield": {
+        "name": "Telekinetic Barrier",
+        "blend_mode": "additive",
+        "max_particles": 22,
+        "lifespan_frames": 35,
+        "emission_rate": 1.5,
+        "color_start": [94, 234, 212, 31],  # Esmeralda menta
+        "color_end": [0, 160, 210, 0],      # Ciano reflexivo
+        "velocity_range": [-0.5, 0.5],
+        "gravity": 0.0,
+        "texture": "VFX_HexBarrier",
+        "description": "Cúpula de força hexagonal que absorve impactos e reflete projéteis."
+    },
+    "meteor_spin": {
+        "name": "Meteor Spin Vortex",
+        "blend_mode": "additive",
+        "max_particles": 40,
+        "lifespan_frames": 22,
+        "emission_rate": 3.5,
+        "color_start": [0, 180, 255, 31],   # Azul Sonic + Ciano Silver
+        "color_end": [180, 100, 30, 0],     # Fragmentos rochosos incandescentes
+        "velocity_range": [-3.0, 3.0],
+        "gravity": 0.08,
+        "texture": "VFX_SpinDebris",
+        "description": "Vórtice supersônico combinando Spin Dash com detritos telecinéticos."
+    },
+    "event_horizon": {
+        "name": "Event Horizon Singularity",
+        "blend_mode": "additive",
+        "max_particles": 48,
+        "lifespan_frames": 40,
+        "emission_rate": 4.0,
+        "color_start": [255, 255, 255, 31], # Branco estelar central
+        "color_end": [40, 0, 90, 0],        # Roxo escuro vácuo cósmico
+        "velocity_range": [-2.0, 2.0],
+        "gravity": 0.20,                    # Colapso gravitacional em direção ao centro
+        "texture": "VFX_Singularity",
+        "description": "Micro-buraco negro atraindo matéria antes da detonação supernova."
+    },
 }
 
 

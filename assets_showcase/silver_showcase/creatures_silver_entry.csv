@@ -1,2 +1,2 @@
 ID,NameStrRef,Class,HitPoints,MaxHitPoints,Fatigue,MaxFatigue,Attack,Defense,Speed,Health,Power,Grit,Luck,NumActions,MoveSpeed,ScaleModifier,PortraitResRef,ModelResRef,Combo1,Combo2,Combo3,Combo4,Combo5,Combo6,Combo7,Combo8,Combo9,Combo10
-11,996000,2,38,38,12,12,7,11,8,10,9,5,6,2,140.0,100.0,prtl_silverglad,silver_the_hedgehog,170,171,-1,-1,-1,-1,-1,-1,-1,-1
+11,996000,2,38,38,12,12,7,11,8,10,9,5,6,2,140.0,100.0,prtl_silverglad,silver_the_hedgehog,170,171,172,173,174,-1,-1,-1,-1,-1
