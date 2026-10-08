@@ -18,7 +18,8 @@ from desmume.controls import Keys, keymask
 from desmume.emulator import DeSmuME
 
 CONTADOR = 0x02100000
-R44, R45, R7, NIVEL = 0x020F64C0, 0x020F64BC, 0x020F6470, 0x02160E54
+R44, R45, R7, R71, NIVEL = 0x020F64C0, 0x020F64BC, 0x020F6470, 0x021A57C0, 0x02160E54
+ANEIS, ATRIBUTOS = 0x02160EB0, 0x02110200  # o grupo de mentira da ROM de teste
 
 TECLAS = {
     'A': Keys.KEY_A, 'B': Keys.KEY_B, 'L': Keys.KEY_L, 'R': Keys.KEY_R,
@@ -106,17 +107,26 @@ def main(rom, pasta):
     e.captura(pasta, '2_painel_inicio')
 
     print('3. editar valores')
-    e.apertar('A')                       # entra em "Regras de combate"
+    e.apertar('A')                       # entra em "Regras de combate (74)"
+    for _ in range(44):
+        e.apertar('BAIXO', quadros=1)    # desce até a regra 44 (a lista rola)
     for _ in range(5):
         e.apertar('DIR')                 # R44: 110 -> 115
     e.apertar('R')                       # +10 -> 125
     confere(e.s32(R44) == 125, f'R44 = {e.s32(R44)} (esperado 125)')
     e.apertar('BAIXO')
     for _ in range(7):
-        e.apertar('L')                   # R45: 60 -> 0, sem passar do mínimo
-    confere(e.s32(R45) == 0, f'R45 = {e.s32(R45)} (esperado 0: o mínimo segura)')
+        e.apertar('L')                   # R45: 60 -> -10 (as regras aceitam negativos)
+    confere(e.s32(R45) == -10, f'R45 = {e.s32(R45)} (esperado -10: 60 - 70)')
     confere(e.s32(R7) == 7, f'R7 não mudou ({e.s32(R7)})')
     e.captura(pasta, '3_regras')
+    for _ in range(26):
+        e.apertar('BAIXO', quadros=1)    # regra 71, formato fx/100 (0,90 guardado x 4096)
+    for _ in range(5):
+        e.apertar('ESQ')                 # 90 -> 85 na tela
+    confere(e.s32(R71) == (85 * 41943 + 512) >> 10,
+            f'R71 guardada = {e.s32(R71)} (esperado {(85 * 41943 + 512) >> 10}, ou 0,85 x 4096)')
+    e.captura(pasta, '3b_regra71')
     e.apertar('B')                       # volta à tela inicial
     e.apertar('BAIXO')
     e.apertar('A')                       # entra em "Dificuldade dinamica"
@@ -124,6 +134,29 @@ def main(rom, pasta):
         e.apertar('ESQ')                 # nível: 0 -> -4, sem passar do mínimo
     confere(e.s8(NIVEL) == -4, f'nível = {e.s8(NIVEL)} (esperado -4, byte com sinal)')
     e.captura(pasta, '4_dificuldade')
+    e.apertar('B')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Aneis"
+    e.apertar('R')                       # 8 -> 18
+    confere(e.s32(ANEIS) == 18, f'anéis = {e.s32(ANEIS)} (esperado 18)')
+    e.apertar('B')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Grupo: membro 1"
+    e.apertar('BAIXO')
+    e.apertar('BAIXO')                   # PP (ponto fixo)
+    e.apertar('DIR')
+    e.apertar('DIR')                     # 7 -> 9
+    confere(e.s32(ATRIBUTOS + 0xB0) == 9 << 12, f'PP guardado = {e.s32(ATRIBUTOS + 0xB0)} (esperado 9 x 4096)')
+    e.captura(pasta, '4b_membro1')
+    antes_grupo = bytes(e.mem.unsigned[0x02110000:0x02110300])
+    e.apertar('B')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Grupo: membro 2", que está vazio
+    e.apertar('DIR')
+    e.apertar('R')
+    confere(bytes(e.mem.unsigned[0x02110000:0x02110300]) == antes_grupo,
+            'membro vazio: o painel não escreveu nada')
+    e.captura(pasta, '4c_membro_vazio')
 
     print('4. fechar com START')
     e.apertar('START')

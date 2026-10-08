@@ -227,18 +227,31 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.2, e **roda dentro do jogo
+no emulador**. Falta o teste no DS e numa batalha.
+
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
   compilado com o **clang e o ld.lld** do LLVM, que já geram código para o ARM946E-S. Sem
-  libnds nem NitroSDK: o código escreve direto nos registradores. Fica em
-  [`modmenu/`](../modmenu/README.md).
-- **B2, console: feito na ROM de teste, falta no jogo.** Uma ROM de teste nossa (um "jogo
-  de mentira" que pinta a tela de baixo nos mesmos blocos de VRAM que o painel usa) prova
-  no DeSmuME, com `make testar`: o combo abre, o jogo pausa, os valores mudam na RAM com
-  os limites, e ao fechar os registradores, a paleta e os 32 KB de VRAM voltam idênticos,
-  inclusive após 100 ciclos. O critério da B2 ("no jogo") só vale depois da B1.
-- **B3, adiantada:** as páginas "Regras de combate" (regras 44, 45, 7 e 8) e
-  "Dificuldade dinâmica" já existem; falta vê-las mudar uma batalha de verdade.
-- **B1 em aberto:** precisa da ROM para achar a função que roda uma vez por quadro.
+  libnds nem NitroSDK: o código escreve direto nos registradores. O enxerto (o papel do
+  NCPatcher) é `modmenu/ferramentas/enxertar.py`.
+- **B1, gancho: feito no emulador.** `contar_funcoes.py` contou as execuções de cada uma
+  das ~10 mil funções. O laço principal (`main`, 0x02000c8e) chama a leitura dos botões
+  (`func_02002708`) uma vez por volta: 30 voltas por segundo na exploração, 60 no
+  diálogo. O gancho troca essa chamada (0x02000d50). Conferido na exploração, no diálogo
+  e na tela de perfil; **falta a batalha** (não achei uma jogando às cegas no emulador)
+  e os 30 minutos do critério.
+- **B2, console: feito no emulador.** A tela volta idêntica byte a byte depois de 100
+  aberturas na ROM de teste, e a tela de perfil do jogo volta perfeita.
+- **B3: feito.** Todas as 74 regras (mapa de `analise/tools/mapa_regras.py`), com os 5
+  formatos, e a dificuldade dinâmica. Falta ver uma regra mudar uma batalha.
+- **B4: adiantada.** Atributos dos 4 membros do grupo e os anéis, com os endereços do
+  [CHEATS.md](CHEATS.md). Conferido: o painel mostra os mesmos números da tela de perfil e
+  mudar o Luck muda o atributo.
+- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload em 0x021B9500,
+  heap empurrado para depois dele, ARM7 mudado para o fim da ROM.
+- **Achado no caminho:** o jogo move tudo pelo tempo real entre voltas (objeto Time,
+  0x02109b60). Sem cuidado, fechar o painel dava um salto no tempo; o gancho acerta o
+  relógio ao fechar.
 
 ## 5. Riscos e cuidados
 

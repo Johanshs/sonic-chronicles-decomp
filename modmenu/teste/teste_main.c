@@ -9,7 +9,7 @@
  * byte que a tela de baixo voltou como estava. */
 #include "ds.h"
 
-void modmenu_quadro(void);
+int modmenu_quadro(void);
 
 /* Contador de quadros do "jogo", num endereço fixo para o roteiro de teste ler. Se o
  * painel pausa o jogo de verdade, ele para de subir enquanto o painel está aberto. */
@@ -56,6 +56,24 @@ void teste_main(void) {
     *(volatile s32 *)0x020F64FC = 20;
     *(volatile s8 *)0x02160E54 = 0;
     *(volatile u8 *)0x02160E58 = 0;
+    *(volatile s32 *)0x02160EB0 = 8;       /* anéis */
+    *(volatile s32 *)0x021A57C0 = 3686;    /* regra 71: 0,90 x 4096 (formato fx/100) */
+
+    /* Um grupo de mentira, com o mesmo formato do jogo (docs/CHEATS.md): 0x02160B28
+     * aponta para a lista; a posição 1 é uma criatura cujo primeiro campo é a vtable de
+     * CGamePlayerCreature e cujo +0x1C aponta para o vetor de atributos. A posição 2
+     * fica vazia, para o teste ver o painel recusar escrever nela. */
+    volatile u32 *lista = (volatile u32 *)0x02110000;
+    volatile u32 *criatura = (volatile u32 *)0x02110100;
+    volatile s32 *atributos = (volatile s32 *)0x02110200;
+    lista[1] = (u32)criatura;
+    lista[2] = 0;
+    criatura[0] = 0x020F9200;
+    criatura[7] = (u32)atributos; /* +0x1C */
+    atributos[0] = 33;            /* HP */
+    atributos[0xA0 / 4] = 33;     /* HP máximo */
+    atributos[0xB0 / 4] = 7 << 12; /* PP, em ponto fixo */
+    *(volatile u32 *)0x02160B28 = (u32)lista;
 
     CONTADOR = 0;
     for (;;) {

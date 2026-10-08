@@ -6,6 +6,10 @@
 #   make          compila o painel e a ROM de teste (build/painel_teste.nds)
 #   make testar   roda a ROM de teste no DeSmuME (py-desmume) e confere tudo
 #   make tamanho  mostra quanto o painel ocupa (código + dados + BSS)
+#   make enxertar ROM=jogo.nds SAIDA=jogo_painel.nds
+#                 põe o painel numa CÓPIA da sua ROM (a original não muda)
+#   make testar-jogo ROM=jogo.nds
+#                 enxerta e testa dentro do jogo, no DeSmuME (uns 2 minutos)
 
 CC      := clang
 LD      := ld.lld
@@ -23,7 +27,7 @@ ASFLAGS := $(ALVO)
 B := build
 PAINEL := $(B)/menu.o $(B)/console.o $(B)/fonte.o
 
-all: $(B)/painel_teste.nds tamanho
+all: $(B)/painel_teste.nds $(B)/painel_jogo.elf tamanho
 
 $(B):
 	mkdir -p $@
@@ -44,6 +48,13 @@ $(B)/arm7.o: teste/arm7.s | $(B)
 $(B)/painel.o: $(PAINEL)
 	$(LD) -r --gc-sections -e modmenu_quadro $^ -o $@
 
+# O painel para o jogo: ligado no endereço onde vai morar (jogo/painel.ld).
+$(B)/gancho.o: jogo/gancho.s | $(B)
+	$(CC) $(ASFLAGS) -c $< -o $@
+
+$(B)/painel_jogo.elf: $(B)/gancho.o $(PAINEL) jogo/painel.ld
+	$(LD) -T jogo/painel.ld --gc-sections $(filter %.o,$^) -o $@
+
 $(B)/teste9.elf: $(B)/crt0.o $(B)/teste_main.o $(PAINEL) teste/link.ld
 	$(LD) -T teste/link.ld --gc-sections $(filter %.o,$^) -o $@
 
@@ -63,7 +74,16 @@ tamanho: $(B)/painel.o
 testar: $(B)/painel_teste.nds
 	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $(PY) ferramentas/testar.py $< $(B)/capturas
 
+ROM ?=
+SAIDA ?= $(B)/sonic_painel.nds
+enxertar: $(B)/painel_jogo.elf
+	@test -n "$(ROM)" || (echo "uso: make enxertar ROM=caminho/da/rom.nds [SAIDA=saida.nds]"; exit 1)
+	$(PY) ferramentas/enxertar.py "$(ROM)" $< "$(SAIDA)"
+
+testar-jogo: enxertar
+	SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $(PY) ferramentas/testar_no_jogo.py "$(SAIDA)" $(B)/capturas_jogo
+
 clean:
 	rm -rf $(B)
 
-.PHONY: all tamanho testar clean
+.PHONY: all tamanho testar enxertar testar-jogo clean
