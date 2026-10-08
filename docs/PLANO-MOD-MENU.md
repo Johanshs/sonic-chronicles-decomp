@@ -110,7 +110,9 @@ Os botões ficam em `0x04000130` (bit em 0 = apertado): A = bit 0, B = 1, Select
 Start = 3, R = 8, L = 9. Assim, "L + R apertados" é `94000130 FCFF0000`.
 
 ### Primeiros cheats (rascunho, a validar na fase A1)
-Valores tirados de [COMBATE.md](COMBATE.md). Nenhum deles foi testado numa batalha ainda.
+Valores tirados de [COMBATE.md](COMBATE.md). **Testados no DS real em 08/10/2026**: os 4
+ligaram e o efeito visto em batalha foi o esperado (ver "Andamento" abaixo). Falta a
+medição da fase A1: conferir os números contra as fórmulas.
 
 ```
 [Dano do grupo bem maior (k 110 → 1000: o termo aleatório pesa 9× mais)]
@@ -177,6 +179,19 @@ batalha, sem encontros, nível dos POW no máximo.
   ([DeadSkullzJr](https://gbatemp.net/threads/deadskullzjrs-nds-i-cheat-databases.488711/))
   e pode ser baixado de novo. Motivo da troca: o gravador do cartão aceita no máximo
   30 MB por arquivo, e o nome tem que ser `usrcheat.dat`.
+- **Teste no DS (08/10/2026)**: com esse banco no cartão, os 4 cheats de
+  `cheats/YWSE.txt` foram ligados pelo Pico Launcher. O jogo rodou sem erro e o efeito
+  de cada um foi o esperado. Com isso:
+  - a **A0 está concluída**: o jogo roda pelo cartão e o motor de cheats funciona (com
+    cheats nossos, o que prova mais do que um cheat do banco público);
+  - o critério da **A3** ("o Pico Launcher lista os cheats e eles funcionam no DS") foi
+    atingido para estes 4 cheats; a A3 continua valendo para os cheats que a A2 trouxer;
+  - o Pico Launcher aceitou os tipos de código `0` (escrita de 32 bits), `2` (8 bits),
+    `9` (condição de 16 bits, os botões) e `D0` (fim do bloco);
+  - a **A1 continua aberta**: o teste foi a olho, sem medir o dano. A A1 vai dizer se os
+    números batem com as fórmulas do [COMBATE.md](COMBATE.md). O efeito da dificuldade
+    dinâmica é o mais difícil de ver a olho, e a dúvida sobre a cópia do nível em cada
+    inimigo (`+0x1d8`) também fica para a A1.
 
 ## 4. Caminho B: o mod menu
 
@@ -248,10 +263,11 @@ mesmo modificada.
 ## 7. Perguntas em aberto
 
 - ~~Qual é o modelo do R4?~~ R4i-SDHC Gold Pro (r4isdhc.com) → plataforma DSTT.
-- O Pico Launcher abre pelo kernel do Gold Pro e lê o SD? (teste da fase A0)
+- ~~O Pico Launcher abre pelo kernel do Gold Pro e lê o SD?~~ Sim: o jogo e os cheats
+  rodaram por ele no DS (08/10/2026).
 - O formato exato do `usrcheat.dat` (cabeçalho, identificação do jogo por código + CRC) e
   quais tipos de código AR o Pico Launcher aceita: conferir na fase A3, no código-fonte
-  do launcher.
+  do launcher. Já sabemos, pelo teste no DS, que aceita os tipos `0`, `2`, `9` e `D0`.
 - Menu em inglês ou português? (A fonte 8×8 nossa permite acentos.)
 
 Referências: [Pico Loader](https://github.com/LNH-team/pico-loader),
