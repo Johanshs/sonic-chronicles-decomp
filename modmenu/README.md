@@ -5,12 +5,17 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.2:**
-- **Funciona dentro do jogo, no emulador**: conferido na exploração, num diálogo e na
-  tela de perfil (ver "Como foi testado").
-- **Ainda não testado num DS de verdade nem numa batalha.**
-- Páginas: as **74 regras de combate**, a dificuldade dinâmica, os anéis e os
-  atributos dos **4 membros do grupo** (HP, PP, Speed, Attack, Defense, Power, Grit, Luck).
+**Situação (08/10/2026), versão 0.3:**
+- **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
+  save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
+  testado").
+- **Ainda não testado num DS de verdade.**
+- Páginas: as **74 regras de combate**, a dificuldade dinâmica, os **anéis da carteira**
+  e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
+  jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
+  Power, Grit, Luck).
+- **Compatível com os cheats**: o painel mora no fim do heap do jogo, então os objetos
+  do jogo ficam nos mesmos endereços da ROM original (a v0.2 os deslocava).
 
 Nada aqui vem do jogo: o repositório só tem o nosso código e os endereços. O painel é
 posto na **sua cópia** da ROM por `ferramentas/enxertar.py`.
@@ -21,11 +26,11 @@ src/menu.c                      o painel: páginas, campos, teclado, pausa
 src/console.c                   texto na tela, salvando e restaurando tudo o que toca
 src/fonte.c                     fonte 8x8 de domínio público (font8x8, de Daniel Hepper)
 jogo/gancho.s                   a ponte entre o laço principal do jogo e o painel
-jogo/painel.ld                  onde o painel mora na memória do jogo (0x021B9500)
+jogo/painel.ld                  onde o painel mora na memória do jogo (0x023DC000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM
-ferramentas/testar.py           testa o painel na ROM de teste (14 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (7 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (18 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (10 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -52,21 +57,34 @@ em cima. Ele não escolhe a tela: usa a que o jogo deu ao motor B.
 (o jogo recarrega as regras a cada boot), mas anéis e atributos do grupo provavelmente
 vão, se você salvar depois de mudá-los.
 
+**Com cheats:** a partir da v0.3 os cheats do projeto e os públicos funcionam na ROM com
+o painel, porque o heap fica igual ao do jogo original. **Não use a ROM da v0.2 com
+cheats que escrevem em endereços do heap** (os de anéis): nela o heap estava deslocado e
+um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar errado.
+
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (14 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (7 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (18 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (10 checagens)
 ```
 
 ## Como funciona
 
-1. **Onde o código mora.** O painel ocupa ~6 KB de código e ~5,5 KB de variáveis. Ele
+1. **Onde o código mora.** O painel ocupa ~7 KB de código e ~5,5 KB de variáveis. Ele
    vira um bloco novo de *autoload*: a lista que o início do programa (crt0 do NitroSDK)
    percorre para copiar blocos do ARM9 para a memória (o jogo já a usa para o ITCM e o
-   DTCM). O bloco vai para 0x021B9500, onde o heap do jogo começaria, e o começo do heap
-   (`OS_GetInitArenaLo`, literal em 0x020d8d10) é empurrado para depois do painel. Assim
-   o jogo nunca usa a nossa memória. É a técnica do NCPatcher, feita à mão em Python.
+   DTCM). O heap do jogo vai de 0x021B9500 a 0x023E0000. O bloco vai para os últimos
+   16 KB (0x023DC000), e o fim do heap (`OS_GetInitArenaHi`, literal em 0x020d8c9c)
+   baixa para 0x023DC000. Assim o jogo nunca usa a nossa memória. É a técnica do
+   NCPatcher, feita à mão em Python.
+
+   **Por que no fim do heap.** O jogo aloca os objetos a partir do começo do heap, um
+   atrás do outro. A v0.2 punha o painel no começo e empurrava o heap 0x2EA0 bytes para
+   a frente: todos os objetos mudavam de endereço, e os cheats que usam endereços do
+   heap (o esquadrão em 0x022261E0, por exemplo) deixavam de valer. Tirando o espaço do
+   fim, o começo fica igual e os endereços também. Conferido: num boot do zero, o
+   esquadrão, a lista do grupo e o Sonic caem nos mesmos endereços da ROM original.
 2. **O gancho.** O laço principal do jogo (`main`, 0x02000c8e) chama a leitura dos
    botões (`func_02002708`, do objeto Input) uma vez por volta. Trocamos essa chamada
    (0x02000d50) por uma chamada ao `gancho`, que chama o painel e depois a função
@@ -82,9 +100,17 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (7 checagens
    paleta e os 5 KB de VRAM que vai usar; ao fechar, devolve tudo.
 6. **Os campos.** Cada campo é um endereço e um formato. As regras têm 5 formatos
    (inteiro, 0/1, ponto fixo ×4096 e ponto fixo dividido por 100 ou 1000); o painel
-   mostra e edita o valor como está na tabela do jogo e converte ao gravar. Os membros
-   do grupo são achados pela lista em 0x02160B28, conferindo cada ponteiro e a "vtable"
-   (o primeiro campo de todo `CGamePlayerCreature` é 0x020F9200) antes de escrever.
+   mostra e edita o valor como está na tabela do jogo e converte ao gravar.
+7. **Objetos do heap.** Os anéis e os personagens moram no heap, em endereços que
+   mudam. O painel os acha por caminhos fixos e confere a "vtable" (o primeiro campo de
+   todo objeto C++ do jogo diz a classe dele) antes de escrever:
+   - **carteira**: a global `0x02160C18` aponta para um objeto cujo primeiro campo é o
+     esquadrão (`CGamePlayerSquad`, vtable `0x020F9C08`); os anéis ficam em `+0x114`;
+   - **grupo**: `0x02160B28` aponta para a lista de todos os personagens que já
+     entraram (vtable `0x020F9200`); cada um tem os atributos em `+0x1C` e o nome em
+     `+0x98`. As posições variam (num jogo novo o Sonic é a 0; num save carregado, a 1),
+     e depois do último vem lixo, então o painel percorre 16 posições e fica só com as
+     que passam na conferência.
 
 ## Como foi testado
 
@@ -99,6 +125,13 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (7 checagens
 - **À mão, no DeSmuME:** a tela do perfil (modo bitmap, paletas estendidas) volta
   perfeita depois de fechar; os atributos do Sonic no painel batem com os do perfil
   (Spd 7, Atk 8, Def 14, Lck 3).
+- **Com o save do Capítulo 10** (o `.sav` cortado em 64 KB, como no `emu_run.py`): a
+  carteira mostra 986967, o mesmo número da tela de save, e o grupo lista os 11
+  personagens com os nomes certos.
+- **Numa batalha** (Capítulo 10, contra 4 Nocturne Decurion, achada por um robô que anda
+  ao acaso pelo mapa): o gancho roda 30 vezes por segundo também na batalha; o painel
+  abre na tela de cima; baixar o HP do Sonic de 311 para 301 no painel mudou o número
+  na tela da batalha; ao fechar, a batalha seguiu para o menu de ações.
 
 ## Descobertas e erros pelo caminho
 
@@ -117,11 +150,20 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (7 checagens
   conta os ponteiros válidos em vez de confiar na posição.
 - **No perfil, um combo de 4 quadros não abriu o painel**: o jogo estava carregando e
   não passou pelo gancho nesses quadros. Com o combo segurado por mais tempo, abre.
+- **Dois erros da v0.2, achados pela sessão dos cheats:** a página "Aneis" mexia em
+  `0x02160EB0`, que é o contador do HUD, não a carteira; e o grupo tinha só 4 páginas,
+  achando que a lista era o time da batalha, mas ela tem todos os personagens (11 no
+  Capítulo 10). Lição: o jogo novo (2 personagens, carteira 0) escondia os dois; o save
+  avançado mostrou.
+- **A v0.2 deslocava o heap.** Ao seguir o ponteiro do cheat de anéis (`0x021D10AC`) na
+  ROM com o painel, li lixo. O motivo: `0x021D10AC` não é uma global, é um endereço do
+  heap, e a v0.2 empurrava o heap 0x2EA0 bytes. Daí a mudança do painel para o fim do
+  heap e a busca de um caminho que não dependa do heap (`0x02160C18`).
 
 ## Limites conhecidos
 
-- **Batalha e DS real ainda não testados.** O gancho está no laço principal, que é o
-  mesmo em todos os modos, mas só um teste vai dizer.
+- **DS real ainda não testado.**
+- O painel mostra todos os personagens, sem marcar quais 4 estão no time da batalha.
 - A ROM enxertada muda 12 bytes do ARM9 dentro da "área segura" (0x4000 a 0x7FFF da
   ROM: o gancho e a posição da lista de autoload). Emuladores e cartões com ROMs
   decifradas não conferem essa área; um cartão original conferiria.

@@ -7,9 +7,11 @@ A ROM original não é alterada. O que muda na cópia (todos os endereços são 
 1. O código do painel vira um bloco de "autoload" novo. Autoload é a lista que o
    próprio início do programa (crt0 do NitroSDK) percorre para copiar blocos do
    arquivo do ARM9 para outros lugares da memória; o jogo já a usa para o ITCM e o
-   DTCM. Acrescentamos uma terceira entrada: "copie o painel para 0x021B9500".
-2. O heap do jogo começava em 0x021B9500 (OS_GetInitArenaLo, literal em 0x020d8d10).
-   Ele passa a começar depois do painel, para o jogo nunca usar a nossa memória.
+   DTCM. Acrescentamos uma terceira entrada: "copie o painel para 0x023DC000".
+2. O heap do jogo ia até 0x023E0000 (OS_GetInitArenaHi, literal em 0x020d8c9c). Ele
+   passa a terminar onde o painel começa, para o jogo nunca usar a nossa memória. O
+   começo do heap não muda, então os objetos do heap ficam nos mesmos endereços do
+   jogo original e os cheats que dependem deles continuam valendo.
 3. Em 0x02000d50, no laço principal, `bl func_02002708` (ler os botões) vira
    `bl gancho`. O gancho chama o painel e depois a função original.
 4. O ARM9 cresce. Na ROM ele é seguido de perto pelo ARM7, então o ARM7 é mudado para o
@@ -26,8 +28,8 @@ BASE = 0x02000000
 PARAMS = 0xB9C                     # parâmetros do módulo (NitroSDK _start_ModuleParams)
 CHAMADA = 0x02000D50               # bl func_02002708 no main
 ALVO_ORIGINAL = 0x02002708
-LITERAL_ARENA = 0x020D8D10         # OS_GetInitArenaLo, caso 0 (memória principal)
-ARENA_ORIGINAL = 0x021B9500
+LITERAL_ARENA_FIM = 0x020D8C9C     # OS_GetInitArenaHi, caso 0 (memória principal)
+ARENA_FIM_ORIGINAL = 0x023E0000
 NITROCODE = 0xDEC00621
 
 
@@ -66,7 +68,7 @@ def ler_elf(caminho):
                 nome = e[strtab[4] + nome_off:e.index(b'\0', strtab[4] + nome_off)].decode()
                 if nome:
                     simbolos[nome] = valor
-    inicio, fim = 0x021B9500, simbolos['__painel_fim_carregado']
+    inicio, fim = simbolos['__painel_inicio'], simbolos['__painel_fim_carregado']
     dados = bytearray(fim - inicio)
     for s in secs:
         tipo, addr, off, tam = s[1], s[3], s[4], s[5]
@@ -113,7 +115,7 @@ def enxertar(rom, painel_elf):
         (ram9 == BASE, f'ARM9 carregado em {ram9:#x}'),
         ((lista, lista_fim) == (0x02110F00, 0x02110F18), 'lista de autoload fora do lugar'),
         (lista_fim - BASE == tam9, 'a lista de autoload não termina no fim do ARM9'),
-        (u32(arm9, LITERAL_ARENA - BASE) == ARENA_ORIGINAL, 'começo do heap diferente'),
+        (u32(arm9, LITERAL_ARENA_FIM - BASE) == ARENA_FIM_ORIGINAL, 'fim do heap diferente'),
         (decodificar_bl_thumb(CHAMADA, *struct.unpack_from('<HH', arm9, CHAMADA - BASE))
          == ALVO_ORIGINAL, f'em {CHAMADA:#x} não está a chamada de func_02002708'),
     ]
@@ -123,9 +125,10 @@ def enxertar(rom, painel_elf):
 
     inicio, bloco, sim = ler_elf(painel_elf)
     fim_bss = sim['__painel_fim']
-    nova_arena = (fim_bss + 31) & ~31
+    if fim_bss > ARENA_FIM_ORIGINAL or inicio & 31:
+        raise Erro(f'o painel ({inicio:#x}-{fim_bss:#x}) precisa caber antes de {ARENA_FIM_ORIGINAL:#x}')
     print(f'painel: {len(bloco)} bytes carregados + {fim_bss - inicio - len(bloco)} de BSS, '
-          f'em {inicio:#x}-{fim_bss:#x}; o heap do jogo passa a começar em {nova_arena:#x}')
+          f'em {inicio:#x}-{fim_bss:#x}; o heap do jogo passa a terminar em {inicio:#x}')
 
     # 1. bloco novo antes da lista de autoload, e a entrada nova no fim da lista
     corte = lista - BASE
@@ -133,8 +136,8 @@ def enxertar(rom, painel_elf):
     entrada = struct.pack('<3I', inicio, len(bloco), fim_bss - inicio - len(bloco))
     novo9 = arm9[:corte] + bloco + tabela + entrada
     struct.pack_into('<2I', novo9, PARAMS, lista + len(bloco), lista_fim + len(bloco) + 12)
-    # 2. heap
-    struct.pack_into('<I', novo9, LITERAL_ARENA - BASE, nova_arena)
+    # 2. heap: termina onde o painel começa
+    struct.pack_into('<I', novo9, LITERAL_ARENA_FIM - BASE, inicio)
     # 3. gancho
     novo9[CHAMADA - BASE:CHAMADA - BASE + 4] = codificar_bl_thumb(CHAMADA, sim['gancho'] & ~1)  # bit 0 = Thumb
 

@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.2"
+#define VERSAO "0.3"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -31,14 +31,22 @@ typedef struct {
     u32 endereco;     /* absoluto, ou o deslocamento no vetor de atributos (páginas do grupo) */
     u8 formato;
     u8 conferido;     /* 1 = conferido no emulador */
-    s16 minimo, maximo;
+    s32 minimo, maximo;
 } Campo;
+
+/* De onde vêm os endereços dos campos de uma página. */
+enum {
+    P_FIXO,      /* endereço absoluto: o campo mora sempre no mesmo lugar */
+    P_ESQUADRAO, /* deslocamento dentro do esquadrão (CGamePlayerSquad), que mora no heap */
+    P_MEMBRO,    /* deslocamento no vetor de atributos do personagem escolhido */
+    P_GRUPO,     /* não tem campos: é a lista de personagens, para escolher um */
+};
 
 typedef struct {
     const char *titulo;
     const Campo *campos;
     u8 n;
-    u8 membro; /* 0 = endereços absolutos; 1 a 4 = membro do grupo */
+    u8 tipo;
 } Pagina;
 
 /* ---- As 74 regras de combate (combatrules.gda), na ordem da tabela ----
@@ -129,9 +137,11 @@ static const Campo campos_dificuldade[] = {
     {"Chave (0/1)", 0x02160E58, F_U8, 0, 0, 1},
 };
 
-static const Campo campos_aneis[] = {
-    /* CHEATS.md: o contador do HUD (achado no emulador: pegar um anel soma 1 aqui) */
-    {"Aneis", 0x02160EB0, F_INT, 1, 0, 9999},
+static const Campo campos_carteira[] = {
+    /* CHEATS.md: os anéis que você gasta (os do Inventário e da tela de save) moram no
+     * esquadrão, em +0x114. 999999 é o maior número que cabe na tela do jogo.
+     * (A v0.2 mexia em 0x02160EB0, que é outro contador: o do HUD, não a carteira.) */
+    {"Aneis (carteira)", 0x114, F_INT, 1, 0, 999999},
 };
 
 /* Atributos de um membro do grupo: deslocamentos no vetor de atributos (CHEATS.md). */
@@ -150,55 +160,99 @@ static const Campo campos_membro[] = {
 
 #define N(v) ((u8)(sizeof v / sizeof v[0]))
 static const Pagina paginas[] = {
-    {"Regras de combate (74)", campos_regras, N(campos_regras), 0},
-    {"Dificuldade dinamica", campos_dificuldade, N(campos_dificuldade), 0},
-    {"Aneis", campos_aneis, N(campos_aneis), 0},
-    {"Grupo: membro 1", campos_membro, N(campos_membro), 1},
-    {"Grupo: membro 2", campos_membro, N(campos_membro), 2},
-    {"Grupo: membro 3", campos_membro, N(campos_membro), 3},
-    {"Grupo: membro 4", campos_membro, N(campos_membro), 4},
+    {"Regras de combate (74)", campos_regras, N(campos_regras), P_FIXO},
+    {"Dificuldade dinamica", campos_dificuldade, N(campos_dificuldade), P_FIXO},
+    {"Aneis", campos_carteira, N(campos_carteira), P_ESQUADRAO},
+    {"Grupo (personagens)", 0, 0, P_GRUPO},
 };
 #define N_PAGINAS ((int)N(paginas))
+/* A página de atributos de um personagem: o título é desenhado com o nome dele. */
+static const Pagina pagina_membro = {"", campos_membro, N(campos_membro), P_MEMBRO};
 
 /* ---- Achar o endereço de um campo ---- */
 
 #define LISTA_DO_GRUPO 0x02160B28u
-#define VTABLE_JOGADOR 0x020F9200u /* todo CGamePlayerCreature começa com isto */
+#define VTABLE_JOGADOR 0x020F9200u   /* todo CGamePlayerCreature começa com isto */
+#define GLOBAL_ESQUADRAO 0x02160C18u /* aponta para um ponteiro para o esquadrão */
+#define VTABLE_ESQUADRAO 0x020F9C08u /* todo CGamePlayerSquad começa com isto */
+#define MAX_MEMBROS 16
 
 static int ponteiro_ok(u32 p) { return p >= 0x02000000u && p < 0x02400000u && !(p & 3); }
 
-/* A n-ésima criatura do grupo (n = 1 a 4), ou 0. 0x02160B28 aponta para um vetor de
- * ponteiros para as criaturas. No começo de um jogo novo, o Sonic está na posição 0 e
- * logo depois vem lixo; com o save do Johans (docs/CHEATS.md), o primeiro membro estava
- * na posição 1. Para servir aos dois casos, percorremos as 8 primeiras posições e
- * contamos só os ponteiros válidos que apontam para um CGamePlayerCreature (o primeiro
- * campo é a vtable da classe), sem repetir. Cada ponteiro é conferido antes de ser
- * lido: um ponteiro errado faria o painel escrever em lugar aleatório. */
-static u32 membro(int n) {
+/* O esquadrão (CGamePlayerSquad), ou 0. Ele mora no heap, então o endereço dele depende
+ * de tudo o que o jogo alocou antes. O caminho fixo até ele: a global 0x02160C18 aponta
+ * para um objeto cujo primeiro campo é o esquadrão. Achado no emulador procurando, de
+ * trás para a frente, quem aponta para o esquadrão; conferido em 8 estados do jogo
+ * (título, Green Hill, Capítulo 10) e com o heap em lugares diferentes. */
+static u32 esquadrao(void) {
+    u32 p = *(volatile u32 *)GLOBAL_ESQUADRAO;
+    if (!ponteiro_ok(p)) return 0;
+    u32 s = *(volatile u32 *)p;
+    if (!ponteiro_ok(s) || *(volatile u32 *)s != VTABLE_ESQUADRAO) return 0;
+    return s;
+}
+
+/* Os personagens do grupo, na ordem da lista. 0x02160B28 aponta para um vetor de
+ * ponteiros com TODOS os que já entraram no grupo (11 no fim do jogo), não só os 4 da
+ * batalha. As posições variam: num jogo novo o Sonic está na posição 0; num save
+ * carregado, a 0 fica vazia e o Sonic vai para a 1. Depois do último vem lixo (pedaços
+ * de texto). Por isso percorremos as primeiras posições e ficamos só com os ponteiros
+ * válidos que apontam para um CGamePlayerCreature (o primeiro campo é a vtable da
+ * classe), sem repetir. Um ponteiro errado faria o painel escrever em lugar aleatório. */
+static u32 membros[MAX_MEMBROS];
+static int n_membros;
+
+static void achar_membros(void) {
+    n_membros = 0;
     u32 lista = *(volatile u32 *)LISTA_DO_GRUPO;
-    if (!ponteiro_ok(lista)) return 0;
-    u32 vistos[4];
-    int achados = 0;
-    for (int i = 0; i < 8; i++) {
+    if (!ponteiro_ok(lista)) return;
+    for (int i = 0; i < MAX_MEMBROS && lista + 4u * i < 0x02400000u; i++) {
         u32 c = *(volatile u32 *)(lista + 4u * i);
         if (!ponteiro_ok(c) || *(volatile u32 *)c != VTABLE_JOGADOR) continue;
         int repetido = 0;
-        for (int j = 0; j < achados; j++) repetido |= vistos[j] == c;
-        if (repetido) continue;
-        vistos[achados++] = c;
-        if (achados == n) return c;
+        for (int j = 0; j < n_membros; j++) repetido |= membros[j] == c;
+        if (!repetido) membros[n_membros++] = c;
     }
-    return 0;
 }
 
-/* Endereço do campo, ou 0 se ele não existe agora (membro vazio, fora do jogo...). */
+static s32 *atributos_de(u32 criatura) {
+    u32 a = *(volatile u32 *)(criatura + 0x1C);
+    return ponteiro_ok(a) ? (s32 *)a : 0;
+}
+
+/* O nome do personagem: a criatura guarda em +0x98 um ponteiro para o texto ("Sonic",
+ * "Amy"...), conferido no emulador para os 11. Copiamos no máximo `max` letras e só
+ * ASCII visível; se algo não bater, fica "?". */
+static void nome_de(u32 criatura, char *buf, int max) {
+    u32 p = *(volatile u32 *)(criatura + 0x98);
+    int n = 0;
+    if (p >= 0x02000000u && p < 0x023FFFF0u)
+        while (n < max) {
+            char ch = *(volatile char *)(p + n);
+            if (ch < 0x20 || ch > 0x7E) break;
+            buf[n++] = ch;
+        }
+    if (!n) buf[n++] = '?';
+    buf[n] = 0;
+}
+
+static int membro_sel; /* o personagem aberto na página de atributos */
+
+/* Endereço do campo, ou 0 se ele não existe agora (fora do jogo, personagem sumiu...). */
 static u32 endereco(const Pagina *p, const Campo *c) {
-    if (!p->membro) return c->endereco;
-    u32 criatura = membro(p->membro);
-    if (!criatura) return 0;
-    u32 atributos = *(volatile u32 *)(criatura + 0x1C);
-    if (!ponteiro_ok(atributos)) return 0;
-    return atributos + c->endereco;
+    switch (p->tipo) {
+    case P_FIXO: return c->endereco;
+    case P_ESQUADRAO: {
+        u32 s = esquadrao();
+        return s ? s + c->endereco : 0;
+    }
+    case P_MEMBRO: {
+        if (membro_sel >= n_membros) return 0;
+        s32 *a = atributos_de(membros[membro_sel]);
+        return a ? (u32)a + c->endereco : 0;
+    }
+    default: return 0;
+    }
 }
 
 /* ---- Conversão entre o valor guardado e o valor humano ----
@@ -298,8 +352,8 @@ static void desenhar_inicio(int sel) {
     rodape("A entra   B/START fecha", "Abrir: L + R + SELECT");
 }
 
-static void desenhar_pagina(const Pagina *p, int sel, int topo) {
-    cabecalho(p->titulo);
+static void desenhar_pagina(const Pagina *p, const char *titulo, int sel, int topo) {
+    cabecalho(titulo);
     con_texto(1, 3, COR_CINZA, "campo               valor conf");
     int vazio = 1;
     for (int i = topo; i < p->n && i < topo + VISIVEIS; i++) {
@@ -316,34 +370,79 @@ static void desenhar_pagina(const Pagina *p, int sel, int topo) {
     /* setas de rolagem quando a lista não cabe */
     if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
     if (topo + VISIVEIS < p->n) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
-    if (vazio && p->membro) con_texto(1, 20, COR_CINZA, "(membro vazio ou fora do jogo)");
+    if (vazio) con_texto(1, 20, COR_CINZA, "(nao achado: fora do jogo?)");
     rodape("<> -1/+1   L R -10/+10", "B volta   START fecha");
+}
+
+/* A lista de personagens: nome e HP de cada um, para escolher qual abrir. */
+static void desenhar_grupo(int sel, int topo) {
+    cabecalho("Grupo: escolha o personagem");
+    con_texto(1, 3, COR_CINZA, "nome             HP / max");
+    for (int i = topo; i < n_membros && i < topo + VISIVEIS; i++) {
+        int lin = LINHA_1 + i - topo;
+        int cor = i == sel ? COR_AMARELO : COR_BRANCO;
+        char nome[13];
+        nome_de(membros[i], nome, 12);
+        con_texto(0, lin, cor, i == sel ? ">" : " ");
+        con_texto(1, lin, cor, nome);
+        s32 *a = atributos_de(membros[i]);
+        if (a) {
+            con_numero(15, lin, cor, a[0], 5);
+            con_texto(21, lin, COR_CINZA, "/");
+            con_numero(22, lin, cor, a[0xA0 / 4], 5);
+        }
+    }
+    if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
+    if (topo + VISIVEIS < n_membros) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
+    if (!n_membros) con_texto(1, 20, COR_CINZA, "(nenhum: fora do jogo?)");
+    rodape("A abre   B volta", "START fecha");
 }
 
 /* ---- Laço do painel ---- */
 
+/* Sobe/desce `sel` numa lista de n itens (dando a volta) e acerta a rolagem. */
+static void mover(u16 t, int *sel, int *topo, int n) {
+    if (n <= 0) { *sel = *topo = 0; return; }
+    if (t & TECLA_CIMA) *sel = *sel ? *sel - 1 : n - 1;
+    if (t & TECLA_BAIXO) *sel = *sel + 1 < n ? *sel + 1 : 0;
+    if (*sel >= n) *sel = n - 1;
+    if (*sel < *topo) *topo = *sel;
+    if (*sel >= *topo + VISIVEIS) *topo = *sel - VISIVEIS + 1;
+}
+
+#define TELA_INICIO -1
+#define TELA_MEMBRO -2
+
 static void painel(void) {
-    int pagina = -1; /* -1 = tela inicial */
+    int tela = TELA_INICIO; /* ou o número da página aberta */
     int sel_inicio = 0, sel = 0, topo = 0;
+    int sel_grupo = 0, topo_grupo = 0, tela_grupo = 0;
     for (;;) {
         esperar_quadro();
         con_reafirmar();
+        achar_membros(); /* barato: no máximo 16 ponteiros */
         u16 t = ler_teclas();
         if (t & TECLA_START) return;
 
-        if (pagina < 0) {
+        if (tela == TELA_INICIO) {
             if (t & TECLA_B) return;
-            if (t & TECLA_CIMA) sel_inicio = sel_inicio ? sel_inicio - 1 : N_PAGINAS - 1;
-            if (t & TECLA_BAIXO) sel_inicio = sel_inicio + 1 < N_PAGINAS ? sel_inicio + 1 : 0;
-            if (t & TECLA_A) { pagina = sel_inicio; sel = 0; topo = 0; }
+            mover(t, &sel_inicio, &topo, N_PAGINAS);
+            topo = 0;
+            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; }
+        } else if (tela >= 0 && paginas[tela].tipo == P_GRUPO) {
+            if (t & TECLA_B) tela = TELA_INICIO;
+            mover(t, &sel_grupo, &topo_grupo, n_membros);
+            if ((t & TECLA_A) && sel_grupo < n_membros) {
+                membro_sel = sel_grupo;
+                tela_grupo = tela; /* para o B voltar à lista */
+                tela = TELA_MEMBRO;
+                sel = topo = 0;
+            }
         } else {
-            const Pagina *p = &paginas[pagina];
+            const Pagina *p = tela == TELA_MEMBRO ? &pagina_membro : &paginas[tela];
+            if (t & TECLA_B) tela = tela == TELA_MEMBRO ? tela_grupo : TELA_INICIO;
+            mover(t, &sel, &topo, p->n);
             const Campo *c = &p->campos[sel];
-            if (t & TECLA_B) pagina = -1;
-            if (t & TECLA_CIMA) sel = sel ? sel - 1 : p->n - 1;
-            if (t & TECLA_BAIXO) sel = sel + 1 < p->n ? sel + 1 : 0;
-            if (sel < topo) topo = sel;
-            if (sel >= topo + VISIVEIS) topo = sel - VISIVEIS + 1;
             s32 d = 0;
             if (t & TECLA_DIREITA) d += 1;
             if (t & TECLA_ESQUERDA) d -= 1;
@@ -354,8 +453,16 @@ static void painel(void) {
         }
 
         con_limpar();
-        if (pagina < 0) desenhar_inicio(sel_inicio);
-        else desenhar_pagina(&paginas[pagina], sel, topo);
+        if (tela == TELA_INICIO) desenhar_inicio(sel_inicio);
+        else if (tela == TELA_MEMBRO) {
+            /* "Grupo: " + o nome, montado à mão (sem biblioteca C não há strcpy) */
+            char titulo[28];
+            const char *g = "Grupo: ";
+            for (int i = 0; i < 8; i++) titulo[i] = g[i];
+            if (membro_sel < n_membros) nome_de(membros[membro_sel], titulo + 7, 20);
+            desenhar_pagina(&pagina_membro, titulo, sel, topo);
+        } else if (paginas[tela].tipo == P_GRUPO) desenhar_grupo(sel_grupo, topo_grupo);
+        else desenhar_pagina(&paginas[tela], paginas[tela].titulo, sel, topo);
     }
 }
 

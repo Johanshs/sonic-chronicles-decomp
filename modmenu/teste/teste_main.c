@@ -56,24 +56,39 @@ void teste_main(void) {
     *(volatile s32 *)0x020F64FC = 20;
     *(volatile s8 *)0x02160E54 = 0;
     *(volatile u8 *)0x02160E58 = 0;
-    *(volatile s32 *)0x02160EB0 = 8;       /* anéis */
     *(volatile s32 *)0x021A57C0 = 3686;    /* regra 71: 0,90 x 4096 (formato fx/100) */
 
     /* Um grupo de mentira, com o mesmo formato do jogo (docs/CHEATS.md): 0x02160B28
-     * aponta para a lista; a posição 1 é uma criatura cujo primeiro campo é a vtable de
-     * CGamePlayerCreature e cujo +0x1C aponta para o vetor de atributos. A posição 2
-     * fica vazia, para o teste ver o painel recusar escrever nela. */
+     * aponta para a lista de ponteiros. Como num save carregado, a posição 0 fica vazia;
+     * a 1 e a 3 são criaturas (o primeiro campo é a vtable de CGamePlayerCreature, +0x1C
+     * aponta para o vetor de atributos e +0x98 para o nome); a 2 tem um ponteiro para
+     * algo que NÃO é criatura e a 4 tem lixo (texto), como o jogo tem. O painel deve
+     * listar só as duas criaturas. */
     volatile u32 *lista = (volatile u32 *)0x02110000;
-    volatile u32 *criatura = (volatile u32 *)0x02110100;
-    volatile s32 *atributos = (volatile s32 *)0x02110200;
-    lista[1] = (u32)criatura;
-    lista[2] = 0;
-    criatura[0] = 0x020F9200;
-    criatura[7] = (u32)atributos; /* +0x1C */
-    atributos[0] = 33;            /* HP */
-    atributos[0xA0 / 4] = 33;     /* HP máximo */
-    atributos[0xB0 / 4] = 7 << 12; /* PP, em ponto fixo */
+    lista[0] = 0;
+    lista[2] = 0x02110800;        /* aponta para algo que não começa com a vtable */
+    lista[4] = 0x6C616D69;        /* lixo: "imal" */
+    for (int k = 0; k < 2; k++) {
+        volatile u32 *criatura = (volatile u32 *)(0x02110100 + 0x400 * k);
+        volatile s32 *atributos = (volatile s32 *)(0x02110200 + 0x400 * k);
+        lista[1 + 2 * k] = (u32)criatura;
+        criatura[0] = 0x020F9200;
+        criatura[0x1C / 4] = (u32)atributos;
+        criatura[0x98 / 4] = (u32)(k ? "Amy" : "Sonic");
+        atributos[0] = 33 - 10 * k;          /* HP */
+        atributos[0xA0 / 4] = 33 - 10 * k;   /* HP máximo */
+        atributos[0xB0 / 4] = (7 + k) << 12; /* PP, em ponto fixo */
+    }
     *(volatile u32 *)0x02160B28 = (u32)lista;
+
+    /* O esquadrão de mentira: 0x02160C18 aponta para um objeto cujo primeiro campo é o
+     * esquadrão; o esquadrão começa com a vtable de CGamePlayerSquad e tem a carteira
+     * em +0x114. */
+    volatile u32 *esquadrao = (volatile u32 *)0x02111000;
+    esquadrao[0] = 0x020F9C08;
+    esquadrao[0x114 / 4] = 8;     /* anéis na carteira */
+    *(volatile u32 *)0x02110F00 = (u32)esquadrao;
+    *(volatile u32 *)0x02160C18 = 0x02110F00;
 
     CONTADOR = 0;
     for (;;) {

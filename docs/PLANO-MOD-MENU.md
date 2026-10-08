@@ -227,8 +227,8 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.2, e **roda dentro do jogo
-no emulador**. Falta o teste no DS e numa batalha.
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.3, e **roda dentro do jogo
+no emulador**, inclusive numa batalha. Falta o teste no DS.
 
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
   compilado com o **clang e o ld.lld** do LLVM, que já geram código para o ARM946E-S. Sem
@@ -238,17 +238,26 @@ no emulador**. Falta o teste no DS e numa batalha.
   das ~10 mil funções. O laço principal (`main`, 0x02000c8e) chama a leitura dos botões
   (`func_02002708`) uma vez por volta: 30 voltas por segundo na exploração, 60 no
   diálogo. O gancho troca essa chamada (0x02000d50). Conferido na exploração, no diálogo
-  e na tela de perfil; **falta a batalha** (não achei uma jogando às cegas no emulador)
-  e os 30 minutos do critério.
+  e na tela de perfil e, com o save do Capítulo 10, numa batalha (achada por um robô
+  que anda ao acaso). Faltam os 30 minutos do critério.
 - **B2, console: feito no emulador.** A tela volta idêntica byte a byte depois de 100
   aberturas na ROM de teste, e a tela de perfil do jogo volta perfeita.
 - **B3: feito.** Todas as 74 regras (mapa de `analise/tools/mapa_regras.py`), com os 5
   formatos, e a dificuldade dinâmica. Falta ver uma regra mudar uma batalha.
-- **B4: adiantada.** Atributos dos 4 membros do grupo e os anéis, com os endereços do
-  [CHEATS.md](CHEATS.md). Conferido: o painel mostra os mesmos números da tela de perfil e
-  mudar o Luck muda o atributo.
-- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload em 0x021B9500,
-  heap empurrado para depois dele, ARM7 mudado para o fim da ROM.
+- **B4: adiantada.** A carteira de anéis e os atributos de **todos** os personagens (a
+  lista com nome e HP; 11 no Capítulo 10). Conferido: o painel mostra os mesmos números da
+  tela de perfil e da tela de save; mudar o HP do Sonic numa batalha mudou o HP na tela
+  da batalha. A v0.2 tinha dois erros que a sessão dos cheats achou: os anéis eram o
+  contador do HUD (0x02160EB0), não a carteira, e o grupo tinha só 4 posições.
+- **B5, itens: começado.** O inventário é um `CGameObjectInventory` apontado pelo
+  esquadrão (+0x40), com uma lista de objetos `CGameItem`. A função que dá um item
+  (procura a pilha do mesmo item ou cria um novo) parece ser a 0x0202dc6c; falta
+  conferir no emulador antes de chamá-la do painel.
+- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 16 KB
+  do heap (0x023DC000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
+  v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que
+  quebrava os cheats que usam endereços do heap; na v0.3 eles ficam nos mesmos
+  endereços da ROM original (conferido num boot do zero).
 - **Achado no caminho:** o jogo move tudo pelo tempo real entre voltas (objeto Time,
   0x02109b60). Sem cuidado, fechar o painel dava um salto no tempo; o gancho acerta o
   relógio ao fechar.

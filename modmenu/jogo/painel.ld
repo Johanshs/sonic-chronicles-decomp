@@ -1,12 +1,19 @@
 /* O painel dentro do Sonic Chronicles (YWSE).
  *
- * 0x021B9500 é onde o BSS do ARM9 termina e o heap do jogo começaria (OS_GetInitArenaLo,
- * 0x020d8cbc). O enxerto empurra o começo do heap para depois do painel, então este
- * espaço passa a ser só nosso. */
+ * O heap do jogo vai de 0x021B9500 (OS_GetInitArenaLo) até 0x023E0000
+ * (OS_GetInitArenaHi, literal em 0x020d8c9c). O painel mora nos últimos 16 KB, e o
+ * enxerto abaixa o fim do heap para 0x023DC000.
+ *
+ * Por que no FIM, e não no começo (como na v0.2)? O jogo aloca a partir do começo do
+ * heap. Se o começo muda, TODOS os objetos do heap mudam de lugar (na v0.2, 0x2EA0
+ * bytes), e os cheats que usam endereços do heap (como o 0x021D10AC dos anéis) deixam
+ * de funcionar na ROM com o painel. Tirando o espaço do fim, o começo fica igual ao do
+ * jogo original e os endereços do heap também (conferido por testar_no_jogo.py). */
 ENTRY(gancho)
 SECTIONS
 {
-    . = 0x021B9500;
+    . = 0x023DC000;
+    __painel_inicio = .;
     .text : { *(.text.gancho) *(.text*) *(.rodata*) *(.data*) }
     . = ALIGN(4);
     __painel_fim_carregado = .;
@@ -15,3 +22,4 @@ SECTIONS
     __painel_fim = .;
     /DISCARD/ : { *(.ARM.exidx*) *(.ARM.attributes*) *(.comment) }
 }
+ASSERT(__painel_fim <= 0x023E0000, "o painel passou de 16 KB: aumente o espaço (e o enxerto) ou enxugue o código")

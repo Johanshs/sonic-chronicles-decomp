@@ -5,10 +5,12 @@ Uso: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \\
 
 Começa um jogo novo (o roteiro de toques passa pelas telas de abertura até a primeira
 exploração do capítulo 1) e confere:
-  1. o enxerto está lá: o começo do heap mudou e o gancho roda uma vez por volta do laço;
+  1. o enxerto está lá: o fim do heap baixou para o começo do painel, o começo NÃO mudou
+     e o esquadrão está no mesmo endereço que no jogo original (0x022261E0: os cheats que
+     usam endereços do heap continuam valendo), e o gancho roda uma vez por volta do laço;
   2. L + R + SELECT abre o painel (a tela do motor B passa a ser a do painel);
-  3. a página "Grupo: membro 1" acha o Sonic (HP 33/33, Luck 3 no começo do jogo) e
-     mudar o Luck muda o atributo de verdade;
+  3. a página "Aneis" muda a carteira (esquadrão + 0x114), e a página "Grupo" acha o
+     Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar o Luck muda o atributo de verdade;
   4. depois de 5 segundos com o painel aberto, o relógio do jogo NÃO dá o salto (o
      tempo medido na volta seguinte é o de uma volta normal);
   5. depois de fechar, a tela do motor B volta a ser a do jogo.
@@ -20,8 +22,11 @@ import sys
 from desmume.controls import Keys, keymask
 from desmume.emulator import DeSmuME
 
-GANCHO = 0x021B9500
-LITERAL_ARENA = 0x020D8D10
+GANCHO = 0x023DC000                # o painel mora no fim do heap (jogo/painel.ld)
+LITERAL_ARENA_INICIO = 0x020D8D10  # OS_GetInitArenaLo
+LITERAL_ARENA_FIM = 0x020D8C9C     # OS_GetInitArenaHi
+GLOBAL_ESQUADRAO = 0x02160C18
+ESQUADRAO_NO_ORIGINAL = 0x022261E0 # onde o jogo sem painel põe o esquadrão neste ponto
 TIME_DELTA = 0x02109B60 + 0x30     # objeto Time: tempo da última volta
 LISTA_DO_GRUPO = 0x02160B28
 
@@ -74,8 +79,13 @@ def main(rom, pasta):
     captura('1_exploracao')
 
     print('1. o enxerto')
-    confere(m.read_long(LITERAL_ARENA) > 0x021B9500,
-            f'heap do jogo começa em {m.read_long(LITERAL_ARENA):#x}, depois do painel')
+    confere(m.read_long(LITERAL_ARENA_FIM) == GANCHO,
+            f'heap do jogo termina em {m.read_long(LITERAL_ARENA_FIM):#x}, onde o painel começa')
+    confere(m.read_long(LITERAL_ARENA_INICIO) == 0x021B9500,
+            f'começo do heap igual ao original ({m.read_long(LITERAL_ARENA_INICIO):#x})')
+    esquadrao = m.read_long(m.read_long(GLOBAL_ESQUADRAO))
+    confere(esquadrao == ESQUADRAO_NO_ORIGINAL,
+            f'esquadrão em {esquadrao:#x}, o mesmo endereço do jogo original')
     voltas = [0]
     e.memory.register_exec(GANCHO, lambda a, s: voltas.__setitem__(0, voltas[0] + 1))
     quadros(60)
@@ -88,10 +98,19 @@ def main(rom, pasta):
     confere(m.read_long(0x04001000) == 0x10100, 'a tela do motor B é a do painel')
     captura('2_painel')
 
-    print('3. página do grupo')
-    for _ in range(3):
+    print('3. carteira e grupo')
+    for _ in range(2):
         apertar('BAIXO')
-    apertar('A')                           # "Grupo: membro 1"
+    apertar('A')                           # "Aneis"
+    carteira = m.read_long(esquadrao + 0x114)
+    apertar('R')
+    confere(m.read_long(esquadrao + 0x114) == carteira + 10,
+            f'carteira {carteira} -> {m.read_long(esquadrao + 0x114)} (esperado +10)')
+    apertar('B')
+    apertar('BAIXO')
+    apertar('A')                           # "Grupo": a lista de personagens
+    captura('3a_grupo')
+    apertar('A')                           # o primeiro: o Sonic
     lista = m.read_long(LISTA_DO_GRUPO)
     sonic = next(c for c in (m.read_long(lista + 4 * i) for i in range(8))
                  if 0x02000000 <= c < 0x02400000 and m.read_long(c) == 0x020F9200)

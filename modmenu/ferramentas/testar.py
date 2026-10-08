@@ -19,7 +19,8 @@ from desmume.emulator import DeSmuME
 
 CONTADOR = 0x02100000
 R44, R45, R7, R71, NIVEL = 0x020F64C0, 0x020F64BC, 0x020F6470, 0x021A57C0, 0x02160E54
-ANEIS, ATRIBUTOS = 0x02160EB0, 0x02110200  # o grupo de mentira da ROM de teste
+CARTEIRA = 0x02111000 + 0x114             # o esquadrão de mentira da ROM de teste
+ATRIB_SONIC, ATRIB_AMY = 0x02110200, 0x02110600  # os atributos dos dois personagens
 
 TECLAS = {
     'A': Keys.KEY_A, 'B': Keys.KEY_B, 'L': Keys.KEY_L, 'R': Keys.KEY_R,
@@ -136,27 +137,37 @@ def main(rom, pasta):
     e.captura(pasta, '4_dificuldade')
     e.apertar('B')
     e.apertar('BAIXO')
-    e.apertar('A')                       # "Aneis"
+    e.apertar('A')                       # "Aneis" (a carteira, no esquadrão)
     e.apertar('R')                       # 8 -> 18
-    confere(e.s32(ANEIS) == 18, f'anéis = {e.s32(ANEIS)} (esperado 18)')
+    confere(e.s32(CARTEIRA) == 18, f'carteira = {e.s32(CARTEIRA)} (esperado 18)')
+    for _ in range(3):
+        e.apertar('ESQ')                 # 18 -> 15
+    confere(e.s32(CARTEIRA) == 15, f'carteira = {e.s32(CARTEIRA)} (esperado 15)')
     e.apertar('B')
     e.apertar('BAIXO')
-    e.apertar('A')                       # "Grupo: membro 1"
+    antes_grupo = bytes(e.mem.unsigned[0x02110000:0x02111000])
+    e.apertar('A')                       # "Grupo": a lista de personagens
+    e.captura(pasta, '4b_grupo')
+    e.apertar('BAIXO')                   # o segundo da lista: a Amy (posição 3)
+    e.apertar('A')
     e.apertar('BAIXO')
     e.apertar('BAIXO')                   # PP (ponto fixo)
     e.apertar('DIR')
-    e.apertar('DIR')                     # 7 -> 9
-    confere(e.s32(ATRIBUTOS + 0xB0) == 9 << 12, f'PP guardado = {e.s32(ATRIBUTOS + 0xB0)} (esperado 9 x 4096)')
-    e.captura(pasta, '4b_membro1')
-    antes_grupo = bytes(e.mem.unsigned[0x02110000:0x02110300])
-    e.apertar('B')
-    e.apertar('BAIXO')
-    e.apertar('A')                       # "Grupo: membro 2", que está vazio
-    e.apertar('DIR')
-    e.apertar('R')
-    confere(bytes(e.mem.unsigned[0x02110000:0x02110300]) == antes_grupo,
-            'membro vazio: o painel não escreveu nada')
-    e.captura(pasta, '4c_membro_vazio')
+    e.apertar('DIR')                     # 8 -> 10
+    confere(e.s32(ATRIB_AMY + 0xB0) == 10 << 12, f'PP da Amy = {e.s32(ATRIB_AMY + 0xB0)} (esperado 10 x 4096)')
+    confere(e.s32(ATRIB_SONIC + 0xB0) == 7 << 12, 'PP do Sonic não mudou')
+    e.captura(pasta, '4c_membro_amy')
+    e.apertar('B')                       # volta à lista
+    e.apertar('BAIXO')                   # dá a volta: o Sonic de novo
+    e.apertar('A')
+    e.apertar('R')                       # HP 33 -> 43
+    confere(e.s32(ATRIB_SONIC) == 43, f'HP do Sonic = {e.s32(ATRIB_SONIC)} (esperado 43)')
+    depois_grupo = bytearray(e.mem.unsigned[0x02110000:0x02111000])
+    esperado = bytearray(antes_grupo)
+    esperado[0x200:0x204] = (43).to_bytes(4, 'little')
+    esperado[0x6B0:0x6B4] = (10 << 12).to_bytes(4, 'little')
+    confere(depois_grupo == esperado,
+            'só o HP do Sonic e o PP da Amy mudaram (nada escrito no "não criatura" nem no lixo)')
 
     print('4. fechar com START')
     e.apertar('START')
