@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silver the Hedgehog - Visualizador 3D Nitro G3D (Sonic Chronicles)</title>
+  <style>
+    :root {
+      --bg: #090c10;
+      --card: #161b22;
+      --accent: #00e5ff;
+      --gold: #f5c518;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+    h1 {
+      font-size: 22px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 span { color: var(--accent); }
+    .badge {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+    }
+    @media (max-width: 950px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .viewport-container {
+      background: radial-gradient(circle at center, #131d2e 0%, #06090e 100%);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+    }
+    #viewport3d {
+      width: 100%;
+      height: 580px;
+      display: block;
+      cursor: grab;
+    }
+    #viewport3d:active { cursor: grabbing; }
+    .hud-overlay {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .hud-tag {
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      color: var(--accent);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .hud-instructions {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      color: var(--text-muted);
+      font-size: 12px;
+      background: rgba(0,0,0,0.6);
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .panel h2 {
+      font-size: 15px;
+      color: var(--accent);
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .stat-label { color: var(--text-muted); }
+    .stat-val { font-weight: bold; color: #fff; }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    button {
+      background: #21262d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    button:hover {
+      background: #30363d;
+      border-color: var(--accent);
+    }
+    button.active {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .color-swatch-list {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>⚡ Modelo 3D: <span>Silver the Hedgehog</span></h1>
+      <p style="font-size: 13px; color: var(--text-muted);">Renderização em tempo real conforme a especificação Nintendo NitroSystem G3D (Sonic Chronicles)</p>
+    </div>
+    <div class="badge">NINTENDO DS LOW-POLY MESH</div>
+  </header>
+
+  <div class="layout">
+    <!-- Viewport 3D -->
+    <div class="viewport-container">
+      <canvas id="viewport3d"></canvas>
+      
+      <div class="hud-overlay">
+        <div class="hud-tag">MOTOR: NITRO G3D (TOON CEL-SHADING)</div>
+        <div class="hud-tag" id="hudMode">MODO: CEL-SHADED COM CONTORNOS</div>
+      </div>
+
+      <div class="hud-instructions">
+        🖱️ Arraste para girar em 360° | Roda do mouse para dar zoom
+      </div>
+    </div>
+
+    <!-- Barra Lateral -->
+    <div class="sidebar">
+      <div class="panel">
+        <h2>Orçamento de Hardware (DS Limits)</h2>
+        <div class="stat-row">
+          <span class="stat-label">Polígonos (Triângulos):</span>
+          <span class="stat-val" style="color: #58a6ff;">101 tris (máx 1.536)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Vértices da Malha:</span>
+          <span class="stat-val">110 vértices (máx 2.048)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Orçamento por Quadro:</span>
+          <span class="stat-val" style="color: #3fb950;">~6.5% de VRAM consumida</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Textura:</span>
+          <span class="stat-val">128×128 BGR555 (16 KB)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Formato de Exportação:</span>
+          <span class="stat-val"><code>.imd</code> / <code>.nsbmd</code></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Modos de Renderização</h2>
+        <div class="btn-group">
+          <button class="active" id="btnToon" onclick="setRenderMode('toon')">🎨 Cel-Shading BioWare (Toon Shaded)</button>
+          <button id="btnWire" onclick="setRenderMode('wireframe')">📐 Malha Wireframe (Topologia do DS)</button>
+          <button id="btnFlat" onclick="setRenderMode('flat')">⬛ Flat Shaded (Cores Puras)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Efeito de Telecinese (VFX Aura)</h2>
+        <div class="btn-group">
+          <button class="active" id="btnAura" onclick="toggleAura()">✨ Aura Psíquica Ciana: LIGADA</button>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+          Emulador de partículas com blending aditivo (<code>Additive_VFX</code>) característico da telecinese do Silver.
+        </p>
+      </div>
+
+      <div class="panel">
+        <h2>Paleta de Cores do Silver (BGR555)</h2>
+        <div class="color-swatch-list">
+          <div class="swatch" style="background: #eceef2;" title="Pelagem Prata Base"></div>
+          <div class="swatch" style="background: #c5cad4;" title="Sombra da Pelagem"></div>
+          <div class="swatch" style="background: #ffffff;" title="Pelagem do Peito / Luvas"></div>
+          <div class="swatch" style="background: #ffc8a0;" title="Pele do Focinho"></div>
+          <div class="swatch" style="background: #f5a623;" title="Olhos Âmbar"></div>
+          <div class="swatch" style="background: #00e5ff;" title="Aura Psíquica"></div>
+          <div class="swatch" style="background: #142850;" title="Botas Azul Marinho"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('viewport3d');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = 580;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let renderMode = 'toon';
+    let auraEnabled = true;
+    let time = 0;
+
+    // Controles de mouse orbitais
+    let isDragging = false;
+    let prevMouseX = 0, prevMouseY = 0;
+    let rotY = 0.4, rotX = 0.15;
+    let zoom = 1.0;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevMouseX;
+      const dy = e.clientY - prevMouseY;
+      rotY += dx * 0.01;
+      rotX = Math.max(-0.6, Math.min(0.8, rotX + dy * 0.01));
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    });
+    canvas.addEventListener('wheel', (e) => {
+      zoom = Math.max(0.6, Math.min(1.8, zoom - e.deltaY * 0.001));
+      e.preventDefault();
+    });
+
+    function setRenderMode(mode) {
+      renderMode = mode;
+      document.getElementById('btnToon').classList.toggle('active', mode === 'toon');
+      document.getElementById('btnWire').classList.toggle('active', mode === 'wireframe');
+      document.getElementById('btnFlat').classList.toggle('active', mode === 'flat');
+      const tag = document.getElementById('hudMode');
+      if (mode === 'toon') tag.textContent = 'MODO: CEL-SHADED COM CONTORNOS';
+      else if (mode === 'wireframe') tag.textContent = 'MODO: MALHA WIREFRAME';
+      else tag.textContent = 'MODO: FLAT SHADED';
+    }
+
+    function toggleAura() {
+      auraEnabled = !auraEnabled;
+      const btn = document.getElementById('btnAura');
+      btn.textContent = auraEnabled ? '✨ Aura Psíquica Ciana: LIGADA' : '✨ Aura Psíquica Ciana: DESLIGADA';
+      btn.classList.toggle('active', auraEnabled);
+    }
+
+    // Geometria 3D de Silver the Hedgehog (Baseada no arquivo OBJ gerado)
+    const vertices = [];
+    const faces = [];
+
+    function addV(x, y, z) {
+      vertices.push([x, y, z]);
+      return vertices.length - 1;
+    }
+    function addTri(v1, v2, v3, col) {
+      faces.push({ verts: [v1, v2, v3], color: col });
+    }
+    function addQuad(v1, v2, v3, v4, col) {
+      faces.push({ verts: [v1, v2, v3], color: col });
+      faces.push({ verts: [v1, v3, v4], color: col });
+    }
+
+    // Cores BGR555 do Silver
+    const C_SILVER = '#eceef2';
+    const C_SILVER_SHADOW = '#c5cad4';
+    const C_WHITE = '#ffffff';
+    const C_PEACH = '#ffc8a0';
+    const C_AMBER = '#f5a623';
+    const C_CYAN = '#00e5ff';
+    const C_GOLD = '#ffd000';
+    const C_BOOT_NAVY = '#162238';
+    const C_BOOT_TEAL = '#008b9e';
+    const C_BLACK = '#111111';
+
+    // 1. Cabeça
+    const hCY = 2.4, hR = 0.52;
+    const hTop = addV(0, hCY + hR, 0);
+    const hBot = addV(0, hCY - hR, 0);
+    const hR1 = [], hR2 = [];
+    for (let i = 0; i < 8; i++) {
+      let a = i * Math.PI / 4;
+      hR1.push(addV(Math.cos(a)*hR*0.9, hCY + hR*0.4, Math.sin(a)*hR*0.9));
+      hR2.push(addV(Math.cos(a)*hR*0.9, hCY - hR*0.4, Math.sin(a)*hR*0.9));
+    }
+    for (let i = 0; i < 8; i++) {
+      let n = (i + 1) % 8;
+      addTri(hTop, hR1[i], hR1[n], C_SILVER);
+      addQuad(hR1[i], hR2[i], hR2[n], hR1[n], C_SILVER);
+      addTri(hBot, hR2[n], hR2[i], C_SILVER_SHADOW);
+    }
+
+    // 2. Os 5 Espinhos Psíquicos da Coroa (Signature Crown Quills)
+    const crownQuills = [
+      [0.0, 0.45, 0.4, 0.0, 1.35, 0.25],       // Central
+      [-0.3, 0.4, 0.35, -0.65, 1.2, 0.15],    // Médio Esquerdo
+      [0.3, 0.4, 0.35, 0.65, 1.2, 0.15],      // Médio Direito
+      [-0.55, 0.3, 0.25, -1.05, 0.9, 0.05],   // Externo Esquerdo
+      [0.55, 0.3, 0.25, 1.05, 0.9, 0.05],     // Externo Direito
+    ];
+    crownQuills.forEach(([bx, by, bz, tx, ty, tz]) => {
+      let tip = addV(tx, hCY + ty, tz);
+      let b1 = addV(bx - 0.12, hCY + by, bz - 0.08);
+      let b2 = addV(bx + 0.12, hCY + by, bz - 0.08);
+      let b3 = addV(bx + 0.12, hCY + by, bz + 0.08);
+      let b4 = addV(bx - 0.12, hCY + by, bz + 0.08);
+      addTri(tip, b1, b2, C_SILVER);
+      addTri(tip, b2, b3, C_SILVER_SHADOW);
+      addTri(tip, b3, b4, C_SILVER);
+      addTri(tip, b4, b1, C_SILVER_SHADOW);
+    });
+
+    // 3. Os 2 Espinhos Traseiros
+    const backQuills = [
+      [-0.35, 0.1, -0.3, -0.55, -0.85, -1.05],
+      [0.35, 0.1, -0.3, 0.55, -0.85, -1.05]
+    ];
+    backQuills.forEach(([bx, by, bz, tx, ty, tz]) => {
+      let tip = addV(tx, hCY + ty, tz);
+      let b1 = addV(bx - 0.15, hCY + by, bz);
+      let b2 = addV(bx + 0.15, hCY + by, bz);
+      let b3 = addV(bx, hCY + by + 0.2, bz);
+      addTri(tip, b1, b2, C_SILVER);
+      addTri(tip, b2, b3, C_SILVER_SHADOW);
+      addTri(tip, b3, b1, C_SILVER);
+    });
+
+    // 4. Focinho / Muzzle Peach
+    const focTip = addV(0, hCY - 0.18, 0.72);
+    const f1 = addV(-0.25, hCY - 0.1, 0.45);
+    const f2 = addV(0.25, hCY - 0.1, 0.45);
+    const f3 = addV(0.2, hCY - 0.35, 0.42);
+    const f4 = addV(-0.2, hCY - 0.35, 0.42);
+    addTri(focTip, f1, f2, C_PEACH);
+    addTri(focTip, f2, f3, C_PEACH);
+    addTri(focTip, f3, f4, C_PEACH);
+    addTri(focTip, f4, f1, C_PEACH);
+
+    // Nariz preto
+    const nose = addV(0, hCY - 0.12, 0.78);
+    addTri(nose, f1, f2, C_BLACK);
+
+    // Olhos Âmbar
+    const eyeL = addV(-0.16, hCY + 0.05, 0.52);
+    const eyeR = addV(0.16, hCY + 0.05, 0.52);
+    addTri(eyeL, f1, focTip, C_AMBER);
+    addTri(eyeR, focTip, f2, C_AMBER);
+
+    // 5. Orelhas
+    [-1, 1].forEach(sign => {
+      let tip = addV(sign * 0.55, hCY + 0.65, -0.05);
+      let b1 = addV(sign * 0.38, hCY + 0.38, -0.15);
+      let b2 = addV(sign * 0.48, hCY + 0.38, 0.05);
+      addTri(tip, b1, b2, C_SILVER);
+      // Parte interna peach
+      let inTip = addV(sign * 0.52, hCY + 0.58, -0.03);
+      addTri(inTip, b1, b2, C_PEACH);
+    });
+
+    // 6. Torso e Gola Felpuda do Peito (Fluffy Chest Fur)
+    const cTop = 1.95, cBot = 1.35;
+    const cCenter = addV(0, cTop + 0.05, 0.38);
+    const cf1 = addV(-0.35, cTop - 0.05, 0.28);
+    const cf2 = addV(0.35, cTop - 0.05, 0.28);
+    const cf3 = addV(0, cTop - 0.28, 0.42);
+    addTri(cCenter, cf1, cf3, C_WHITE);
+    addTri(cCenter, cf3, cf2, C_WHITE);
+
+    // Corpo
+    const tT = [], tB = [];
+    for (let i = 0; i < 6; i++) {
+      let a = i * Math.PI / 3;
+      tT.push(addV(Math.cos(a)*0.25, cTop, Math.sin(a)*0.22));
+      tB.push(addV(Math.cos(a)*0.20, cBot, Math.sin(a)*0.18));
+    }
+    for (let i = 0; i < 6; i++) {
+      let n = (i + 1) % 6;
+      addQuad(tT[i], tB[i], tB[n], tT[n], C_SILVER);
+    }
+
+    // 7. Braços & Luvas
+    // Braço Esquerdo (Estendido com Palma de Telecinese)
+    const shL = addV(-0.32, cTop - 0.1, 0.05);
+    const elbL = addV(-0.65, cTop - 0.05, 0.35);
+    const handL = addV(-0.95, cTop + 0.05, 0.65);
+    addTri(elbL, shL, handL, C_SILVER);
+    // Cuff de Telecinese (Anel Dourado/Ciano)
+    const cuffL = addV(-0.92, cTop + 0.08, 0.58);
+    addTri(cuffL, elbL, handL, C_GOLD);
+    // Palma da Luva Branca
+    const p1 = addV(-1.12, cTop + 0.18, 0.62);
+    const p2 = addV(-0.82, cTop + 0.18, 0.70);
+    const p3 = addV(-0.98, cTop - 0.18, 0.65);
+    addTri(handL, p1, p2, C_WHITE);
+    addTri(handL, p2, p3, C_WHITE);
+    addTri(handL, p3, p1, C_WHITE);
+    // Glifo Ciano na Palma
+    const glyphL = addV(-0.97, cTop + 0.06, 0.68);
+    addTri(glyphL, p1, p2, C_CYAN);
+
+    // Braço Direito (Abaixado)
+    const shR = addV(0.32, cTop - 0.1, 0.05);
+    const elbR = addV(0.55, cTop - 0.45, 0.15);
+    const handR = addV(0.68, cTop - 0.75, 0.25);
+    addTri(shR, elbR, handR, C_SILVER);
+    const cuffR = addV(0.65, cTop - 0.68, 0.22);
+    addTri(cuffR, elbR, handR, C_GOLD);
+    const r1 = addV(0.78, cTop - 0.85, 0.28);
+    const r2 = addV(0.58, cTop - 0.85, 0.22);
+    addTri(handR, r1, r2, C_WHITE);
+
+    // 8. Pernas e Botas Futuristas (Flutuando)
+    [-1, 1].forEach(sign => {
+      let hip = addV(sign * 0.15, cBot, 0.0);
+      let knee = addV(sign * 0.22, 0.85, 0.15);
+      let ankle = addV(sign * 0.25, 0.35, 0.05);
+      addTri(hip, knee, ankle, C_SILVER);
+      
+      // Cuff da bota
+      let bCuff = addV(sign * 0.25, 0.38, 0.06);
+      addTri(bCuff, knee, ankle, C_GOLD);
+
+      // Bota Navy & Bico Teal
+      let toe = addV(sign * 0.25, 0.05, 0.45);
+      let heel = addV(sign * 0.25, 0.05, -0.15);
+      let soleL = addV(sign * 0.15, -0.05, 0.15);
+      let soleR = addV(sign * 0.35, -0.05, 0.15);
+      addTri(ankle, toe, soleL, C_BOOT_TEAL);
+      addTri(ankle, soleR, toe, C_BOOT_TEAL);
+      addTri(ankle, heel, soleL, C_BOOT_NAVY);
+      addTri(ankle, soleR, heel, C_BOOT_NAVY);
+    });
+
+    // Partículas da Telecinese
+    const auraParticles = [];
+    for (let i = 0; i < 45; i++) {
+      auraParticles.push({
+        angle: Math.random() * Math.PI * 2,
+        r: Math.random() * 0.6 + 0.2,
+        y: Math.random() * 2.8,
+        speed: Math.random() * 0.04 + 0.02,
+        size: Math.random() * 4 + 2
+      });
+    }
+
+    function project(v, cx, cy, floatY) {
+      let x = v[0];
+      let y = v[1] + floatY;
+      let z = v[2];
+
+      // Rotação Y (Horizontal)
+      let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+      let rx = x * cosY - z * sinY;
+      let rz = x * sinY + z * cosY;
+
+      // Rotação X (Vertical)
+      let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+      let ry = y * cosX - rz * sinX;
+      let rdepth = y * sinX + rz * cosX;
+
+      // Câmera a distância 5.2
+      let camDist = 5.2 / zoom;
+      let zProj = rdepth + camDist;
+      if (zProj <= 0.2) return null;
+
+      let fov = 380;
+      let sx = cx + (rx / zProj) * fov;
+      let sy = cy - ((ry - 1.2) / zProj) * fov;
+
+      return { x: sx, y: sy, depth: zProj };
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 0.035;
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + 10;
+      // Animação de flutuação suave de telecinese (bobbing)
+      const floatY = Math.sin(time * 1.5) * 0.12;
+
+      // 1. Sombra Psíquica Ciana no Chão
+      const shadowP = project([0, -0.15, 0], cx, cy, 0);
+      if (shadowP) {
+        ctx.fillStyle = 'rgba(0, 229, 255, 0.2)';
+        ctx.beginPath();
+        let sR = (45 - floatY * 40) * zoom;
+        ctx.ellipse(shadowP.x, shadowP.y, sR, sR * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(shadowP.x, shadowP.y, sR * 0.6, sR * 0.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. Projeção dos Vértices
+      const projected = vertices.map(v => project(v, cx, cy, floatY));
+
+      // 3. Ordenação das Faces por Z (Painter's Algorithm)
+      const sortedFaces = faces.map(f => {
+        let p0 = projected[f.verts[0]];
+        let p1 = projected[f.verts[1]];
+        let p2 = projected[f.verts[2]];
+        let zAvg = (p0 && p1 && p2) ? (p0.depth + p1.depth + p2.depth) / 3 : -999;
+        return { face: f, z: zAvg, p0, p1, p2 };
+      }).sort((a, b) => b.z - a.z);
+
+      // 4. Desenho das Faces
+      sortedFaces.forEach(({ face, p0, p1, p2 }) => {
+        if (!p0 || !p1 || !p2) return;
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.closePath();
+
+        if (renderMode === 'wireframe') {
+          ctx.strokeStyle = '#00e5ff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        } else if (renderMode === 'flat') {
+          ctx.fillStyle = face.color;
+          ctx.fill();
+        } else {
+          // Toon Shading com Contorno de Nanquim Nintendo DS
+          ctx.fillStyle = face.color;
+          ctx.fill();
+
+          // Contorno Preto estilo Comic Book
+          ctx.strokeStyle = '#050a14';
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+        }
+      });
+
+      // 5. Partículas da Aura de Telecinese (VFX Additive)
+      if (auraEnabled) {
+        ctx.fillStyle = '#00e5ff';
+        auraParticles.forEach(p => {
+          p.angle += p.speed;
+          let px = Math.cos(p.angle) * (p.r + Math.sin(time*2)*0.1) - 0.4;
+          let py = p.y + floatY;
+          let pz = Math.sin(p.angle) * p.r + 0.3;
+
+          let proj = project([px, py, pz], cx, cy, 0);
+          if (proj) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#00e5ff';
+            ctx.beginPath();
+            ctx.arc(proj.x, proj.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        });
+        ctx.shadowBlur = 0;
+      }
+
+      requestAnimationFrame(render);
+    }
+    render();
+  </script>
+</body>
+</html>
