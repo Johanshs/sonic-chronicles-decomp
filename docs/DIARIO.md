@@ -313,6 +313,33 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   múltiplo de 4, porque o `.o` diz alinhamento 1 e eu acreditei. O linker alinha a 4
   mesmo assim, e o pedaço do jogo seguinte começava 3 bytes antes do que devia.
 
+## 19. Os arquivos do jogo (Fase 2.4)
+- **O que a ROM não diz.** O linker põe o código de cada `.cpp` junto, mas não marca
+  onde um acaba. Nomes de arquivo não há (nem em strings de `assert`), e todas as 4.942
+  funções do jogo começam em múltiplo de 4, então o alinhamento também não ajuda.
+- **O que o compilador mostrou.** Compilei arquivos de teste com a 2.0 e olhei o `.o`:
+  cada string literal vai numa seção `.data` própria, logo depois da função que a usa
+  primeiro, e uma string repetida no mesmo arquivo vira uma cópia só. No jogo há 105
+  strings com várias cópias (`"BackButton"` tem 9): uma por arquivo. Daí a regra:
+  quem lê a mesma cópia está no mesmo arquivo. E as funções inline vão para o fim do
+  `.text` do arquivo.
+- **A ordem do linker é uma só.** As 149 funções da tabela `.ctor` (os construtores de
+  variáveis globais, um por arquivo que tem) estão em ordem crescente de endereço, e os
+  dados que cada uma escreve também: a ordem dos arquivos é a mesma no código e nos
+  dados.
+- **O resultado:** 175 pedaços com certeza de um arquivo só, 38% dos bytes do código do
+  jogo, em `delinks.txt` com a ROM idêntica. 338 pares de cópias da mesma string
+  conferem a regra, sem nenhuma falha. O `dsd` ainda pegou um caso que eu não tinha
+  previsto: dois pedaços do `GameModeInventory` com o código numa ordem e as strings na
+  outra ("ciclo na ordem de link"). Era uma função inline no fim do arquivo, que lê
+  uma string do começo dele: os dois pedaços são o mesmo arquivo, e a ferramenta agora
+  junta pedaços assim.
+- **Erro nº 11:** no meu teste, cada arquivo tinha um bloco só de variáveis, antes das
+  strings, e eu ia cortar o `.data` em cada variável que viesse depois de uma string.
+  No jogo, os typeinfo e as vtables ficam intercalados com os nomes das classes, e 18
+  funções liam strings dos dois lados de um desses "cortes". Larguei esse corte; a
+  regra das cópias de strings não depende dele.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de

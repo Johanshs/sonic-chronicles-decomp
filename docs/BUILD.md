@@ -218,7 +218,38 @@ A configuração versionada sai das três, nesta ordem, a partir da de antes da 
 python3 decomp/tools/ligar_bibliotecas.py NitroSystem work/NitroSystem work/bibliotecas/nitrosystem 0x020c8278 0x020d4394 --aplicar
 python3 decomp/tools/ligar_bibliotecas.py NitroSDK work/NitroSDK work/bibliotecas/nitrosdk 0x020d4394 0x020e09d0 --aplicar
 python3 decomp/tools/ligar_bibliotecas.py MSL - work/bibliotecas/msl 0x020e09d0 0x020eccb4 --aplicar
+python3 decomp/tools/mapa_arquivos.py --aplicar                  # o código do jogo (abaixo)
 ```
+
+## O mapa de arquivos do jogo
+
+A BioWare compilou o jogo arquivo por arquivo, e o linker pôs o `.text` de cada `.o`
+inteiro, um depois do outro, na mesma ordem no `.text` e no `.data`. A ROM não diz onde
+um arquivo acaba. `decomp/tools/mapa_arquivos.py` recupera parte disso com uma regra
+que dá para provar:
+
+- **Uma string literal pertence ao arquivo que a usa.** O compilador guarda uma cópia
+  só de cada string repetida dentro de um arquivo, mas não junta entre arquivos:
+  `"BackButton"` aparece 9 vezes no `.data`. Então duas funções que leem a mesma cópia
+  estão no mesmo arquivo, e tudo o que fica entre elas no `.text` também.
+- **A ordem dos dados é a do código.** Se um pedaço vem antes no `.text` mas tem
+  strings depois das de outro, os dois são o mesmo arquivo. Acontece com função inline
+  (o `GameModeInventory` tem uma no fim do `.text`, que lê uma string do começo do
+  `.data` do arquivo).
+- **A conferência:** funções que leem cópias diferentes da mesma string têm de cair em
+  pedaços diferentes. São 338 pares, e todos caem. Se um falhasse, o script pararia.
+
+O resultado são **175 "núcleos"**, com 604 das 4.915 funções do jogo e 38% dos bytes do
+código dele. Cada um está em `delinks.txt` como `jogo/<Classe>_<endereço>.cpp` (a
+classe mais citada nos nomes das funções, quando há uma), com o `.text` e, em 171, as
+strings no `.data`. Não são `complete`: o build continua usando o código do jogo, só que
+cortado em um `.o` por arquivo, e a ROM sai idêntica.
+
+Um núcleo é um pedaço **de um arquivo só**, mas pode ser menor que o arquivo de verdade:
+as funções da ponta que não usam strings ficam de fora, nos `_dsd_gap`. Dois detalhes
+que o `dsd` exige: o `.text` vai até o múltiplo de 4 (os 2 bytes de enchimento depois de
+uma função Thumb são do `.o` dela) e o `.data` acaba num começo de símbolo (o `dsd` dá a
+um dado sem tamanho os bytes até o próximo).
 
 ## As ferramentas e as versões
 

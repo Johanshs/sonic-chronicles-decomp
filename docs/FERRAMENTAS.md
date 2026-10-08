@@ -155,6 +155,7 @@ fáceis de testar no PC. As versões *matching* (os mesmos bytes do jogo) ficam 
 | `nitrosystem.sh` | o mesmo para a NitroSystem 071126 (3D, 2D, som); precisa do `nitrosdk.sh` antes |
 | `msl.sh` | tira os `.o` do MSL de dentro dos `.a` do CodeWarrior 2.0 sp2, para `work/bibliotecas/msl/` |
 | `ligar_bibliotecas.py` | divide a região de uma biblioteca em arquivos e faz o build ligar os `.o` compilados dela |
+| `mapa_arquivos.py` | acha pedaços do código do jogo que com certeza são de um arquivo só (pelas strings) e os grava em `delinks.txt` com `--aplicar` |
 | `preparar_link.py` | (o `montar_rom.sh` chama) acerta as cópias dos `.o` das bibliotecas para o link sair igual ao da Nintendo |
 | `conferir_chamadas.py arquivo.o ...` | confere os nomes pelas chamadas: o `bl` de X no jogo cai na função Y que o fonte chama? |
 | `versao_msl.sh` | qual versão do CodeWarrior forneceu o MSL do jogo |

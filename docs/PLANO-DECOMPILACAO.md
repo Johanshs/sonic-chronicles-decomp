@@ -97,6 +97,10 @@ precisa ser reescrito do zero.
   fonte" (*translation unit*). O jogo foi compilado arquivo por arquivo, e as
   classes ajudam a adivinhar a divisão (ex.: tudo de `CTlkTable` num `TlkTable.cpp`).
   **Pronto quando:** o build continua idêntico com o ARM9 dividido em TUs.
+  🟡 175 pedaços que com certeza são de um arquivo só (38% dos bytes do código do jogo)
+  já estão em `delinks.txt`, com a ROM idêntica (`decomp/tools/mapa_arquivos.py`, a
+  regra em [BUILD.md](BUILD.md#o-mapa-de-arquivos-do-jogo)). Falta achar onde cada um
+  começa e acaba de verdade e dividir o resto.
 
 **Métrica a partir daqui:** % de bytes de código em C com match (relatório do `objdiff`).
 
