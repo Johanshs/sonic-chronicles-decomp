@@ -195,6 +195,9 @@ de dano, com nome, descrição e textos de dano novos, posta no `Combo7` do Soni
   pinta de verde e toca no centro) acerta 4 dos 5 anéis no melhor caso; com isso o jogo
   marca "Missed!" e o dano sai 0. Fica registrado como está: o golpe novo existe e é
   calculado pelo jogo, mas o dano ainda precisa de alguém jogando o minijogo à mão.
+- **Pendente (projeto pausado em 2026-10-08):** medir o dano do Sonic Boom jogando o
+  minijogo à mão; depois, os próximos conteúdos planejados, ainda não começados: uma
+  variação de inimigo (`creatures.gda`/`squads.gda`) e um diálogo editado.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
