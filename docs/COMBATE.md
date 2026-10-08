@@ -616,9 +616,17 @@ com 10%, 50% e 100% do HP.
   nível 1 = `3` (POW Candy ou Health Seed), nível 2 = `0x40007` (POW Gum ou Health Leaf),
   nível 3 = `0x50008` (Health Root ou POW Drink). Bate com o diário do jogo. O mesmo
   formato aparece no Chao "item extra" (código 23).
-- **Lojas**: `stores.gda` aponta as 5 tabelas `Store1`…`Store5`, com 3 colunas sem nome:
-  item, preço de compra e preço de venda (**média**: Health Seed custa 6 e vende por 3,
-  igual ao `MinimumCost`).
+- **Lojas**: `stores.gda` aponta as 5 tabelas `Store1`…`Store5` (0 Central City,
+  1 Station Square, 2 Kron Quartermaster, 3 Civilian Supply Depot, 4 The Overmart), com 3
+  colunas sem nome: item, preço de compra e preço de venda (**alta**: um item novo posto
+  com preço 15 custou 15 anéis no jogo; Health Seed custa 6 e vende por 3).
+  **Como o jogo abre uma loja** (**alta**, conferido no emulador): o evento 40 (o mesmo
+  código de evento dos gatilhos de área e das respostas de conversa; a conversa
+  `kron_store` usa evento 40 com dado 2) cai no tratador `0x0207be48`, que grava o dado
+  (a linha de `stores.gda`) em `GameModeStateStore+4` e pede o **modo 11** ao
+  `ModeSwitcher` (global `0x02109ba0`; `0x020305a4` pede um modo, `0x02030604` faz a
+  troca, e o `switch` em `0x02030d18` cria o `GameModeStore` no caso 11). Chamar esse
+  tratador com outro índice abre qualquer loja em qualquer lugar.
 - **Recompensas**: `rewards.gda` (70 linhas: missões) dá `XP` e até 6 itens; as colunas
   `Copper`, `Silver`, `Gold` ainda não foram ligadas ao código (**baixa**).
 
@@ -696,6 +704,9 @@ completa, com valores, sai de `combate_tabelas.py` (`regras.md`). As conhecidas:
   (veneno, regeneração) são aplicados.
 - A ligação de `CombatAI.gda` às criaturas; o status 9; o bit 27 de `AllowEquip`;
   `Random` = −2.
+- **Onde as lojas ficam no jogo**: só a do Kron (conversa `kron_store`, evento 40, dado 2)
+  foi achada; nenhum gatilho de área usa o evento 40. As outras quatro devem ser abertas
+  por outro caminho (talvez o mapa-múndi). Também falta a regra de ordem da lista da loja.
 
 ## 17. Como conferir
 
@@ -705,5 +716,6 @@ completa, com valores, sai de `combate_tabelas.py` (`regras.md`). As conhecidas:
 | uma função auxiliar | execute-a isolada com o Unicorn: carregue `arm9.bin` em 0x02000000, ponha os argumentos em r0–r3 e um endereço de retorno em lr (funções Thumb: endereço \| 1) |
 | um valor de tabela | `sonic-mod unpack` e abra a planilha; `combate_tabelas.py` decodifica os `.SPL`/`.ITM` |
 | no jogo | mude um valor (ex.: regra 44, o k do grupo) com o `sonic-mod pack` e compare o dano no emulador |
+| um item novo numa loja | `analise/tools/testar_item_loja.py rom_mod.nds save.sav ITEM LOJA PRECO CURA pasta` abre a loja pelo tratador do jogo, compra e usa o item, e confere anéis, inventário e HP na RAM |
 
 A história de como cada parte foi descoberta está no [diário](DIARIO.md#11-o-combate).

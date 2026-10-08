@@ -58,19 +58,26 @@ coluna `Name` de `Items.csv`.
 `arquivos/test/ItemN.ITM`. Por exemplo, `Item1.ITM` (Health Seed) tem
 `HealHP ... 50`, e trocar o 50 muda quanto o item cura.
 
-### Adicionar um item novo (experimental)
+### Adicionar um item novo
 1. Em `Items.csv`, copie a linha de um item parecido para o fim e dê um `ID` novo
-   (o próximo número livre).
+   (o próximo número livre: o jogo original vai até 287).
 2. Crie dois textos novos em `textos/en.csv`, por exemplo `990100,Chili Dog` e
-   `990101,Recupera muita vida.`, e ponha `990100` em `Name` e `990101` em `Description`.
-3. Copie `arquivos/test/Item1.ITM` para `arquivos/test/Item900.ITM`, edite os
-   efeitos e ponha `Item900.ITM` em `BaseItem1`. Arquivos com nome novo são
-   **adicionados** ao pacote.
-4. Para o item aparecer no jogo, coloque-o numa loja (`Store1.csv`... as colunas
-   ainda não têm nome; a primeira parece ser o ID do item) ou numa recompensa.
+   `990101,Restores 321 HP.`, e ponha `990100` em `Name` e `990101` em `Description`.
+3. Copie `arquivos/test/Item1.ITM` para `arquivos/test/Item288.ITM`, edite os
+   efeitos (ex.: `HealHP ... 321`) e ponha `Item288.ITM` em `BaseItem1`. Arquivos
+   com nome novo são **adicionados** ao pacote.
+4. Para o item aparecer no jogo, coloque-o numa loja: em `Store1.csv`... `Store5.csv`
+   acrescente uma linha `N,288,15,7` (as colunas ainda não têm nome; são o **ID do
+   item**, o **preço de compra** e o **preço de venda**). Ou numa recompensa
+   (`rewards.csv`).
 
-Atenção: este fluxo é **experimental**. A mecânica de "tabela + texto novo" foi
-testada no jogo; um item novo numa loja ainda não.
+Testado no emulador com o item 288 "Chili Dog" (cura 321 HP) nas 5 lojas: ele aparece
+na lista da loja (no topo; a regra de ordem da lista ainda não é conhecida), a
+descrição e o "HP +321" saem do texto novo e do `.ITM`, a compra tira 15 anéis, o item
+entra no inventário em "Consumables" e, usado no Sonic, o HP sobe exatamente 321.
+O roteiro que prova isso é `analise/tools/testar_item_loja.py` no repositório.
+Ainda não testado: o texto só existe em inglês (se o DS estiver em outro idioma, crie
+também em `fr.csv`, `de.csv`...), e itens de equipamento ou Chao novos.
 
 ### Remover um item
 Prefira **tirar o item das lojas e recompensas** a apagar a linha de `Items.csv`.

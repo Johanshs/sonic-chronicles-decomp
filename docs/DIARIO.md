@@ -146,9 +146,43 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 20. Conteúdo novo: um item à venda numa loja
+O `sonic-mod` já editava tabelas e textos; faltava provar que um item **novo** (uma linha
+que não existia em `Items.gda`) funciona no jogo. O teste: o item 288 "Chili Dog", com
+dois textos novos e um `Item288.ITM` novo (`HealHP 321`), posto nas 5 lojas.
+
+- **O problema: chegar a uma loja.** O save de teste está no capítulo 10, em Nocturne, e
+  andar até uma loja com toques roteirizados seria longo e frágil. Procurei como o jogo
+  abre uma loja. Nos dados, só a conversa `kron_store` tem uma ação com o código 40 e o
+  dado 2, e a loja 2 é a "Kron Quartermaster". Os códigos de evento das conversas são os
+  mesmos dos gatilhos das áreas (`EventID` de `Conversations.gda` também usa 23, por
+  exemplo), então 40 parecia "abrir a loja N".
+- **No código.** A troca de modos de jogo (`0x02030604`) é um `switch` (em `0x02030d18`)
+  que cria um objeto por modo; o caso 11 cria o `GameModeStore`. Procurei quem pede o
+  modo 11 a `0x020305a4` (a função que pede um modo): só uma função, `0x0207be48`. Ela
+  grava o seu argumento `r3` em `GameModeStateStore+4` e pede o modo 11. É o tratador do
+  evento 40, e o argumento é a linha de `stores.gda`.
+- **Chamar uma função do jogo de fora.** Primeiro tentei mudar o PC do emulador dentro
+  de um *callback* de execução: não funcionou: o tratador nunca rodou (provavelmente porque o
+  DeSmuME já tinha buscado a próxima instrução). Funcionou trocar, por um quadro, o `bl` do laço principal por
+  um `bl` para um trampolim de 24 bytes numa área livre da RAM, que chama o tratador e
+  segue para a função original. **Erro nº 6:** no primeiro trampolim errei o
+  deslocamento do `ldr r2, [pc, #...]` (no Thumb, o `pc` lido é o endereço da instrução
+  + 4, arredondado para baixo a múltiplo de 4), o jogo pulou direto para a função
+  original e a RAM virou lixo. Corrigido, a Overmart abriu.
+- **O resultado.** O Chili Dog aparece na loja (no topo da lista, embora seja a última
+  linha da tabela), com o nome, a descrição e o "HP +321" que o jogo monta a partir do
+  `.ITM`. Comprado, custou 15 anéis e entrou no inventário (`288: 1` na RAM). Usado no
+  Sonic pelo inventário, o HP foi de 100 para 421: **+321, exatamente**. O roteiro
+  `analise/tools/testar_item_loja.py` refaz tudo e confere na RAM; com a ROM original
+  (sem o item) ele falha, como deve: o primeiro da lista é o Med Emitter, que custa 20 e
+  cura 250.
+- Uma surpresa no caminho: aberta na tela de título (sem jogo carregado), a loja mostra o
+  tutorial "Welcome to a store!" e um grupo vazio com tudo em 99.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
-colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
-itens, de personagens), a versão exata do compilador e as partes do combate listadas em
+colunas GDA, onde quatro das cinco lojas ficam no jogo, os limites que o código impõe (número
+máximo de itens, de personagens), a versão exata do compilador e as partes do combate listadas em
 [COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
 [plano](PLANO-DECOMPILACAO.md).
