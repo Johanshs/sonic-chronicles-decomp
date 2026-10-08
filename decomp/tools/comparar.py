@@ -45,6 +45,9 @@ def main():
         return 0
     nome, endereco = sys.argv[2], int(sys.argv[3], 16)
     arm9_path = sys.argv[4] if len(sys.argv) > 4 else "work/extract/arm9/arm9.bin"
+    if nome not in simbolos:
+        print(f"símbolo {nome} não está no .o (use --listar)")
+        return 1
     s = simbolos[nome]
     sec = elf.get_section(s["st_shndx"])
     dados = sec.data()
@@ -56,9 +59,10 @@ def main():
 
     # bytes que o linker ainda vai preencher (relocações dentro da função)
     mascara = set()
-    for nome_rel in (".rel" + sec.name, ".rela" + sec.name):
-        rel = elf.get_section_by_name(nome_rel)
-        if rel is None:
+    # a seção de relocações que vale para ESTA seção (sh_info aponta para ela;
+    # pode haver várias seções .text, por exemplo uma por função de template)
+    for rel in elf.iter_sections():
+        if rel.header.sh_type not in ("SHT_REL", "SHT_RELA") or rel.header.sh_info != s["st_shndx"]:
             continue
         for r in rel.iter_relocations():
             if ini <= r["r_offset"] < ini + tam:

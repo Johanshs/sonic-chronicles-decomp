@@ -7,6 +7,9 @@
 #                 config/YWSE/arm9/delinks.txt. Cada .o tem o código, os
 #                 símbolos (symbols.txt) e as relocações (relocs.txt): onde o
 #                 código aponta para outro endereço, fica uma referência por nome
+#   2b. compilar  os arquivos marcados "complete" em delinks.txt já foram
+#                 decompilados: em vez do pedaço cortado do jogo, entra o .o
+#                 compilado do nosso C++ (src/)
 #   3. lcf        dsd lcf: escreve o script do linker (ordem dos .o na memória)
 #   4. link       mwldarm, o linker original da Metrowerks, junta tudo de novo e
 #                 resolve as referências. Se algum endereço sair diferente, os
@@ -14,8 +17,8 @@
 #   5. rom        dsd rom config + rom build: monta o .nds
 #   6. conferir   dsd check modules (ARM9/ITCM/DTCM) e SHA-1 da ROM inteira
 #
-# Quando o C decompilado entrar (Fase 1+), os .o dele substituem os pedaços
-# correspondentes do passo 2, e este mesmo script prova que nada mudou.
+# Se o C++ de src/ não gerar exatamente os bytes do jogo, a ROM muda e o
+# passo 6 falha: é assim que se prova que a decompilação está certa.
 #
 # Uso: decomp/tools/montar_rom.sh rom_original.nds
 set -euo pipefail
@@ -27,20 +30,32 @@ MWLD="$F/mwccarm/2.0/sp1p5/mwldarm.exe"
 CFG=config/YWSE/arm9/config.yaml
 SAIDA=work/build/sonic_rebuilt.nds
 cd "$REPO"
+# o dsd escreve "[INFO ] ..." a cada passo; esconde só essas linhas
+dsd() { "$DSD" "$@" 2>&1 | { grep -v '^\[INFO \] Load\|^\[INFO \] Saving\|^\[INFO \] Extracting' || true; }; }
 [ -x "$DSD" ] || { echo "faltam ferramentas: rode decomp/tools/ferramentas.sh"; exit 1; }
 
 echo "== 1. extrair (work/extract)"
 rm -rf work/extract
-"$DSD" rom extract --rom "$ROM" --output-path work/extract >/dev/null
+dsd rom extract --rom "$ROM" --output-path work/extract
 python3 decomp/tools/banner_sem_perda.py "$ROM" work/extract/banner
 
 echo "== 2. delink"
 rm -rf work/build
-"$DSD" delink -c "$CFG" >/dev/null
-echo "   $(ls work/build/delinks | wc -l) arquivo(s) .o"
+dsd delink -c "$CFG"
+echo "   $(find work/build/delinks -name '*.o' | wc -l) arquivo(s) .o"
+
+echo "== 2b. compilar o C++ decompilado (src/)"
+"$DSD" json delinks -c "$CFG" | python3 -c '
+import json, sys
+for f in json.load(sys.stdin)["files"]:
+    if f["object_to_link"] != f["delink_file"]:
+        print(f["name"], f["object_to_link"])' | while read -r fonte objeto; do
+    echo "   $fonte"
+    decomp/tools/compilar.sh "$fonte" "$objeto"
+done
 
 echo "== 3. lcf"
-"$DSD" lcf -c "$CFG" >/dev/null
+dsd lcf -c "$CFG"
 
 echo "== 4. link (mwldarm)"
 # -dead: descarta o que ninguém usa; -m Entry: ponto de entrada; -map: gera
@@ -50,20 +65,29 @@ echo "== 4. link (mwldarm)"
     @work/build/objects.txt work/build/arm9.lcf -o work/build/arm9.o
 
 echo "== 5. montar a ROM"
-"$DSD" rom config --elf work/build/arm9.o -c "$CFG" >/dev/null
-"$DSD" rom build --config work/build/build/rom_config.yaml --rom "$SAIDA" >/dev/null
+dsd rom config --elf work/build/arm9.o -c "$CFG"
+dsd rom build --config work/build/build/rom_config.yaml --rom "$SAIDA"
 python3 decomp/tools/crc_area_segura.py "$ROM" "$SAIDA"
 
 echo "== 6. conferir"
-"$DSD" check modules -c "$CFG" --fail 2>&1 | sed 's/^\[INFO \] /   /'
-"$DSD" check symbols -c "$CFG" -e work/build/arm9.o --fail
+dsd check modules -c "$CFG" | sed 's/^\[INFO \] /   /'
+dsd check symbols -c "$CFG" -e work/build/arm9.o --fail
 ESPERADO=$(sha1sum "$ROM" | cut -d' ' -f1)
 OBTIDO=$(sha1sum "$SAIDA" | cut -d' ' -f1)
 echo "   original:      $ESPERADO"
 echo "   reconstruída:  $OBTIDO"
 if [ "$ESPERADO" != "$OBTIDO" ]; then
-    echo "DIFERENTE. Primeiros bytes que mudaram (offset, original, novo):"
-    cmp -l "$ROM" "$SAIDA" | head -10 | awk '{printf "   0x%x %02x %02x\n", $1-1, strtonum("0"$2), strtonum("0"$3)}'
+    echo "DIFERENTE. Primeiros bytes que mudaram:"
+    python3 - "$ROM" "$SAIDA" <<'PY'
+import struct, sys
+a, b = (open(p, "rb").read() for p in sys.argv[1:3])
+arm9_off, _, arm9_ram, arm9_tam = struct.unpack_from("<4I", a, 0x20)
+difs = [i for i in range(min(len(a), len(b))) if a[i] != b[i]][:10]
+for o in difs:
+    onde = f" (ARM9 {o - arm9_off + arm9_ram:#010x})" if arm9_off <= o < arm9_off + arm9_tam else ""
+    print(f"   offset {o:#x}{onde}: {a[o]:02x} -> {b[o]:02x}")
+PY
+    echo "Ache a função em config/YWSE/arm9/symbols.txt e compare com decomp/tools/comparar.py"
     exit 1
 fi
 echo "IDÊNTICA. ROM em $SAIDA"

@@ -48596,7 +48596,6 @@ from:0x020e6e00 kind:thumb_call to:0x020ec91c module:main
 from:0x020e6e14 kind:load to:0x02108760 module:main
 from:0x020e6e20 kind:load to:0x02003439 module:main
 from:0x020e6e32 kind:thumb_call to:0x020e8fa4 module:main
-from:0x020e6e40 kind:thumb_call to:0x020ec414 module:main
 from:0x020e6e56 kind:thumb_call to:0x02003438 module:main
 from:0x020e6e66 kind:thumb_call to:0x020e6e24 module:main
 from:0x020e6e6c kind:thumb_call to:0x0200341c module:main

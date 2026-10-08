@@ -1,0 +1,6 @@
+# Funções que já dão 100% de match. testar_compilador.sh compila cada fonte
+# com cada versão do mwccarm e compara o símbolo com o endereço no jogo.
+# fonte                            símbolo gerado pelo compilador              endereço
+src/Aurora/CExoString.cpp          _ZNK10CExoString4CStrEv                     0x020052f0
+src/Aurora/ResourceHash.cpp        _Z16HashResourceNameRK10CExoString          0x02009b78
+decomp/compilador/lista.cpp        _Z20Lista_Par16_RemoveAtP5ListaI5Par16Ei    0x0202d428

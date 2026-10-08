@@ -5,7 +5,10 @@ As ferramentas estão em três grupos:
 - **`engine/`** (Rust): o que se usa no dia a dia. Rápido e testado, com binários para Windows e Linux.
 - **`analise/`** (Python, Java/Ghidra, shell): o pipeline de engenharia reversa.
   É onde as descobertas foram feitas.
-- **`decomp/`** (C): funções do jogo reescritas e os testes que as validam.
+- **`decomp/`** (C): funções do jogo reescritas e os testes que as validam, e
+  `decomp/tools/`, o build que reconstrói a ROM idêntica.
+- **`src/`, `include/`, `config/`** (C++ e configuração do `dsd`): a decompilação
+  *matching*, que compila para os mesmos bytes do jogo.
 
 Requisitos gerais: Rust 1.80+ (`cargo`), Python 3.10+ (`pip install ndspy capstone pillow`),
 um compilador C. Opcionais: Ghidra 11.x (`GHIDRA_HOME`), `py-desmume` (emulador).
@@ -135,8 +138,23 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy python3 analise/tools/emu_run.py rom
 make -C decomp test HERF_DIR=$PWD/work/herf/test          # saída do run_all.sh
 make -C decomp test MANIFEST=$PWD/saida/herf/_manifesto.json   # saída do sonic-dump
 ```
-Estas são decompilações *non-matching* (mesmo comportamento, não os mesmos bytes). O
-caminho para o matching está no [plano](PLANO-DECOMPILACAO.md).
+Estas são decompilações *non-matching* (mesmo comportamento, não os mesmos bytes),
+fáceis de testar no PC. As versões *matching* (os mesmos bytes do jogo) ficam em `src/`.
+
+## `decomp/tools/`: o build matching
+
+| Script | O que faz |
+|---|---|
+| `ferramentas.sh` | baixa `dsd`, `wibo` e os compiladores `mwccarm` para `work/ferramentas/` (SHA-256 conferido) |
+| `montar_rom.sh rom.nds` | reconstrói a ROM a partir do assembly e de `src/` e compara o SHA-1 |
+| `compilar.sh fonte.cpp saida.o` | compila com o compilador e as flags do jogo |
+| `comparar.py arquivo.o símbolo endereço` | compara uma função compilada com a do jogo, instrução por instrução |
+| `testar_compilador.sh` | matriz de versões × otimizações para as funções de `decomp/compilador/casos.txt` |
+| `gerar_config.sh rom.nds` | gera `config/YWSE/` do zero (apaga as edições à mão) |
+| `banner_sem_perda.py`, `crc_area_segura.py` | os dois ajustes que deixam a ROM idêntica |
+
+O passo a passo e o porquê de cada etapa: [`BUILD.md`](BUILD.md). O compilador:
+[`COMPILADOR.md`](COMPILADOR.md).
 
 ## `exemplos/rust-minimo/`
 

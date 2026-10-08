@@ -146,9 +146,59 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 14. A ROM reconstruída (Fase 0)
+O guia está em [`BUILD.md`](BUILD.md). O caminho:
+
+- **Ferramentas sem Windows.** Os compiladores da Metrowerks são `.exe` de 32 bits. O
+  `wibo`, um carregador mínimo feito pela comunidade de decompilação, roda eles no
+  Linux sem Wine. O pacote de compiladores é o mesmo que o decomp.me usa.
+- **Desmontar e montar de novo.** `dsd delink` corta o ARM9 em `.o` com as
+  relocações no lugar dos endereços; o `mwldarm` (o linker original) junta tudo. O
+  ARM9, o ITCM e o DTCM saíram idênticos na primeira tentativa: as 60 mil relocações
+  achadas pelo `dsd init` estão certas.
+- **Os 20 bytes teimosos.** A ROM inteira ainda tinha 20 bytes diferentes, nenhum de
+  código. 16 eram do ícone: a paleta tem duas cores iguais e o PNG intermediário do
+  `dsd` não guarda qual índice era qual. Os outros eram o CRC da área segura, que
+  depende da chave da BIOS do ARM7. Os dois foram resolvidos sem a BIOS, e o SHA-1
+  bateu: `f4ff8291...`.
+- **Erro nº 7:** primeiro li as diferenças do ícone como "índice 8 virou 6" (olhando
+  os bytes em octal do `cmp`). Comparando nibble a nibble, todas eram 4 → 2: as duas
+  entradas com a mesma cor. A causa certa só apareceu quando li o código do `ds-rom`
+  que converte o PNG.
+- **Uma falha da ferramenta.** Compilado do código mais novo, o `dsd` recusava
+  qualquer divisão do ARM9 em arquivos ("nome duplicado" nos buracos sem fonte). O
+  binário da release 0.12.1 não tem o problema; ficamos com ele.
+
+## 15. O compilador (Fase 1)
+O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, Thumb**.
+
+- **Comparar sem o linker.** `decomp/tools/comparar.py` põe lado a lado a função do
+  jogo e a do `.o`, ignorando os bytes que só o linker preenche (o destino de um
+  `bl`, os ponteiros do pool de constantes).
+- **CExoString::CStr** bateu de primeira em todas as versões 2.0: é pequena demais para
+  dizer qual. **HashResourceName** precisou de 3 rodadas: o `tolower` inline com `||`
+  explicou o registrador-bandeira, e uma variável temporária acertou a ordem dos
+  operandos da última soma.
+- **Procurando uma função que separe as versões.** Compilei ~30 construções de C++
+  com todas as versões: só três famílias geram código diferente (1.2, 2.0 e DSi).
+  Uma diferença da DSi é alocar `r4-r7` onde a 2.0 usa `r3-r6`; procurando funções do
+  jogo com esse padrão, a remoção de item de uma lista (`0x0202d428`) bateu com toda a
+  2.0 e com nenhuma DSi.
+- **Exceções desligadas.** Com exceções ligadas o hash ganhava uma entrada no
+  `.exceptix`; as do jogo são todas da biblioteca MSL. O jogo foi compilado sem.
+- **Erro nº 8:** o `comparar.py` media as relocações pela primeira seção `.text` do
+  `.o`. Com uma função de template (que o compilador põe numa seção própria), as
+  relocações erradas eram mascaradas e uma função idêntica aparecia como diferente. A
+  seção certa é a que o campo `sh_info` da seção de relocações aponta.
+- **Do teste para o jogo.** CStr e o hash viraram `src/Aurora/*.cpp`, marcados
+  `complete` no `delinks.txt`. O build passou a usar o nosso `.o` no lugar do código
+  original, e o SHA-1 continuou o mesmo. Para provar que a verificação funciona,
+  desfiz a variável temporária do hash: o build falhou apontando o byte
+  `0x02009ba6`, a soma com os operandos trocados.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
-itens, de personagens), a versão exata do compilador e as partes do combate listadas em
+itens, de personagens), o service pack exato do compilador (2.0 base ou sp1+) e as partes do combate listadas em
 [COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
 [plano](PLANO-DECOMPILACAO.md).

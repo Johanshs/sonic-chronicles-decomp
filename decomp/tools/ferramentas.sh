@@ -2,7 +2,7 @@
 # Instala as ferramentas do build "matching" em work/ferramentas/ (fora do Git).
 #
 #   dsd     ds-decomp: extrai a ROM, corta o ARM9 em .o (delink), gera o
-#           script do linker (LCF) e monta a ROM de volta. Compilado do fonte.
+#           script do linker (LCF) e monta a ROM de volta. Binário da release.
 #   wibo    roda executáveis Windows de 32 bits no Linux (bem menor que o Wine).
 #   mwccarm compiladores e linker da Metrowerks para DS, o mesmo pacote que o
 #           decomp.me usa. Não vêm junto com este repositório.
@@ -13,7 +13,11 @@ REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 DEST="${FERRAMENTAS:-$REPO/work/ferramentas}"
 mkdir -p "$DEST"
 
-DSD_REV=c4080635ac38aaf9608ca23751defa9fa19cf81a        # ds-decomp 0.12.1
+# Release, não o fonte: o `main` do ds-decomp (c408063) acusa "nome de
+# arquivo duplicado" em todo pedaço sem fonte (_dsd_gap) assim que o ARM9 é
+# dividido em mais de um arquivo; o binário da release 0.12.1 não tem o erro.
+DSD_URL=https://github.com/AetiasHax/ds-decomp/releases/download/v0.12.1/dsd-linux-x86_64
+DSD_SHA=256edde804dd8e5d7bc4c0e4187f85244ee4cd1f42bb427502e01fda6af43ceb
 WIBO_URL=https://github.com/decompals/wibo/releases/download/0.6.16/wibo
 WIBO_SHA=8a8490a6172aa4f0f6ddcadb144ca96f51da6e90e6648ce9adaf4f6babb6e00b
 MWCC_URL=https://github.com/decompme/compilers/releases/download/compilers/mwccarm.zip
@@ -27,14 +31,12 @@ baixar() {  # baixar URL SHA256 destino
     mv "$3.tmp" "$3"
 }
 
-if [ ! -x "$DEST/bin/dsd" ] || ! "$DEST/bin/dsd" --version | grep -q 0.12.1; then
-    echo "== dsd (compilando do fonte, alguns minutos)"
-    cargo install --quiet --locked --git https://github.com/AetiasHax/ds-decomp \
-        --rev "$DSD_REV" ds-decomp-cli --root "$DEST"
-fi
+mkdir -p "$DEST/bin"
+echo "== dsd"
+baixar "$DSD_URL" "$DSD_SHA" "$DEST/bin/dsd"
+chmod +x "$DEST/bin/dsd"
 
 echo "== wibo"
-mkdir -p "$DEST/bin"
 baixar "$WIBO_URL" "$WIBO_SHA" "$DEST/bin/wibo"
 chmod +x "$DEST/bin/wibo"
 

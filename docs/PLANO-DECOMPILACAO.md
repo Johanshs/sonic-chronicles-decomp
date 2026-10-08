@@ -22,11 +22,12 @@ diante, as partes podem ser feitas em paralelo, e de forma incremental para semp
 | Funções já reescritas | `HashResourceName`, `CExoString::CStr`, escolha do TLK por idioma (`src/`), validadas contra o jogo |
 | Formatos de dados | todos os principais lidos **e escritos** byte a byte (`engine/`) |
 | Bibliotecas embutidas | NitroSDK 4.2 (`0x04027531`), NitroSystem (`NNS_Tga`, `G3D`), MSL C++ da Metrowerks (iostreams) |
-| Compilador | CodeWarrior para DS (mwccarm), C++ com exceções e RTTI. **Versão exata: desconhecida** (Fase 1) |
+| Compilador | CodeWarrior para DS, **mwccarm 2.0, `-O4,p`, Thumb, RTTI ligado, exceções desligadas** ([COMPILADOR.md](COMPILADOR.md)). Service pack exato: em aberto |
+| Build matching | ✅ ROM reconstruída idêntica (SHA-1) a partir do assembly e do C++ de `src/` ([BUILD.md](BUILD.md)) |
 
 ---
 
-## Fase 0: build "matching" a partir do assembly (semana 1)
+## Fase 0: build "matching" a partir do assembly (semana 1) ✅ 0.1 a 0.3
 
 Antes de escrever qualquer C, a ROM precisa ser **reconstruída a partir das partes
 desmontadas** e sair idêntica. É a rede de segurança de todo o resto.
@@ -35,17 +36,21 @@ desmontadas** e sair idêntica. É a rede de segurança de todo o resto.
   executor para os binários Windows da Metrowerks no Linux (`wibo` ou Wine). Os
   compiladores mwccarm não são distribuídos livremente; use os pacotes que a
   comunidade de decompilação de DS usa (o decomp.me tem os mesmos).
-  **Pronto quando:** `mwccarm -version` roda.
+  **Pronto quando:** `mwccarm -version` roda. ✅ `decomp/tools/ferramentas.sh` (dsd 0.12.1,
+  wibo 0.6.16, mwccarm do decomp.me); o `objdiff` foi trocado por `decomp/tools/comparar.py` por enquanto.
 - **0.2 Delink.** `dsd delink` corta o ARM9 em arquivos-objeto (`.o`) por seção.
   No começo, um arquivo por região grande. **Pronto quando:** os `.o` são gerados
-  sem erro.
+  sem erro. ✅
 - **0.3 Linker script.** `dsd lcf` gera o `.lcf` para o `mwldarm`; ligar tudo e
   montar com `dsd rom build`. **Pronto quando:** `sha1(rom_reconstruida) == sha1(rom_original)`.
+  ✅ `decomp/tools/montar_rom.sh` (o ícone do banner e o CRC da área segura precisaram de
+  correção; veja [BUILD.md](BUILD.md#dois-detalhes-fora-do-código)).
 - **0.4 CI.** Uma GitHub Action que roda o build, compara o SHA-1 e publica o
   progresso. A ROM não pode ir para o repositório: o CI só roda com a ROM num
   segredo, ou em uma máquina própria. **Pronto quando:** o build quebrado deixa o PR vermelho.
+  ⏳ em aberto: um segredo do GitHub tem no máximo 48 KB e a ROM tem 128 MB.
 
-## Fase 1: identificar o compilador e as flags (semana 2)
+## Fase 1: identificar o compilador e as flags (semana 2) ✅ 1.1 e 1.2
 
 Sem o compilador certo, nenhum C sai igual ao original.
 
@@ -57,6 +62,8 @@ Sem o compilador certo, nenhum C sai igual ao original.
   `-proc arm946e`, `-thumb`, `-interworking`, `-enum int`, `-char signed`...).
   Comparar com o `objdiff`. A função é Thumb, então `-thumb` deve estar ativo.
   **Pronto quando:** pelo menos 3 funções diferentes dão 100% de match com a mesma configuração.
+  ✅ `CExoString::CStr`, `HashResourceName` e a remoção de item de lista (`0x0202d428`):
+  todas as 2.0, `-O4,p`. Matriz completa: `decomp/tools/testar_compilador.sh`.
 - **1.3 Configurações por biblioteca.** O SDK e a NitroSystem costumam ter sido
   compilados com versão e flags diferentes das do jogo. Repetir 1.2 com uma função
   de cada biblioteca. Documentar em `docs/COMPILADOR.md`.
