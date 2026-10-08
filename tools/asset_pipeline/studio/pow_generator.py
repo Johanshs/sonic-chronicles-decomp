@@ -25,10 +25,12 @@ CREATURE_CREAM = 7
 CREATURE_OMEGA = 8
 CREATURE_EGGMAN = 9
 CREATURE_SHADE = 10  # Marcador em combo.gda (criatura real é 27)
+CREATURE_SILVER = 11
 
 CREATURE_NAMES = {
     0: "Sonic", 1: "Knuckles", 2: "Tails", 3: "Amy", 4: "Shadow",
-    5: "Rouge", 6: "Big", 7: "Cream", 8: "Omega", 9: "Eggman", 10: "Shade"
+    5: "Rouge", 6: "Big", 7: "Cream", 8: "Omega", 9: "Eggman", 10: "Shade",
+    11: "Silver"
 }
 
 
