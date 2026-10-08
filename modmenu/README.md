@@ -35,7 +35,7 @@ src/fonte.c                     fonte 8x8 de domínio público (font8x8, de Dani
 jogo/gancho.s                   a ponte entre o laço principal do jogo e o painel
 jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D8000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
-ferramentas/enxertar.py         põe o painel numa cópia da ROM
+ferramentas/enxertar.py         põe o painel numa cópia da ROM (o `sonic-mod menu` faz o mesmo)
 ferramentas/testar.py           testa o painel na ROM de teste (25 checagens)
 ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (12 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
@@ -44,13 +44,27 @@ ferramentas/mknds.py            monta o .nds da ROM de teste
 
 ## Usar
 
-Precisa de `clang` e `ld.lld` (LLVM 14 ou mais novo) e `python3`. Para os testes,
-`pip install py-desmume`. Não precisa de devkitARM: o clang já gera código para o ARM9.
+**Sem compilar nada** (fase B8): o pacote de release das ferramentas traz o `sonic-mod`
+e o painel já compilado (`painel_jogo.elf`) lado a lado.
+
+```bash
+sonic-mod menu "Sonic Chronicles.nds" sonic_painel.nds    # a original não muda
+```
+
+**Compilando:** precisa de `clang` e `ld.lld` (LLVM 14 ou mais novo) e `python3`. Para
+os testes, `pip install py-desmume`. Não precisa de devkitARM: o clang já gera código
+para o ARM9.
 
 ```bash
 cd modmenu
 make enxertar ROM="Sonic Chronicles.nds" SAIDA=sonic_painel.nds   # a original não muda
+# ou, com o sonic-mod do repositório e o painel que o make gerou:
+sonic-mod menu "Sonic Chronicles.nds" sonic_painel.nds build/painel_jogo.elf
 ```
+
+O `sonic-mod menu` (Rust, `engine/crates/sonic-mod/src/menu.rs`) e o `enxertar.py`
+fazem o mesmo enxerto. Conferido: com a mesma ROM e o mesmo painel, as duas saídas são
+idênticas byte a byte.
 
 No jogo: segure **L + R + SELECT**. CIMA/BAIXO escolhem, A entra, B volta, ESQUERDA/DIREITA
 mudam o valor em 1, L/R em 10, START fecha. Segure o combo por meio segundo: durante um

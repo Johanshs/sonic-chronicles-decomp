@@ -30,5 +30,11 @@ jobs:
         run: make -C decomp build/test_hash build/test_language && ./decomp/build/test_language
       - name: sintaxe dos scripts
         run: |
-          python3 -m py_compile analise/tools/*.py
+          python3 -m py_compile analise/tools/*.py modmenu/ferramentas/*.py
           bash -n analise/run_all.sh
+      # o painel (modmenu/) compila com -Werror e precisa caber nos 32 KB reservados
+      # (o painel.ld recusa ligar se passar)
+      - name: compilar o painel de controle
+        run: |
+          sudo apt-get update && sudo apt-get install -y lld
+          make -C modmenu build/painel_jogo.elf

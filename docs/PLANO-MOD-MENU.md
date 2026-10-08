@@ -264,8 +264,11 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   subida de nível). Conferido em 6 encontros, todos contra 4 Nocturne Decurion; falta
   um inimigo de outro tipo e um chefe. Faltam também forçar emboscada e ver o ajuste
   de dificuldade no inimigo.
-- **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 32 KB
-  do heap (0x023D8000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
+- **B8: feito o enxerto e o `sonic-mod menu`; falta o teste no DS.** Novo bloco de
+  autoload nos últimos 32 KB do heap (0x023D8000), fim do heap baixado para lá, ARM7
+  mudado para o fim da ROM. O `sonic-mod menu rom.nds saida.nds` faz o enxerto sem
+  Python; a saída é idêntica byte a byte à do `enxertar.py`. A release compila o painel
+  e o põe no pacote, ao lado do `sonic-mod`; a CI compila o painel a cada push. Na
   v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que
   quebrava os cheats que usam endereços do heap; na v0.3 eles ficam nos mesmos
   endereços da ROM original (conferido num boot do zero).

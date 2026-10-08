@@ -14,7 +14,22 @@ on:
 permissions:
   contents: write
 jobs:
+  # O painel de controle (modmenu/) é C para o ARM9 do DS: compilado uma vez, com o clang
+  # e o ld.lld do Linux, e posto nos dois pacotes ao lado do sonic-mod (`sonic-mod menu`).
+  painel:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: instalar o ligador do LLVM
+        run: sudo apt-get update && sudo apt-get install -y lld
+      - name: compilar o painel
+        run: make -C modmenu build/painel_jogo.elf
+      - uses: actions/upload-artifact@v7
+        with:
+          name: painel
+          path: modmenu/build/painel_jogo.elf
   build:
+    needs: painel
     strategy:
       matrix:
         include:
@@ -35,10 +50,13 @@ jobs:
         run: |
           cargo test --release --locked
           cargo build --release --locked -p sonic-mod -p sonic-dump
+      - uses: actions/download-artifact@v8
+        with: { name: painel, path: sonic-tools }
       - name: empacotar
         shell: bash
         run: |
           mkdir -p sonic-tools
+          test -f sonic-tools/painel_jogo.elf
           cp engine/target/release/sonic-mod${{ matrix.ext }} engine/target/release/sonic-dump${{ matrix.ext }} sonic-tools/
           cp docs/MODDING.md sonic-tools/GUIA-DE-MODDING.md
           cp docs/LEIA-ME-BINARIOS.txt sonic-tools/LEIA-ME.txt
@@ -62,7 +80,7 @@ jobs:
             sonic-tools-windows.zip
             sonic-tools-linux.tar.gz
           body: |
-            Ferramentas do Sonic Chronicles (DS): **sonic-mod** (modding por planilhas) e **sonic-dump** (extração de assets).
+            Ferramentas do Sonic Chronicles (DS): **sonic-mod** (modding por planilhas e, com `sonic-mod menu`, o painel de controle dentro do jogo) e **sonic-dump** (extração de assets).
             Compiladas e testadas pelo GitHub Actions a partir da versão `${{ inputs.versao || github.ref_name }}`.
             Guia: https://github.com/${{ github.repository }}/blob/main/docs/MODDING.md
             Use com uma cópia do jogo que você possui. Nenhum dado do jogo está incluído.

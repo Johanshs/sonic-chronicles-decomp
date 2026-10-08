@@ -10,6 +10,13 @@ MODIFICAR O JOGO (sonic-mod)
   4. sonic-mod pack "Sonic Chronicles.nds" meu_mod rom_modificada.nds
   5. Abra rom_modificada.nds no melonDS (https://melonds.kuribo64.net) ou DeSmuME.
 
+PAINEL DE CONTROLE NO JOGO (sonic-mod menu)
+  sonic-mod menu "Sonic Chronicles.nds" sonic_painel.nds
+  Usa o painel_jogo.elf que vem nesta pasta. No jogo, segure L + R + SELECT: dá para
+  mudar regras de combate, anéis, atributos do grupo e dos inimigos, dar itens e
+  nocautear os inimigos de uma batalha. Só para a versão dos EUA (YWSE).
+  Faça uma cópia do seu save (.sav) antes de jogar com a ROM nova.
+
 EXTRAIR ASSETS (sonic-dump)
   sonic-dump "Sonic Chronicles.nds" saida
 
