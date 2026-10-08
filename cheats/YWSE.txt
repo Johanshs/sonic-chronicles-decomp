@@ -128,7 +128,10 @@ D0000000 00000000
 D2000000 00000000
 
 [Loja: comprar sem gastar aneis]
-; [baixa] comprar na loja nao confere nem gasta aneis (patch em 0x020B3AD0)
+; [media] botao Buy sempre ligado e a compra nao gasta aneis
+520B2EC0 2701DC00
+020B2EC0 270146C0
+D0000000 00000000
 520B3AD0 1A51DB15
 020B3AD0 1C1146C0
 D2000000 00000000
@@ -232,6 +235,21 @@ D2000000 00000000
 ; [media] cada anel pego vale 10 na carteira do inventario
 52017648 F01F1C49
 02017648 F01F310A
+D2000000 00000000
+
+@escolha Projeto: velocidade de andar
+; o passo do movimento no mapa (patch em 0x02034B92, "lsls r0, r4, #12")
+
+[Andar 2x mais rapido]
+; [media] o grupo anda no mapa com o dobro da velocidade
+52034B90 032021FA
+02034B90 036021FA
+D2000000 00000000
+
+[Andar 4x mais rapido]
+; [media] o grupo anda no mapa com 4 vezes a velocidade
+52034B90 032021FA
+02034B90 03A021FA
 D2000000 00000000
 
 @pasta Projeto: POW

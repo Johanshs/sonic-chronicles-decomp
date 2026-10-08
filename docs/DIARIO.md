@@ -292,6 +292,27 @@ assembly e rodados no emulador. Nenhum deles faz exatamente o que o nome diz.
   oferece o caso de teste, dá para montá-lo, desde que a mudança seja só no lado que não
   está sendo testado.
 
+## 17. Chegar a uma loja sem jogar até ela
+O cheat da loja estava como [baixa] porque o save do Capítulo 10 não tem loja por perto, e
+o mapa do mundo não deixa viajar tocando nas ilhas. A saída foi mexer no emulador, não no
+jogo:
+
+- **Teletransporte.** Um vigia de escrita na posição do grupo mostrou onde ela mora
+  (esquadrão `+0x34`). Escrevendo X e Y ali, o Sonic aparece no lugar escrito, e os pontos
+  de `MapPins.gda` dizem onde ficam a nave e as lojas.
+- **Uma porta para outro lugar.** Ao entrar na nave, o jogo monta um pedido de carga com a
+  área de destino. Pausei o emulador na função que lê esse pedido, troquei a área e ele
+  carregou a Kron Colony.
+- **Uma porta para a loja.** Toda troca de tela passa por uma função com o número do modo.
+  Trocando "explorar" (1) por "loja" (11), a tela da loja abriu.
+- **Erro nº 13: a loja confere duas vezes.** O cheat trocava só a compra. Com 5 anéis ele
+  não fazia nada, porque a tela não acende o botão "Buy Item" quando o preço passa da
+  carteira. Um vigia de leitura na carteira achou essa segunda conferência, e o cheat
+  agora troca as duas. Lição: um cheat "deduzido" do código pode estar certo na função que
+  ele troca e mesmo assim não funcionar, porque outra parte do jogo também confere.
+- **O efeito colateral do "Itens não acabam" é real.** Vender um item com ele ligado dá os
+  anéis e o item continua lá.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de

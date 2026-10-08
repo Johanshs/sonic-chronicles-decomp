@@ -170,7 +170,7 @@ bate mais forte; com "−4", cai mais rápido e erra mais. O "neutro" serve de r
 | Anéis sempre 999999 | ponteiro `0x02160C18` → objeto → esquadrão, `+0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
 | Itens não acabam | patch de código em `0x0202DB4C` | usar um item não gasta | [média] |
 | Pegar todos os anéis da área (de longe) | patch de código em `0x02017A56` e `0x02017A88` | todo anel da área é pego na hora | [média] |
-| Loja: comprar sem gastar anéis | patch de código em `0x020B3AD0` | comprar não confere nem gasta anéis | [baixa] |
+| Loja: comprar sem gastar anéis | patch de código em `0x020B2EC0` e `0x020B3AD0` | o botão "Buy Item" fica sempre ligado e comprar não gasta anéis | [média] |
 
 Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. A
 global `0x02160C18` (na área de variáveis fixas do programa, a BSS) aponta para um objeto
@@ -231,10 +231,11 @@ código é `5202DB4C 1E49DD07` (só age se as instruções originais estiverem l
 levou de 87 para 85 sem o cheat e deixou em 87 com ele; com a quantidade em 1, o item
 continuou lá. Numa batalha, usar o Med Emitter e vencer: 86 sem o cheat, 87 com ele.
 
-**Efeito colateral provável:** a mesma função deve ser usada para vender e para passar um
-equipamento da mochila para um personagem. Com o cheat ligado, vender pode dar anéis sem
-perder o item, e equipar pode duplicar o equipamento. Ainda não conferimos; desligue o
-cheat antes de ir à loja se não quiser isso. A função tem só dois chamadores diretos no
+**Efeito colateral (conferido na loja):** a mesma função é usada para vender. Com o cheat
+ligado, vender um Med Emitter deu os 10 anéis e o item continuou em 87 (sem o cheat, foi
+para 86). Ou seja: vender vira dinheiro infinito. Desligue o cheat antes de ir à loja se
+não quiser isso. Passar um equipamento da mochila para um personagem provavelmente também
+o duplica; isso ainda não foi conferido. A função tem só dois chamadores diretos no
 ARM9: um que tira um item depois de conferir seu número (`0x0202E09C`) e um do jardim dos
 Chao (`0x0203939E`), que tira um item e soma uma cópia a um Chao. No emulador, abrir o
 jardim com o cheat ligado chocou os ovos normalmente e o jogo não travou.
@@ -258,19 +259,36 @@ sobram ficam fora da lista dessa área (atrás de uma porta ou de um evento, por
 
 **Loja: comprar sem gastar anéis.** A compra na loja (`0x020B3AB0`) pega o item escolhido,
 lê o preço (um número de 16 bits em `+0x48` do item), confere `carteira >= preço`, grava
-`carteira − preço` e põe o item na mochila. O cheat troca as duas instruções do meio:
+`carteira − preço` e põe o item na mochila. A tela também tem a sua conferência: ela só
+acende o botão "Buy Item" se o preço não passar da carteira (`0x020B2EB6`). O cheat troca
+três instruções:
 
 | Endereço | Original | Quer dizer | Com o cheat |
 |---|---|---|---|
+| 0x020B2EC0 | `DC00` | `bgt`: preço maior que a carteira, botão apagado | `46C0` (não faz nada) |
 | 0x020B3AD0 | `DB15` | `blt`: sem anéis suficientes, não compra | `46C0` (não faz nada) |
 | 0x020B3AD2 | `1A51` | `subs r1, r2, r1`: carteira − preço | `1C11` = `adds r1, r2, #0`: carteira igual |
 
-[baixa] porque ainda não achei uma loja num estado do emulador: as do jogo ficam em Central
-City, Station Square, na Kron Colony ("Kron Quartermaster") e em mais dois lugares, e o
-mapa do mundo do Capítulo 10 não deixa viajar tocando nas ilhas. O que foi conferido: a
-função é a da tela da loja (ela fica junto do código que carrega `stores.gda` e as telas
-`Store*.gui`), e as instruções originais estão na RAM em todos os estados testados, então a
-trava do código funciona. Teste no DS: entre numa loja com poucos anéis e compre algo caro.
+**Conferido no emulador**, comprando um Health Leaf (10 anéis) na loja de Central City:
+
+| Carteira | Sem o cheat | Com o cheat |
+|---|---|---|
+| 986967 | compra; carteira 986957 | compra; carteira 986967 |
+| 5 | botão apagado, não compra | compra; carteira 5; Health Leaf (1) |
+
+A primeira versão deste cheat só trocava a compra ([baixa]). No teste com 5 anéis ela não
+fazia nada, porque o botão continuava apagado: faltava a conferência da tela.
+
+**Como cheguei a uma loja no emulador.** O save do Capítulo 10 está no Nocturne e não há
+loja por perto. Três truques, todos só no emulador:
+1. **Teletransporte:** a posição do grupo no mapa está no objeto apontado por esquadrão
+   `+0x34` (X em `+4`, Y em `+8`, pixels × 4096). Escrevendo ali, o Sonic aparece onde eu
+   quiser; os pontos vêm de `MapPins.gda` (o tipo 2 é a nave Cyclone).
+2. **Troca de destino:** entrando na nave, o jogo pede a carga de uma área (`0x0204A1A4`,
+   área em `+0x24` do pedido). Trocando 76 (Cyclone) por 2, ele carregou a Kron Colony.
+3. **Abrir a loja direto:** toda troca de tela passa por `0x02030604`, com o número do
+   modo (1 = explorar, 11 = loja). Trocando o 1 por 11 na entrada da nave, a tela da loja
+   abriu.
 
 ### Pasta "Projeto: multiplicador de anéis", escolha 1
 
@@ -304,6 +322,24 @@ confere e escreve as duas (`F01F` é a primeira metade de um `bl`, que fica igua
 
 Eles ficam numa pasta de escolha porque escrevem no mesmo endereço. Combinam com o "Pegar
 todos os anéis da área": no Green Hill, com o x10, são 1750 anéis de uma vez.
+
+### Pasta "Projeto: velocidade de andar", escolha 1
+
+| Cheat | Código | Efeito | Confiança |
+|---|---|---|---|
+| Andar 2x mais rápido | `02034B90 036021FA` | o grupo anda no mapa com o dobro da velocidade | [média] |
+| Andar 4x mais rápido | `02034B90 03A021FA` | 4 vezes a velocidade | [média] |
+
+A função que move o grupo no mapa (`0x02034B08`) converte o tempo do quadro em segundos
+com `lsls r0, r4, #12` (milissegundos × 4096) e depois divide por 1000; o passo é
+velocidade × tempo. Trocando o 12 por 13 o tempo dobra, e por 14 quadruplica (`2003` vira
+`6003` ou `A003`). Achei a função com um vigia de escrita na posição do grupo.
+**Conferido no emulador:** segurando a caneta 15 quadros, o Sonic andou 32 pixels sem cheat,
+65 com o 2x e 130 com o 4x no Green Hill (28 e 55 no Nocturne). Andando contra uma parede
+por 600 quadros, ele parou no mesmo lugar com e sem o cheat, então a colisão continua
+funcionando. Só o esquadrão do jogador passou por essa função nos testes; os inimigos não
+ficaram mais rápidos. O atributo `MoveSpeed` (posição 35) não muda a velocidade no mapa:
+testei 150, 300 e 600 e o passo foi o mesmo.
 
 ### Pasta "Projeto: POW"
 
@@ -743,7 +779,7 @@ coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lug
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Inventário | conferir a loja com "Itens não acabam"; cheat para ganhar itens novos | teste na loja; ler a função que cria itens |
-| Loja | conferir "Loja: comprar sem gastar anéis" [baixa] | numa loja, no DS ou num estado do emulador |
+| Encontros | evitar batalhas ao encostar num inimigo | a batalha começa em `0x02032A4A` (pede o modo 0); falta achar o teste de contato |
 | Status | imunidade a status: resistência 100 nas posições 3 a 18 | achar um inimigo que causa status e conferir que só bloqueia os ruins |
 | POW | usar numa batalha um golpe que estava em 0 e foi para III | batalha com "todos no nível III" |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |

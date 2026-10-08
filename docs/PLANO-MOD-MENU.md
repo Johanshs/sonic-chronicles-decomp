@@ -229,6 +229,10 @@ batalha, sem encontros, nível dos POW no máximo.
   Os pontos e níveis de POW são os atributos 75 e 69 a 74 do personagem. Depois:
   "5 ações por rodada" e "imune aos 6 elementos" (conferidos numa batalha) e "Loja:
   comprar sem gastar anéis" ([baixa]: falta uma loja no emulador).
+- **A2, quarta rodada**: a loja foi aberta no emulador (teletransporte e troca de destino,
+  DIARIO seção 17) e o cheat dela passou a [média], com a conferência do botão que faltava.
+  Novos: andar 2x e 4x mais rápido no mapa. Confirmado: "Itens não acabam" deixa vender sem
+  perder o item.
 
 ## 4. Caminho B: o mod menu
 
