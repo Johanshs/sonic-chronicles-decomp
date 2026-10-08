@@ -339,6 +339,11 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   No jogo, os typeinfo e as vtables ficam intercalados com os nomes das classes, e 18
   funções liam strings dos dois lados de um desses "cortes". Larguei esse corte; a
   regra das cópias de strings não depende dele.
+- **Onde parou (pausa em 08/10/2026).** Os 175 pedaços estão em `delinks.txt` e a ROM
+  sai idêntica. O próximo passo seria achar onde cada arquivo começa e acaba de
+  verdade, juntando às pontas de cada pedaço as funções sem strings. As pistas para
+  isso são as variáveis `.bss`/`.data` que cada função usa, quem chama quem e as
+  sequências de métodos da mesma classe.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
