@@ -45,9 +45,13 @@ MEMORIA = [(BASE, open(os.path.join(REPO, "work/extract/arm9/arm9.bin"), "rb").r
            (ITCM[0], open(os.path.join(REPO, "work/extract/arm9/itcm.bin"), "rb").read()),
            (DTCM, open(os.path.join(REPO, "work/extract/arm9/dtcm.bin"), "rb").read())]
 DADOS = {".rodata": (0x020ef814, 0x020f4ff0), ".data": (0x020f5260, 0x021090e0),
-         ".dtcm": (DTCM, 0x027e1040)}
-# as partes de um arquivo que moram no ITCM/DTCM: seção do .o -> (módulo, seção lá)
-OUTROS_MODULOS = {".itcm": ("itcm", ".text"), ".dtcm": ("dtcm", ".data"), ".dtcm.bss": ("dtcm", ".bss")}
+         ".dtcm": (DTCM, 0x027e1040), ".version": (BASE, BASE + 0x1000)}
+# as partes de um arquivo que ficam longe do resto e entram em delinks.txt com outro
+# nome ("x.itcm.c"): seção do .o -> (apelido, módulo, seção do módulo). O ITCM e o DTCM
+# são outros módulos; a .version ("[SDK+NINTENDO:BACKUP]") o .lcf da Nintendo punha no
+# começo do ARM9, logo depois do crt0
+OUTROS_MODULOS = {".itcm": ("itcm", "itcm", ".text"), ".dtcm": ("dtcm", "dtcm", ".data"),
+                  ".dtcm.bss": ("dtcm", "dtcm", ".bss"), ".version": ("version", "main", ".text")}
 ENDERECOS, THUMB, TODOS, FUNCOES = {}, set(), set(), []   # nome -> endereço; Thumb; com símbolo
 NOMES_TODOS = set()
 # os símbolos que montar_rom.sh define no .lcf (SDK_SYS_STACKSIZE...)
@@ -89,12 +93,10 @@ class Objeto:
         elf = ELFFile(io.BytesIO(dados))
         self.secoes = {}            # índice -> (nome, tamanho, bytes ou None)
         for i, s in enumerate(elf.iter_sections()):
-            if s.name in (".data", ".rodata", ".bss", ".sdata", ".sbss", ".dtcm", ".dtcm.bss") and s.data_size:
+            if s.name in (".data", ".rodata", ".bss", ".sdata", ".sbss", ".dtcm", ".dtcm.bss", ".version") and s.data_size:
                 corpo = None if s.header.sh_type == "SHT_NOBITS" else s.data()
                 self.secoes[i] = (s.name, s.data_size, corpo)
         self.nomes_sec = [s.name for s in elf.iter_sections()]
-        # seções que o linker trata à parte
-        self.especiais = sorted({s.name for s in elf.iter_sections() if s.name == ".version"})
         self.simbolos = list(elf.get_section_by_name(".symtab").iter_symbols())
         self.rels = {}              # índice da seção -> [(offset, tipo, símbolo, addend)]
         for s in elf.iter_sections():
@@ -159,10 +161,13 @@ def dividir(objs, de, ate, conhecidos, secao=".text"):
             k += 1
             continue
         # empate (dois arquivos com o mesmo código): vale o arquivo cujos ponteiros
-        # nos dados apontam para este trecho do código
+        # nos dados apontam para este trecho do código; depois, o que chama o que o
+        # jogo chama (PXI_Init e CARD_WaitBackupAsync são o mesmo "pula para X", com
+        # X diferente)
         def nota(o):
             n = corrida(o, k)
-            return n, apontam(o, jogo[k][0], jogo[k + n - 1][0] + len(jogo[k + n - 1][2]), conhecidos)
+            return (n, apontam(o, jogo[k][0], jogo[k + n - 1][0] + len(jogo[k + n - 1][2]), conhecidos),
+                    concorda(o, escolher(o, k, set(), -1)[1], jogo[k][0]))
         o = max(opcoes.values(), key=nota)
         ja.add(id(o))
         usados, ultima = set(), -1
@@ -383,12 +388,12 @@ def achar_dados(o, funcs, conhecidos):
 
 
 def entre_modulos(o):
-    """Símbolos "static" que uma parte do arquivo usa de outro módulo (OS_ResetSystem, no
-    ARM9, chama OSi_DoResetSystem, no ITCM). Para o linker é o mesmo .o, mas o dsd corta
-    cada módulo à parte e não deixa um módulo usar um símbolo local do outro: esses
-    ficam globais em symbols.txt."""
+    """Símbolos "static" que uma parte do arquivo usa de outra (OS_ResetSystem, no ARM9,
+    chama OSi_DoResetSystem, no ITCM). Para o linker é o mesmo .o, mas para o dsd são
+    dois arquivos (x.c e x.itcm.c), e ele não deixa um usar um símbolo local do outro:
+    esses ficam globais em symbols.txt."""
     def mod(sec):
-        return OUTROS_MODULOS.get(o.nomes_sec[sec], ("main",))[0] if isinstance(sec, int) else None
+        return OUTROS_MODULOS.get(o.nomes_sec[sec], ("",))[0] if isinstance(sec, int) else None
     nomes = set()
     for sec, rl in o.rels.items():
         for _, _, sym, _ in rl:
@@ -456,11 +461,6 @@ def main():
         for end, nomes in fora.items():
             for n in nomes:
                 conhecidos.setdefault(n, end)
-    # a seção .version (a "assinatura" da biblioteca) o linker da Nintendo punha num
-    # lugar próprio; por enquanto esses arquivos continuam vindo do assembly
-    for o in objs:
-        if o.especiais:
-            quebrados.setdefault(id(o), f"tem partes em {', '.join(o.especiais)}")
     # símbolos que o linker da Nintendo calculava (SDK_SYS_STACKSIZE, o fim da arena
     # do ITCM...) não existem no nosso arquivo de link: quem usa ainda não liga
     for fonte, o, funcs, _ in arquivos:
@@ -529,9 +529,11 @@ def main():
     sem_par = [f"{e:#x} {n}" for e, _, o, n in seq if o is None]
     if sem_par:
         print(f"funções sem par no fonte ({len(sem_par)}): {', '.join(sem_par)}")
+    no_jogo = {id(o) for _, s in seqs for _, _, o, _ in s if o is not None}
     for o in objs:
-        if id(o) in quebrados:
+        if id(o) in quebrados and id(o) in no_jogo:
             print(f"não liga: {fontes[os.path.basename(o.caminho)]}: {quebrados[id(o)]}")
+    print(f"# {len(no_jogo)} arquivos da biblioteca estão no jogo")
     for p in problemas:
         print("PROBLEMA:", p)
     print(f"# {len(saida)} arquivos, {sum(len(a[2]) for a in arquivos)} funções, {len(problemas)} problemas")
@@ -549,17 +551,21 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
     # novas. A parte no ITCM/DTCM leva outro nome ("x.itcm.c"), porque o dsd não aceita
     # o mesmo arquivo em dois módulos; montar_rom.sh a liga com o mesmo x.o
     ordem = [".text", ".rodata", ".data", ".bss"]
-    entradas = {"main": [], "itcm": [], "dtcm": []}
+    entradas = {}                                   # (apelido, módulo) -> [(nome, {seção: faixa})]
+    partes = [("", "main")] + sorted({v[:2] for v in OUTROS_MODULOS.values()})
     for fonte, faixas in saida:
-        for mod in entradas:
-            nome = fonte if mod == "main" else f"{fonte[:-2]}.{mod}.c"
+        for apelido, mod in partes:
+            nome = f"{fonte[:-2]}.{apelido}.c" if apelido else fonte
             secs = {}
             for sec, faixa in faixas.items():
-                destino_mod, destino_sec = OUTROS_MODULOS.get(sec, ("main", sec))
-                if destino_mod == mod:
+                a, _, destino_sec = OUTROS_MODULOS.get(sec, ("", "main", sec))
+                if a == apelido:
                     secs[destino_sec] = faixa
-            entradas[mod].append((nome, secs))
-    for mod, lista in entradas.items():
+            entradas.setdefault((apelido, mod), []).append((nome, secs))
+    por_modulo = {}
+    for (apelido, mod), lista in entradas.items():
+        por_modulo.setdefault(mod, []).extend(lista)
+    for mod, lista in por_modulo.items():
         caminho = modulo(DELINKS, mod)
         texto = open(caminho).read().rstrip("\n")
         for nome, secs in lista:

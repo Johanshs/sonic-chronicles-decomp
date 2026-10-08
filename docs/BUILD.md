@@ -107,21 +107,20 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 
 ## As bibliotecas da Nintendo, ligadas do fonte
 
-A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 84 dos 87
+A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 86 dos 87
 arquivos do NitroSDK que o jogo usa não vêm mais do assembly cortado: o build compila
 os `.c` do fonte público (veja [COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida))
-e liga os `.o`, e a ROM continua idêntica. São 95 KB, **9,8% do código do ARM9** (com o ITCM). Na
+e liga os `.o`, e a ROM continua idêntica. São 96 KB, **9,9% do código do ARM9** (com o ITCM). Na
 primeira vez, `montar_rom.sh` baixa e compila as bibliotecas sozinho (`nitrosdk.sh` e
 `nitrosystem.sh`, para `work/bibliotecas/`).
 
-Os 3 arquivos do SDK que ainda vêm do assembly, e por quê:
+Falta `gx_vramcnt.c`: a função `GX_SetBankForSubBG` (`0x020d6930`) faz o mesmo que o
+fonte, mas o `switch` dela saiu com outra árvore de comparações. Não é o compilador
+(as dez versões 2.0 dão o mesmo resultado), nem a ordem dos `case`, nem as opções de
+otimização testadas: a versão do arquivo que a Nintendo compilou deve ser um pouco
+diferente da pública.
 
-| Motivo | Arquivos |
-|---|---|
-| uma função no meio não bate com o fonte | `card_backup.c`, `gx_vramcnt.c` |
-| têm a seção `.version`, que o linker da Nintendo punha num lugar próprio | `os_china.c` |
-
-Quatro coisas no link que só apareceram com o SDK:
+Cinco coisas no link que só apareceram com o SDK:
 
 - **Funções que ninguém chama.** O jogo tem `OS_DisableProtectionUnit`, que nada chama.
   O linker original a manteve; o nosso, com `-dead`, joga fora. `montar_rom.sh` põe um
@@ -145,6 +144,10 @@ Quatro coisas no link que só apareceram com o SDK:
   parte usa da outra (`OSi_DoResetSystem`) ficam globais em `symbols.txt`, senão o
   `dsd` recusa; o `dsd check symbols` aponta essa diferença e `montar_rom.sh` deixa
   passar só ela.
+- **A assinatura `.version`.** Arquivos como `card_backup.c` têm uma string
+  `[SDK+NINTENDO:BACKUP]` numa seção `.version`, que o `.lcf` da Nintendo punha logo
+  depois do crt0 (em `0x02000bd4`). Ela entra pelo mesmo truque, como
+  `card_backup.version.c`, e o `.lcf` pede `card_backup.o(.version)`.
 
 Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.py`:
 

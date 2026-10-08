@@ -263,7 +263,21 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   vindo do `.o` compilado). Depois `ligar_bibliotecas.py` aprendeu a dividir o ITCM e a
   achar os dados do DTCM como faz com o resto. Dois arquivos (`os_cache.c`,
   `mi_dma_gxcommand.c`) nem precisavam disso: as funções deles no ITCM não estão no
-  jogo, o linker as descartou. Ficaram 84 de 87.
+  jogo, o linker as descartou. Foram para 84.
+- **Erro de conta, e um empate mal resolvido.** O `os_china.c` aparecia como "não
+  liga", mas nenhuma função dele está no jogo: a checagem olhava todos os `.o`
+  compilados. E o `card_backup.c` "não batia" por engano: `PXI_Init` (8 bytes, um "pula
+  para X") é idêntica a `CARD_WaitBackupAsync`, o empate foi para o arquivo errado, e
+  quando o `card_backup` apareceu no lugar dele parecia "repetido". O desempate agora
+  olha para onde a função pula, e o `pxi_init.c` apareceu. O total certo é 87 (sem o
+  `os_china.c`, com o `pxi_init.c`), não os 87 de antes por coincidência.
+- **`.version`.** A string `[SDK+NINTENDO:BACKUP]` do `card_backup.c` está em
+  `0x02000bd4`, logo depois do crt0, como o `.lcf` da Nintendo manda. Entrou pelo mesmo
+  apelido do ITCM (`card_backup.version.c`). 86 de 87.
+- **O que falta: `gx_vramcnt.c`.** `GX_SetBankForSubBG` faz o mesmo que o fonte, mas o
+  `switch` saiu com outra árvore de comparações. Testados: as dez versões 2.0 do
+  compilador, as 24 ordens dos `case`, `case` a mais ou a menos, outras otimizações.
+  Nenhum bateu; o arquivo que a Nintendo compilou deve ser diferente do público.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

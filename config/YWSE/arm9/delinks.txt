@@ -534,6 +534,10 @@ NitroSDK/libraries/snd/src/snd_bank.c:
     complete
     .text       start:0x020daecc end:0x020db124
 
+NitroSDK/libraries/pxi/src/pxi_init.c:
+    complete
+    .text       start:0x020db124 end:0x020db12c
+
 NitroSDK/libraries/pxi/src/pxi_fifo.c:
     complete
     .text       start:0x020db12c end:0x020db378
@@ -602,6 +606,10 @@ NitroSDK/libraries/card/src/card_spi.c:
     complete
     .text       start:0x020ddf18 end:0x020de18c
 
+NitroSDK/libraries/card/src/card_backup.c:
+    complete
+    .text       start:0x020de18c end:0x020de4ec
+
 NitroSDK/libraries/card/src/card_rom.c:
     complete
     .text       start:0x020de4ec end:0x020dea14
@@ -661,3 +669,7 @@ NitroSDK/libraries/ctrdg/src/ctrdg_task.c:
 NitroSDK/libraries/math/src/math.c:
     complete
     .text       start:0x020e063c end:0x020e067c
+
+NitroSDK/libraries/card/src/card_backup.version.c:
+    complete
+    .text       start:0x02000bd4 end:0x02000bec

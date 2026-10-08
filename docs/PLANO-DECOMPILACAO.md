@@ -81,9 +81,9 @@ precisa ser reescrito do zero.
   `dsd sig apply`. **Pronto quando:** as funções do SDK estão nomeadas e os
   arquivos `.c` delas ligam com match.
   🟡 562 funções nomeadas (`decomp/tools/nitrosdk.sh`, com o fonte de ntrtwl/NitroSDK
-  4.2.30001, compilado em Thumb com a 2.0/sp1p2); 84 dos 87 arquivos já ligam a partir
-  do fonte com a ROM idêntica, inclusive as partes no ITCM e no DTCM. Faltam 3
-  (`.version` e 2 que não batem): lista em [BUILD.md](BUILD.md#as-bibliotecas-da-nintendo-ligadas-do-fonte).
+  4.2.30001, compilado em Thumb com a 2.0/sp1p2); 86 dos 87 arquivos já ligam a partir
+  do fonte com a ROM idêntica, inclusive as partes no ITCM e no DTCM. Falta o
+  `gx_vramcnt.c`, com uma função que não bate: lista em [BUILD.md](BUILD.md#as-bibliotecas-da-nintendo-ligadas-do-fonte).
 - **2.2 NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`). Mesma abordagem.
   ✅ a região `0x020c8278`-`0x020d4394` é 100% NitroSystem 071126 (Thumb, 2.0/sp2), e os
   59 arquivos dela são ligados a partir do fonte compilado com a ROM idêntica

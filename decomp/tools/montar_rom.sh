@@ -56,8 +56,8 @@ for f in json.load(sys.stdin)["files"]:
         # com o compilador e as flags delas (não as do jogo)
         NitroSDK/*|NitroSystem/*)
             lib="${fonte%%/*}"; resto="${fonte#*/}"
-            # "x.itcm.c"/"x.dtcm.c": a parte de x.c que mora no ITCM/DTCM (veja o passo 3)
-            resto="${resto/.itcm.c/.c}"; resto="${resto/.dtcm.c/.c}"
+            # "x.itcm.c", "x.dtcm.c", "x.version.c": partes de x.c (veja o passo 3)
+            resto="${resto/.itcm.c/.c}"; resto="${resto/.dtcm.c/.c}"; resto="${resto/.version.c/.c}"
             pronto="work/bibliotecas/${lib,,}/$(echo "${resto%.c}" | tr / _).o"
             if [ ! -f "$pronto" ]; then
                 echo "   compilando a biblioteca: decomp/tools/${lib,,}.sh --so-compilar"
@@ -78,10 +78,11 @@ dsd lcf -c "$CFG"
 # opção -force_active da linha de comando não serve: ela aborta passando de ~256
 # caracteres.) E os símbolos de config/YWSE/arm9/simbolos_linker.lcf.
 #
-# Um arquivo do SDK pode ter funções no ITCM (OS_IrqHandler) ou variáveis no DTCM. O dsd
-# não aceita o mesmo nome em dois módulos, então essas partes aparecem em
-# itcm/delinks.txt e dtcm/delinks.txt como "x.itcm.c"/"x.dtcm.c". O .o é um só (x.o),
-# com as seções .itcm, .dtcm e .dtcm.bss: aqui o .lcf passa a pedir essas seções a ele.
+# Um arquivo do SDK pode ter funções no ITCM (OS_IrqHandler), variáveis no DTCM ou a
+# string .version ("[SDK+NINTENDO:BACKUP]", que a Nintendo punha logo depois do crt0).
+# O dsd não aceita o mesmo nome duas vezes, então essas partes aparecem em delinks.txt
+# como "x.itcm.c", "x.dtcm.c", "x.version.c". O .o é um só (x.o), com as seções .itcm,
+# .dtcm, .dtcm.bss e .version: aqui o .lcf passa a pedir essas seções a ele.
 python3 -c '
 import glob, re
 obj = open("work/build/objects.txt").read().splitlines()
@@ -99,7 +100,8 @@ for f in sorted(glob.glob("work/build/NitroS*/**/*.o", recursive=True)):
                 and s["st_shndx"] != "SHN_UNDEF" and s.name in jogo):
             nomes.append(s.name)
 lcf = open("work/build/arm9.lcf").read()
-for mod, sec, nova in (("itcm", "text", "itcm"), ("dtcm", "data", "dtcm"), ("dtcm", "bss", "dtcm.bss")):
+for mod, sec, nova in (("itcm", "text", "itcm"), ("dtcm", "data", "dtcm"), ("dtcm", "bss", "dtcm.bss"),
+                      ("version", "text", "version")):
     lcf = re.sub(rf"(\S+)\.{mod}\.o\(\.{sec}\)", rf"\1.o(.{nova})", lcf)
 if nomes:
     bloco = "FORCE_ACTIVE {\n    " + ",\n    ".join(nomes) + "\n}\n\n"
@@ -123,22 +125,22 @@ python3 decomp/tools/crc_area_segura.py "$ROM" "$SAIDA"
 
 echo "== 6. conferir"
 dsd check modules -c "$CFG" | sed 's/^\[INFO \] /   /'
-# Exceção: os "static" de um arquivo que mora em dois módulos (OSi_DoResetSystem, no
-# ITCM, chamada do ARM9) ficam globais em symbols.txt, porque o dsd não deixa um módulo
-# usar um símbolo local do outro. No .o eles continuam static: só essa diferença passa.
+# Exceção: os "static" de um arquivo dividido em partes (OSi_DoResetSystem, no ITCM,
+# chamada do ARM9) ficam globais em symbols.txt, porque o dsd não deixa uma parte usar
+# um símbolo local da outra. No .o eles continuam static: só essa diferença passa.
 "$DSD" check symbols -c "$CFG" -e work/build/arm9.o 2>&1 | python3 -c '
 import glob, re, sys
 from elftools.elf.elffile import ELFFile
 divididos = set()
 for f in glob.glob("work/build/NitroS*/**/*.o", recursive=True):
     elf = ELFFile(open(f, "rb"))
-    if any(s.name in (".itcm", ".dtcm", ".dtcm.bss") for s in elf.iter_sections()):
+    if any(s.name in (".itcm", ".dtcm", ".dtcm.bss", ".version") for s in elf.iter_sections()):
         divididos |= {s.name for s in elf.get_section_by_name(".symtab").iter_symbols()
                       if s["st_info"]["bind"] == "STB_LOCAL" and s.name}
 erros = [l for l in sys.stdin if l.startswith("[ERROR]")]
 ruins = [l for l in erros if not (re.search(r"Symbol .(\S+). at .* expected to be global but is local", l)
                                   and re.search(r"Symbol .(\S+).", l).group(1).strip("\x27") in divididos)]
-print(f"   símbolos: {len(erros) - len(ruins)} static de arquivos divididos entre módulos (esperado)")
+print(f"   símbolos: {len(erros) - len(ruins)} static de arquivos divididos em partes (esperado)")
 sys.stdout.write("".join(ruins))
 sys.exit(1 if ruins else 0)'
 ESPERADO=$(sha1sum "$ROM" | cut -d' ' -f1)
