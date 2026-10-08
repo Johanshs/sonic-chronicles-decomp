@@ -150,6 +150,8 @@ fáceis de testar no PC. As versões *matching* (os mesmos bytes do jogo) ficam 
 | `compilar.sh fonte.cpp saida.o` | compila com o compilador e as flags do jogo |
 | `comparar.py arquivo.o símbolo endereço` | compara uma função compilada com a do jogo, instrução por instrução |
 | `conferir_sem_rom.py` | o que o CI roda: SHA-1 de cada função decompilada contra `decomp/compilador/esperado.txt` |
+| `achar_funcoes.py lib.a ...` | acha no jogo as funções de uma biblioteca compilada (e grava os nomes com `--aplicar`) |
+| `versao_msl.sh` | qual versão do CodeWarrior forneceu o MSL do jogo |
 | `testar_compilador.sh` | matriz de versões × otimizações para as funções de `decomp/compilador/casos.txt` |
 | `gerar_config.sh rom.nds` | gera `config/YWSE/` do zero (apaga as edições à mão) |
 | `banner_sem_perda.py`, `crc_area_segura.py` | os dois ajustes que deixam a ROM idêntica |

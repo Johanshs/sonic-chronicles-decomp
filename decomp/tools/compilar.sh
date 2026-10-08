@@ -8,7 +8,8 @@
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 F="${FERRAMENTAS:-$REPO/work/ferramentas}"
-VERSAO="${MWCC_VERSAO:-2.0/sp1p5}"
+# 2.0/sp2: o MSL e o Runtime ligados no jogo são os da 2.0 sp2 (docs/COMPILADOR.md)
+VERSAO="${MWCC_VERSAO:-2.0/sp2}"
 SRC="$1"; OUT="$2"; shift 2
 FLAGS=(
     -c

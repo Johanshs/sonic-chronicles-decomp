@@ -22,7 +22,7 @@ diante, as partes podem ser feitas em paralelo, e de forma incremental para semp
 | Funções já reescritas | `HashResourceName`, `CExoString::CStr`, escolha do TLK por idioma (`src/`), validadas contra o jogo |
 | Formatos de dados | todos os principais lidos **e escritos** byte a byte (`engine/`) |
 | Bibliotecas embutidas | NitroSDK 4.2 (`0x04027531`), NitroSystem (`NNS_Tga`, `G3D`), MSL C++ da Metrowerks (iostreams) |
-| Compilador | CodeWarrior para DS, **mwccarm 2.0, `-O4,p`, Thumb, RTTI ligado, exceções desligadas** ([COMPILADOR.md](COMPILADOR.md)). Service pack exato: em aberto |
+| Compilador | CodeWarrior para DS, **mwccarm 2.0 sp2, `-O4,p`, Thumb, RTTI ligado, exceções desligadas** ([COMPILADOR.md](COMPILADOR.md)) |
 | Build matching | ✅ ROM reconstruída idêntica (SHA-1) a partir do assembly e do C++ de `src/` ([BUILD.md](BUILD.md)) |
 
 ---
@@ -83,6 +83,8 @@ precisa ser reescrito do zero.
 - **2.2 NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`). Mesma abordagem.
 - **2.3 Runtime C/C++ (MSL).** `memcpy`, `__register_global_object`, exceções,
   iostreams. Em geral, ligar o `.a` original do CodeWarrior já resolve.
+  🟡 as bibliotecas são as do CodeWarrior 2.0 sp2; 171 funções já têm o nome verdadeiro
+  (`decomp/tools/achar_funcoes.py`). Falta ligar o `.a` no lugar do código cortado.
 - **2.4 Mapa de arquivos.** Definir em `delinks.txt` os limites de cada "arquivo
   fonte" (*translation unit*). O jogo foi compilado arquivo por arquivo, e as
   classes ajudam a adivinhar a divisão (ex.: tudo de `CTlkTable` num `TlkTable.cpp`).

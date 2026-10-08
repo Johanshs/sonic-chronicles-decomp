@@ -26,7 +26,7 @@ ROM="$(realpath "${1:?uso: montar_rom.sh rom_original.nds}")"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 F="${FERRAMENTAS:-$REPO/work/ferramentas}"
 DSD="$F/bin/dsd"
-MWLD="$F/mwccarm/2.0/sp1p5/mwldarm.exe"
+MWLD="$F/mwccarm/2.0/sp2/mwldarm.exe"
 CFG=config/YWSE/arm9/config.yaml
 SAIDA=work/build/sonic_rebuilt.nds
 cd "$REPO"

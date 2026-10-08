@@ -190,6 +190,10 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   `.o`. Com uma função de template (que o compilador põe numa seção própria), as
   relocações erradas eram mascaradas e uma função idêntica aparecia como diferente. A
   seção certa é a que o campo `sh_info` da seção de relocações aponta.
+- **O service pack pelas bibliotecas.** O código do jogo não separava as versões 2.0,
+  mas o MSL que vem pronto com cada CodeWarrior sim. Procurando no jogo as funções das
+  bibliotecas de 7 versões, só a 2.0 sp2 achou todas as 283 (as outras, de 274 a 280).
+  De quebra, 171 funções do MSL ganharam o nome verdadeiro (`memcpy`, `fwrite`...).
 - **Do teste para o jogo.** CStr e o hash viraram `src/Aurora/*.cpp`, marcados
   `complete` no `delinks.txt`. O build passou a usar o nosso `.o` no lugar do código
   original, e o SHA-1 continuou o mesmo. Para provar que a verificação funciona,

@@ -111,7 +111,7 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 |---|---|---|
 | `dsd` | 0.12.1 (binário da release) | [ds-decomp](https://github.com/AetiasHax/ds-decomp/releases/tag/v0.12.1) |
 | `wibo` | 0.6.16 | [decompals/wibo](https://github.com/decompals/wibo): roda os `.exe` de 32 bits da Metrowerks no Linux, bem menor que o Wine |
-| `mwccarm`, `mwldarm` | 2.0/sp1p5 (veja [COMPILADOR.md](COMPILADOR.md)) | pacote `mwccarm.zip` do [decomp.me](https://github.com/decompme/compilers) |
+| `mwccarm`, `mwldarm` | 2.0/sp2 (veja [COMPILADOR.md](COMPILADOR.md)) | pacote `mwccarm.zip` do [decomp.me](https://github.com/decompme/compilers) |
 
 Todas são baixadas com SHA-256 conferido. Por que a release do `dsd` e não o código
 do `main`: compilado do `main` (commit `c408063`), o `dsd lcf` acusa "nome de arquivo

@@ -8,8 +8,8 @@ ser provada certa byte a byte.
 
 | | Valor | Como sabemos |
 |---|---|---|
-| Compilador | **Metrowerks CodeWarrior para DS, mwccarm 2.0** (qualquer service pack de `base` a `sp2p4`) | 3 funções com 100% de match; 1.2 e "DSi" (4.0) erram |
-| Versão usada no build | `2.0/sp1p5` | todas as 2.0 geram o mesmo código nos testes; veja "O que não sabemos" |
+| Compilador | **Metrowerks CodeWarrior para DS, mwccarm 2.0** | 3 funções com 100% de match; 1.2 e "DSi" (4.0) erram |
+| Service pack | **2.0 sp2** (as bibliotecas com certeza; o compilador, quase) | o MSL e o Runtime ligados no jogo são os da sp2: [abaixo](#o-service-pack-pelas-bibliotecas) |
 | Otimização | `-O4,p` | `-O4,s` (tamanho) erra 2 das 3; `-O3,p` também acerta |
 | Modo | `-thumb -interworking` | o código do jogo é Thumb; o NitroSDK é ARM |
 | C++ | `-lang=c++ -Cpp_exceptions off -RTTI on` | abaixo |
@@ -75,15 +75,56 @@ Algumas lições destas três, que devem valer para o resto do jogo:
   sinal) não tem a forma com deslocamento fixo, então o compilador usa um registrador
   zerado.
 
+## O service pack pelas bibliotecas
+
+O código do próprio jogo não separa as versões 2.0 entre si. Mas o jogo também traz,
+no fim do ARM9 (a partir de `0x020e09d0`), a biblioteca C/C++ da Metrowerks (MSL) e
+o Runtime (divisão, ponto flutuante, `new`/`delete`...). Essas bibliotecas vêm
+**prontas** com cada versão do CodeWarrior, e mudam um pouco de uma versão para outra.
+
+`decomp/tools/achar_funcoes.py` procura cada função de uma biblioteca no jogo
+(mesmo tamanho, mesmos bytes fora das relocações). `decomp/tools/versao_msl.sh` faz
+isso com as bibliotecas de cada versão (pacote do [metroskrew](https://github.com/mid-kid/metroskrew)):
+
+```
+versão  endereços achados (de 283 que alguma versão acha)
+base     274
+p2       274
+p4       276
+sp1      276
+sp1p2    280
+sp2      283      <- a única que acha todos
+sp2p3    275
+```
+
+Das 15 funções que mudam entre versões, a sp2 acerta as 15; cada outra versão erra
+pelo menos 3. Então o jogo foi ligado com o CodeWarrior 2.0 **sp2**. O compilador quase
+certamente é o da mesma instalação: `2.0/sp2`, ou um patch dela que não tenha trazido
+bibliotecas novas (o pacote não tem bibliotecas próprias da `sp2p2`; isto é dedução).
+É o que `compilar.sh` usa.
+
+Para comparação: no decomp do Pokémon Platinum, o NitroSDK 4.2.30001 (a mesma versão
+deste jogo) foi compilado pela Nintendo com a `2.0/sp1p2`, e a NitroSystem com a `2.0/sp2`.
+
+**Bônus:** as funções achadas sem ambiguidade ganharam o nome verdadeiro em
+`symbols.txt` (171 nomes: `memcpy`, `fwrite`, `__flush_buffer`, `abort`...). Funções que
+são idênticas entre si (`abs` e `labs`, os destrutores vazios) ficaram com o nome
+antigo, porque não dá para saber qual é qual. O comando:
+
+```
+L=work/ferramentas/metroskrew/lib/metroskrew/sdk/ds/2.0/sp2
+python3 decomp/tools/achar_funcoes.py --de 0x020e09d0 --aplicar \
+    $L/msl/MSL_C/MSL_ARM/Lib/MSL_C_NITRO_{T,Ai}_LE.a \
+    $L/msl/MSL_C++/MSL_ARM/Lib/MSL_CPP_NITRO_{T,Ai}_LE.a \
+    $L/Runtime/Runtime_ARM/Runtime_NITRO/Lib/NITRO_Runtime_{T,Ai}_LE.a
+```
+
 ## O que não sabemos (ainda)
 
-- **Qual service pack da 2.0.** Em cerca de 30 construções diferentes de C++ (laços, `switch`,
-  classes, virtuais, ponto flutuante, cópia de struct, 64 bits) as versões
-  `2.0/sp1` a `2.0/sp2p4` geraram código idêntico. A única diferença achada foi
-  entre `2.0/base` e as outras: `while (n--)` (a `base` usa `subs` + `bmi`). Nenhuma
-  função do jogo com esse laço foi igualada ainda. Usamos `sp1p5` (o mesmo do decomp
-  do Zelda: Phantom Hourglass); se uma função futura só bater com outra, troca-se
-  em `compilar.sh`.
+- **O service pack do compilador com prova direta.** As bibliotecas são da sp2, mas
+  em cerca de 30 construções de C++ as versões `2.0/sp1` a `2.0/sp2p4` geraram código
+  idêntico; a única diferença achada foi `while (n--)` entre a `2.0/base` e as outras.
+  Se uma função futura só bater com outra versão, troca-se em `compilar.sh`.
 - **As flags do NitroSDK, da NitroSystem e do MSL** (Fase 1.3). São bibliotecas que a
   Nintendo e a Metrowerks compilaram, em ARM, provavelmente com outras flags. Elas
   serão testadas quando a Fase 2 as separar.
