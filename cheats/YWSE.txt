@@ -1,24 +1,27 @@
 # Cheats do projeto para Sonic Chronicles: The Dark Brotherhood (USA), código YWSE.
 # Formato: [Nome], ";" descrição opcional, e linhas "ENDEREÇO VALOR" do Action Replay DS.
 # Endereços e regras explicados em docs/COMBATE.md e docs/PLANO-MOD-MENU.md.
-# STATUS: experimental. Endereços conferidos no emulador; efeito em batalha ainda NÃO testado.
+# STATUS: testados no DS real (08/10/2026, R4i-SDHC Gold Pro + Pico Loader v1.6.0 DSTT):
+#   os 4 ligaram, o jogo rodou sem erro e o efeito visto foi o esperado. Foi uma
+#   observação a olho, não uma medição: os números ainda serão conferidos contra as
+#   fórmulas na fase A1 (emulador). Detalhes em docs/DIARIO.md, seção 12.
 # Para gravar num usrcheat.dat:
 #   python3 analise/tools/usrcheat.py inserir usrcheat.dat cheats/YWSE.txt saida.dat
 
 [Dano do grupo muito maior (regra 44: 110 para 1000)]
-; experimental: k do grupo no dano basico e nos POW
+; testado no DS: k do grupo no dano basico e nos POW
 020F64C0 000003E8
 
 [Inimigos sem dano aleatorio (regra 45: 60 para 0)]
-; experimental: dano inimigo = 0,9 x Power - Grit
+; testado no DS: dano inimigo = 0,9 x Power - Grit
 020F64BC 00000000
 
 [Defender mais forte (regra 8: Grit x11)]
-; experimental: Grit += Grit x 100/10 ao defender
+; testado no DS: Grit += Grit x 100/10 ao defender
 020F64FC 00000064
 
 [Dificuldade dinamica minima (L+R)]
-; experimental: segure L+R; nivel -4 nas proximas batalhas
+; testado no DS: segure L+R; nivel -4 nas proximas batalhas
 94000130 FCFF0000
 22160E58 00000001
 22160E54 000000FC

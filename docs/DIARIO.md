@@ -146,6 +146,28 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 12. Os cheats no DS de verdade
+O primeiro teste fora do emulador. O resultado está em
+[PLANO-MOD-MENU.md](PLANO-MOD-MENU.md#andamento-fase-a0-08102026).
+
+- **O caminho até o cartão.** O R4i-SDHC Gold Pro roda o Pico Loader v1.6.0, plataforma
+  DSTT (o arquivo do cartão é idêntico, byte a byte, ao da release oficial). O banco de
+  cheats público de 55 MB passava do limite de 30 MB do gravador do cartão; o
+  `usrcheat.py` gerou um banco enxuto com os jogos do cartão e uma pasta "Projeto
+  sonic-chronicles-decomp" com os 4 cheats de `cheats/YWSE.txt`.
+- **O teste (08/10/2026).** Os 4 cheats foram ligados pelo Pico Launcher, no DS. O jogo
+  rodou sem erro e o efeito de cada um foi o esperado: dano do grupo bem maior, dano inimigo sem a parte aleatória, defesa mais forte e a dificuldade dinâmica
+  baixando com L+R.
+- **O que isto prova.** Que os endereços das regras de combate (`0x020F64BC`,
+  `0x020F64C0`, `0x020F64FC`) e da dificuldade (`0x02160E54`/`58`) são os mesmos no DS e
+  no emulador, como se esperava de um ARM9 sem overlays; que o jogo lê as regras na hora
+  de cada conta (se as copiasse no boot, reescrever a global não mudaria nada); e que o
+  Pico Launcher aceita os tipos de código `0`, `2`, `9` e `D0`.
+- **O que isto não prova.** O teste foi a olho, sem medir. Ainda não sabemos se o dano
+  bate com as fórmulas do [COMBATE.md](COMBATE.md) número por número: isso é a fase A1, no
+  emulador, com captura de tela. A dificuldade dinâmica é o efeito mais difícil de ver
+  sem medir, então é o que mais precisa da A1.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
