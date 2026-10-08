@@ -70,6 +70,27 @@ NCLR (`RLCN`/`TTLP`) e NCGR (`RGCN`/`RAHC`), formatos padrão do NitroSDK. Retra
 e ícones vêm em 4 peças 64×64 (`_0`..`_3`, em 2×2). Paleta de cada imagem: struct
 `IMG` das telas `.gui` (60004 = ncgr, 60015 = nclr) ou linhas de GDA.
 
+## Modelos 3D (`.nsbmd`, `.nsbtx`, `.nsbca`)
+Os personagens são **modelos 3D** do NitroSystem, não sprites. Para cada um (ex.: Shadow):
+- `GenSha_AA.nsbmd` (`BMD0`): geometria e esqueleto. Ainda sem leitor nosso.
+- `GenSha_AA.nsbtx` (`BTX0`/`TEX0`): as texturas, pequenas e indexadas (64×64 e 32×32 a
+  256 cores), cada uma com a paleta `<textura>_pl` em BGR555. Leitor e escritor de paleta:
+  `analise/tools/nsbtx.py` (o layout está no topo do script). Ida e volta (`exportar` +
+  `importar`) dá os 584 `.nsbtx` do jogo idênticos byte a byte.
+- `SHA_CB_*.nsbca` (batalha) e `SHA_EX_*.nsbca` (exploração): animações do esqueleto.
+  Ainda sem leitor nosso.
+
+Tabelas: `creatures.gda` → coluna `Appearance` → `appearances.gda` (escala, nome do modelo
+na coluna `col_7e7d1786`, `Skeleton`). Em `animations.gda` cada coluna depois de
+`col_16ac1851` (o nome genérico da ação, como `EX_IDLE`) é um esqueleto, e a linha 0 dá o
+prefixo dos arquivos (`SHA_`, `SON_`, `KNU_`...). Isto último é inferido da leitura da
+tabela, não conferido no jogo. O Sonic e o Shadow jogáveis (aparências 0 e 4) têm o
+`Type` 4 e o nome do modelo vazio; como o jogo acha o modelo deles ainda não sabemos.
+
+*Validado no emulador:* com só as paletas de `GenSonN_AA.nsbtx` trocadas (azul → verde)
+e a ROM gerada pelo `sonic-mod pack`, o Sonic aparece verde na exploração (save do
+Capítulo 10). Ou seja, o Sonic jogável usa essa textura, apesar do nome vazio na tabela.
+
 ## Diálogos (`.dlg`, GFF4 `CONV`)
 `12002` nós `NTRY`: `12201` texto (TlkString), `12202` retrato (`prtl_<personagem><emoção>`),
 `12208`/`12209` condição e ação (`PLOT`), `12400` links. `12000` entradas `STRT`.

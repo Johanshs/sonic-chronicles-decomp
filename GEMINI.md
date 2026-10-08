@@ -1,10 +1,11 @@
-# Contexto para o Gemini
+# Contexto para o Gemini (Antigravity)
 
-Este arquivo é para você, Gemini. O Gemini CLI o carrega sozinho quando você é aberto
-dentro desta pasta. Ele diz o que é o projeto, onde você pode mexer, o que já está pronto
-e **os comandos exatos** para cada tarefa. Quando um comando daqui servir, copie-o como
-está, em vez de inventar outro. Se algo aqui não bater com o que você vê, pare e pergunte
-ao Johans.
+Este arquivo é para você, o agente Gemini do Johans no Antigravity. O Antigravity e o
+Gemini CLI carregam sozinhos um `GEMINI.md` na raiz da pasta aberta. Ele diz o que é o
+projeto, onde você pode mexer, o que já sabemos sobre **personagens e seus assets** (a sua
+frente: adicionar o **Silver**) e **os comandos exatos** para cada tarefa. Quando um
+comando daqui servir, copie-o como está, em vez de inventar outro. Se algo aqui não bater
+com o que você vê, pare e pergunte ao Johans.
 
 Escrito em 08/10/2026. Os números de PR e o estado das frentes podem ter mudado desde
 então: confira com `git fetch origin` e `git branch -r` (seção 4).
@@ -16,7 +17,9 @@ então: confira com `git fetch origin` e `git branch -r` (seção 4).
 - Jogo: **Sonic Chronicles: The Dark Brotherhood**, Nintendo DS, versão dos EUA, código
   **YWSE**. Motor Aurora da BioWare, NitroSDK 4.2.
 - Objetivos: decompilação completa, cheats para cartão R4, um painel de controle (mod
-  menu) dentro do jogo e **criar conteúdo novo** (itens, golpes, inimigos, textos).
+  menu) dentro do jogo e **criar conteúdo novo** (itens, golpes, inimigos, personagens).
+- A sua frente: **adicionar o Silver**. Você já tem uma base da lógica; o que falta são
+  assets fiéis ao jogo. A seção 5 diz o que o jogo usa para desenhar um personagem.
 - Repositório: https://github.com/Johanshs/sonic-chronicles-decomp (GPL-3).
 - Dono: **Johans** (GitHub `Johanshs`). Ele quer **aprender**: explique sempre o
   *porquê* do que fez, em português simples.
@@ -69,7 +72,7 @@ branch próprio que vira um PR para `dev`.
 
 ```bash
 git fetch origin
-git switch -c gemini/NOME-DO-ASSUNTO origin/dev     # ex.: gemini/inimigo-variante
+git switch -c gemini/NOME-DO-ASSUNTO origin/dev     # ex.: gemini/silver
 ```
 
 **Não toque nestes branches** (são do Claude ou já têm PR aberto). Não faça commit, merge,
@@ -91,32 +94,104 @@ vai ter conflito. Evite; se precisar, mude o mínimo e avise o Johans:
 `cheats/YWSE.txt`, `docs/PLANO-MOD-MENU.md`.
 Arquivos **novos** seus não dão conflito: prefira criá-los.
 
-## 5. Conteúdo novo: o que já existe e o que está em andamento
+## 5. A frente do Silver: como o jogo define e desenha um personagem
 
-Esta é a frente mais parecida com a sua. Leia antes de começar para não refazer nada.
+Tudo o que está aqui foi lido das tabelas e dos arquivos do jogo em 08/10/2026. O que foi
+**conferido no emulador** está marcado; o resto é leitura ou inferência e precisa de prova.
 
-**Pronto e provado no emulador (PR #39, branch `claude/conteudo-novo-*`):**
-- **Item novo:** linha 288 de `Items.csv`, "Chili Dog", cura 321 HP (`Item288.ITM`), à
-  venda nas 5 lojas (`Store1.csv`...`Store5.csv`). Compra e cura conferidas na RAM.
-- **Golpe POW novo:** linha 155 de `combo.csv`, "Sonic Boom", 3 PP, posto no `Combo7` do
-  Sonic em `creatures.csv`. Aparece na lista, gasta 3 PP e o jogo calcula o dano pela linha
-  155. O dano ainda não foi medido.
-- Textos novos com ids `990100` em diante.
+### 5.1 O personagem nas tabelas (projeto do `sonic-mod unpack`, pasta `tabelas/test/`)
 
-**Em andamento agora, pelo Claude (não comece o mesmo):**
-- Um POW novo **com animação e efeito visual (VFX)** e **sprites novos**. A ligação
-  descoberta até aqui: `combo.csv` → `animations.csv` → `AnimationEvents.csv` → `VFX.csv`.
-  A função do jogo que cria cada efeito visual está em `0x0202f47c`.
+| Tabela | O que define | Shadow (exemplo) |
+|---|---|---|
+| `creatures.csv` | uma linha por criatura; linhas 0 a 9 são os jogáveis | `ID` 4 |
+| ↳ `NameStrRef` | id do nome em `textos/en.csv` | 21782 ("Shadow") |
+| ↳ `HitPoints`, `Speed`, `Attack`, `Defense`, `Power`, `Grit`, `Luck`, `NumActions` | atributos | 30, 7, 8, 18, 11, 3, 1, 3 |
+| ↳ `Combo1`...`Combo10` | golpes POW (linhas de `combo.csv`) | 12 a 17 |
+| ↳ `Advancement` | curva de nível (`Adv_Shadow.csv`) | `Adv_Shadow` |
+| ↳ `Appearance` | linha de `appearances.csv` (o modelo 3D) | 4 |
+| ↳ `ConversationPortrait`, `PortraitPalette` | retratos de diálogo e a paleta deles | `PRTL_SDW`, `PRTL_Shadow.nclr` |
+| ↳ `MicroPortrait`, `Portrait`, `ExploreMicroPortrait` | retratos pequenos das telas | `PRT_TP_SDW.ncgr`, `PRT_SP_SDW.ncgr`, `PRT_TP_E_SDW.ncgr` |
+| ↳ `ProfilePortraitPrefix`, `ProfilePortraitPalette` | tela de perfil | `CharPro_SDW`, `CharPro_SDW.nclr` |
+| ↳ `PlayerID`, `Class` | qual jogável é | 4, 4 |
+| `appearances.csv` | `Scale`, nome do modelo (coluna `col_7e7d1786`), `Skeleton` | linha 4: `Type` 4, modelo vazio, `Skeleton` 4 |
+| `animations.csv` | uma linha por ação (`EX_IDLE`, `EX_WALK`, `CB_ATTACK`...); uma coluna por esqueleto; a linha 0 dá o prefixo dos arquivos | coluna do Shadow: prefixo `SHA_` |
+| `party.csv` | os membros do grupo (`MemberName`, `CreatureID`) | |
 
-**Planejado e ainda livre** (combine com o Johans qual você pega):
-- uma variação de inimigo (`creatures.csv` e `squads.csv`);
-- um diálogo editado;
-- itens de equipamento ou Chao novos (só itens consumíveis foram testados).
+Atenção: o Sonic e o Shadow jogáveis têm `Type` 4 e o nome do modelo **vazio** em
+`appearances.csv`. Mesmo assim o jogo usa as texturas `GenSonN_AA.nsbtx` no Sonic (provado
+no emulador, 5.3). Como o jogo escolhe o modelo do `Type` 4 ainda não sabemos. Também não
+sabemos quantos personagens jogáveis o código aceita: isso está no código, não nas tabelas.
 
-**Para os seus conteúdos não colidirem com os do Claude:**
-- ids de texto: use **995000 a 995999** (o Claude usa 990xxx);
-- numa linha nova de tabela, use o próximo número livre do seu projeto de mod e anote no
-  PR qual número usou. Se um dia os mods forem juntados, um dos dois renumera.
+### 5.2 Os assets de um personagem
+
+Os personagens **não são sprites**: são **modelos 3D** do NitroSystem. Os arquivos do
+Shadow, como o `sonic-dump` os extrai em `saida/herf/test/`:
+
+| O quê | Arquivos do Shadow | Formato | Temos ferramenta? |
+|---|---|---|---|
+| modelo (forma e esqueleto) | `GenSha_AA.nsbmd` | `BMD0` | **não** |
+| texturas | `GenSha_AA.nsbtx` | 3 texturas de 256 cores (64×64, 32×32, 32×32) + 3 paletas | **sim**: `analise/tools/nsbtx.py` |
+| animações de batalha | `SHA_CB_*.nsbca`, `Sha_CB_Block*.nsbca` | `BCA0` | **não** |
+| animações de exploração | `SHA_EX_*.nsbca` (Idle, Walk, Run, Jump, Fall...) | `BCA0` | **não** |
+| retratos de diálogo | `PRTL_SDW<emoção>_0`...`_3.NCGR` (`def`, `gen`, `mad`, `smg`) + `PRTL_Shadow.NCLR` | 4 peças de 64×64 a 256 cores (montadas em 2×2) | ler: sim (`sonic-dump` gera PNG); **gravar: não** |
+| retratos pequenos | `PRT_TP_SDW`, `PRT_SP_SDW`, `PRT_MP_SDW`, `PRT_TP_E_SDW`, `PRT_TP_M_SDW` (`.NCGR`) | NCGR | ler: sim; gravar: não |
+| tela de perfil | `CharPro_SDW0`...`5.NCGR` + `CharPro_SDW.NCLR` | NCGR/NCLR | ler: sim; gravar: não |
+| efeitos dos golpes | `FX_SHASON_Atom.*`, `FX_SHASON_Nuke.*`, `FX_ShadBeam.nsbmd`, `FX_ShadTele.nsbmd` | modelos 3D de efeito | é a frente do Claude (5.5) |
+
+Para ver as texturas: `python3 analise/tools/nsbtx.py png saida/herf/test/GenSha_AA.nsbtx work/tex_shadow`.
+A de 64×64 tem o rosto e as penas; as de 32×32, as luvas e os sapatos.
+
+### 5.3 O que já foi provado no emulador
+
+Trocando **só as paletas** de `GenSonN_AA.nsbtx` (azul → verde) com o `nsbtx.py`, e
+gerando a ROM com o `sonic-mod pack`, o Sonic aparece **verde** na exploração (save do
+Capítulo 10). Captura antes e depois: `textura-recolorida-sonic.png` (o Johans tem o
+arquivo). Ou seja: o caminho "exportar a paleta → editar → importar → `pack`" funciona e o
+jogo usa a textura nova.
+
+### 5.4 Caminho recomendado para o Silver, do mais seguro ao mais difícil
+
+**Etapa 1: Silver no lugar do Shadow (só dados; tudo já dá para fazer e conferir).**
+O Shadow é o personagem com o corpo mais parecido. Nesta etapa o Silver substitui o
+Shadow em todo o jogo, inclusive nas cenas da história; é um primeiro passo, não o fim.
+1. Recolorir as 3 paletas de `GenSha_AA.nsbtx`: preto → branco/cinza claro, listras
+   vermelhas → turquesa (comandos na seção 6.6).
+2. Nome: em `textos/en.csv`, troque `21782,Shadow` por `21782,Silver` (e em `fr`, `de`, `es`,
+   `it`). Esse é o nome do personagem; as falas dos diálogos citam "Shadow" em outros textos.
+3. Atributos e golpes: a linha `ID` 4 de `creatures.csv`.
+4. Limite: a **forma** das penas continua a do Shadow, porque ela está no `.nsbmd`.
+
+**Etapa 2: as ferramentas que faltam (bom trabalho para você).** Cada uma precisa de prova
+de ida e volta: converter um arquivo original e voltar tem que dar **os mesmos bytes**.
+- PNG → textura do `.nsbtx` (mesmo tamanho, 256 cores), para **redesenhar** e não só
+  recolorir. Prova: `nsbtx.py png` de uma textura original, converter de volta, comparar.
+- PNG → NCGR + NCLR, para os retratos do Silver. O leitor já existe em Rust
+  (`engine/crates/sonic-formats/src/nitro.rs`); falta o escritor. Prova: `sonic-dump` de um
+  retrato original, converter o PNG de volta, comparar com o original.
+
+**Etapa 3: o Silver como personagem a mais (sem tirar o Shadow). Ninguém testou ainda.**
+Ideia a provar: copiar `GenSha_AA.nsbmd` e o `.nsbtx` recolorido com nomes novos
+(ex.: `GenSil_AA.nsbmd`, `GenSil_AA.nsbtx`) em `arquivos/test/` (o `pack` **adiciona**
+arquivos de nome novo), criar uma linha em `appearances.csv` com esse modelo e o mesmo
+`Skeleton` de uma aparência que já usa `GenSha_AA` (a linha 68 usa o esqueleto 58, cujo
+prefixo de animação também é `SHA_`), e uma linha nova em `creatures.csv`. Riscos: os nomes
+das texturas **dentro** do `.nsbtx` (`GENSha_AA_1`...) talvez precisem bater com o `.nsbmd`;
+e o código pode limitar o número de jogáveis. Teste um passo de cada vez.
+
+**Etapa 4: forma e animações próprias.** Penas do Silver e a pose da psicocinese exigem
+editar o `.nsbmd` e criar `.nsbca`. Não temos leitor nem escritor desses formatos. Converse
+com o Johans antes de começar; é um projeto grande por si só.
+
+### 5.5 A outra frente de conteúdo novo (do Claude): não refaça, não mexa
+
+- **Pronto (PR #39):** item 288 "Chili Dog" nas lojas e golpe POW 155 "Sonic Boom" no Sonic.
+  Textos novos com ids `990100` em diante.
+- **Em andamento agora:** um POW novo com animação, efeito visual (VFX) e sprites novos. A
+  ligação já achada: `combo.csv` → `animations.csv` → `AnimationEvents.csv` → `VFX.csv`; a
+  função que cria cada efeito está em `0x0202f47c`. Quando esse PR sair, ele vai dizer como
+  fazer o efeito de um golpe; use isso para os golpes do Silver em vez de descobrir de novo.
+- **Para não colidir:** use ids de texto de **995000 a 995999** (o Claude usa 990xxx). Numa
+  linha nova de tabela, use o próximo número livre e anote no PR qual número usou.
 
 ## 6. Comandos prontos
 
@@ -128,7 +203,7 @@ PowerShell, as diferenças estão no fim de cada bloco.
 
 ```bash
 # Rust 1.80+ (https://rustup.rs) e Python 3.10+
-pip install ndspy capstone pillow py-desmume
+pip install ndspy capstone pillow py-desmume      # pillow também serve ao nsbtx.py
 cd engine && cargo build --release && cd ..
 # os programas ficam em engine/target/release/sonic-mod e engine/target/release/sonic-dump
 ```
@@ -166,7 +241,9 @@ PowerShell: `$ROM = "C:\caminho\Sonic Chronicles.nds"` e
 | golpes POW | `tabelas/test/combo.csv` (`Cost`, `Damage1..3`, `NameStrRef`...) |
 | personagens e inimigos | `tabelas/test/creatures.csv` (linhas 0 a 9 = jogáveis; 0 é o Sonic) |
 | grupos de inimigos | `tabelas/test/squads.csv` |
-| animações e efeitos | `animations.csv`, `AnimationEvents.csv`, `VFX.csv` (frente do Claude, seção 5) |
+| aparência (modelo 3D) | `tabelas/test/appearances.csv` |
+| animações e efeitos | `animations.csv`, `AnimationEvents.csv`, `VFX.csv` (efeitos: frente do Claude, 5.5) |
+| grupo | `tabelas/test/party.csv` |
 | textos | `textos/en.csv` (`id,texto`), e `fr`, `de`, `es`, `it` |
 
 Comandos úteis para olhar uma planilha sem abrir editor:
@@ -210,7 +287,39 @@ Para ler um deles sem trocar de branch:
 Dica do Johans para testar golpes POW: existe um **Chao que joga o minijogo de toque
 sozinho**. Equipado no personagem, ele evita depender de acertar os anéis.
 
-### 6.5 Antes de abrir o PR
+### 6.5 Extrair os assets (para olhar e para copiar)
+
+```bash
+engine/target/release/sonic-dump "$ROM" saida      # ~8 s; tudo fica em saida/ (fora do Git)
+ls saida/herf/test | grep -i -E 'GenSha|^SHA_|SDW'  # os arquivos do Shadow
+```
+
+`saida/herf/test/` tem cada arquivo do pacote principal já descomprimido e com nome;
+`saida/imagens/montadas/test/PRTL_SDWgen.png` é um retrato inteiro do Shadow (as 4 peças
+juntas) e `saida/imagens/sprites/test/` tem cada peça e os retratos pequenos em PNG. Para trocar um arquivo do jogo, copie a
+versão editada para `modproj/meu_mod/arquivos/test/` **com o mesmo nome** e rode o `pack`:
+ele mostra `arquivo test/NOME (substituído)`. Um nome que não existe é **adicionado**.
+
+### 6.6 Recolorir um personagem (a receita provada na seção 5.3)
+
+```bash
+T=analise/tools/nsbtx.py
+python3 $T info     saida/herf/test/GenSha_AA.nsbtx                  # texturas e paletas
+python3 $T png      saida/herf/test/GenSha_AA.nsbtx work/tex_shadow  # ver as texturas
+python3 $T exportar saida/herf/test/GenSha_AA.nsbtx work/shadow.csv  # paleta,indice,r,g,b
+# edite work/shadow.csv (cores de 0 a 255) e salve como work/silver.csv
+python3 $T importar saida/herf/test/GenSha_AA.nsbtx work/silver.csv modproj/meu_mod/arquivos/test/GenSha_AA.nsbtx
+python3 $T png      modproj/meu_mod/arquivos/test/GenSha_AA.nsbtx work/tex_silver   # confira antes do pack
+engine/target/release/sonic-mod pack "$ROM" modproj/meu_mod work/silver.nds
+```
+
+Não mude as cores magenta (255, 0, 255): aparecem nas texturas como área transparente
+(em `GENSha_AA_1_pl` é o índice 0). O DS guarda 32
+níveis por canal, então cores muito próximas podem virar a mesma. Para ver o Shadow no
+jogo, ele precisa estar no grupo. No save do Capítulo 10 do Johans o grupo é Sonic, Tails,
+Omega e Rouge, e na exploração só o líder (Sonic) aparece na tela.
+
+### 6.7 Antes de abrir o PR
 
 ```bash
 cd engine && cargo fmt && cargo clippy --release && cargo test --release && cd ..
@@ -224,7 +333,7 @@ Os commits saem com o nome do Johans, e uma linha no fim diz que foi você:
 
 ```bash
 git add CAMINHO/DO/ARQUIVO                   # um por um; nunca "git add ." sem olhar o status
-git -c user.name="Johanshs" -c user.email="aluno.johan@gmail.com" commit -m "Adiciona variação do inimigo X
+git -c user.name="Johanshs" -c user.email="aluno.johan@gmail.com" commit -m "Adiciona as paletas do Silver
 
 Feito com o Gemini."
 git push -u origin gemini/NOME-DO-ASSUNTO
