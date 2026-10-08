@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.3"
+#define VERSAO "0.4"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -40,6 +40,7 @@ enum {
     P_ESQUADRAO, /* deslocamento dentro do esquadrão (CGamePlayerSquad), que mora no heap */
     P_MEMBRO,    /* deslocamento no vetor de atributos do personagem escolhido */
     P_GRUPO,     /* não tem campos: é a lista de personagens, para escolher um */
+    P_ITENS,     /* não tem campos fixos: "dar item" e as pilhas do inventário */
 };
 
 typedef struct {
@@ -164,6 +165,7 @@ static const Pagina paginas[] = {
     {"Dificuldade dinamica", campos_dificuldade, N(campos_dificuldade), P_FIXO},
     {"Aneis", campos_carteira, N(campos_carteira), P_ESQUADRAO},
     {"Grupo (personagens)", 0, 0, P_GRUPO},
+    {"Itens (inventario)", 0, 0, P_ITENS},
 };
 #define N_PAGINAS ((int)N(paginas))
 /* A página de atributos de um personagem: o título é desenhado com o nome dele. */
@@ -253,6 +255,57 @@ static u32 endereco(const Pagina *p, const Campo *c) {
     }
     default: return 0;
     }
+}
+
+/* ---- Itens ----
+ * O inventário é um CGameObjectInventory apontado pelo esquadrão (+0x40). Ele guarda uma
+ * lista de pilhas (quantos em +0x2C, o vetor em +0x34); cada pilha é um CGameItem com o
+ * número do item (linha de Items.gda) em +0xB8 (16 bits) e a quantidade em +0xBB (1
+ * byte). Achado no emulador com o save do Capítulo 10 (61 pilhas) e conferido no código:
+ * a função que tira um item do inventário (0x0202dacc) baixa exatamente esse byte. */
+#define VTABLE_INVENTARIO 0x020F93DCu
+#define VTABLE_ITEM 0x020F6120u
+#define ID_MAXIMO 287 /* Items.gda tem 288 linhas */
+
+static u32 inventario(void) {
+    u32 s = esquadrao();
+    if (!s) return 0;
+    u32 i = *(volatile u32 *)(s + 0x40);
+    return ponteiro_ok(i) && *(volatile u32 *)i == VTABLE_INVENTARIO ? i : 0;
+}
+
+static int n_pilhas(u32 inv) {
+    s32 n = *(volatile s32 *)(inv + 0x2C);
+    if (n < 0 || !ponteiro_ok(*(volatile u32 *)(inv + 0x34))) return 0;
+    return n > 255 ? 255 : n;
+}
+
+static u32 pilha(u32 inv, int k) {
+    u32 p = *(volatile u32 *)(*(volatile u32 *)(inv + 0x34) + 4u * k);
+    return ponteiro_ok(p) && *(volatile u32 *)p == VTABLE_ITEM ? p : 0;
+}
+
+/* Dar um item usando a PRÓPRIA função do jogo (0x0202dc6c), a mesma que as recompensas
+ * e o roubo da Rouge chamam: ela procura uma pilha do mesmo item e soma 1, ou cria um
+ * CGameItem novo e o põe no inventário. Assim o jogo fica coerente (o objeto é criado
+ * como ele mesmo cria), o que não aconteceria escrevendo bytes na mão.
+ * Argumentos, lidos no assembly dos chamadores: (inventário, número do item, vetor onde
+ * ela anota as pilhas mexidas, marcar como "novo", 1). O vetor é um CExoArrayList
+ * {quantos, capacidade, dados}; começa zerado e depois liberamos a memória dele com a
+ * função do jogo (0x020146d8). Antes de chamar, conferimos os primeiros bytes da função
+ * (push {r4-r7, lr}; sub sp, #0x2c): se não baterem, não é a ROM que conhecemos. */
+static int dar_item(int id) {
+    u32 inv = inventario();
+    if (!inv || id < 0 || id > ID_MAXIMO) return 0;
+    if (*(volatile u16 *)0x0202DC6C != 0xB5F0 || *(volatile u16 *)0x0202DC6E != 0xB08B) return 0;
+    if (*(volatile u16 *)0x020146D8 != 0xB510) return 0; /* push {r4, lr} */
+    int (*adicionar)(u32, int, u32 *, int, int) = (int (*)(u32, int, u32 *, int, int))0x0202DC6Du;
+    void (*liberar)(u32 *) = (void (*)(u32 *))0x020146D9u; /* +1: código Thumb */
+    u32 vetor[3];
+    vetor[0] = vetor[1] = vetor[2] = 0;
+    int ok = adicionar(inv, id, vetor, 0, 1);
+    liberar(vetor);
+    return ok;
 }
 
 /* ---- Conversão entre o valor guardado e o valor humano ----
@@ -398,6 +451,62 @@ static void desenhar_grupo(int sel, int topo) {
     rodape("A abre   B volta", "START fecha");
 }
 
+/* Página de itens: a linha 0 dá um item pelo número; as outras são as pilhas. */
+static int id_dar = 0;
+static const char *aviso_item = "";
+
+static void desenhar_itens(int sel, int topo) {
+    cabecalho("Itens (inventario)");
+    u32 inv = inventario();
+    int n = inv ? n_pilhas(inv) : 0;
+    con_texto(1, 3, COR_CINZA, "item                 qtd");
+    for (int i = topo; i <= n && i < topo + VISIVEIS; i++) {
+        int lin = LINHA_1 + i - topo;
+        int cor = i == sel ? COR_AMARELO : COR_BRANCO;
+        con_texto(0, lin, cor, i == sel ? ">" : " ");
+        if (i == 0) {
+            con_texto(1, lin, cor, "Dar 1 do item n.");
+            con_numero(17, lin, cor, id_dar, 3);
+            con_texto(21, lin, COR_CINZA, "(A)");
+            continue;
+        }
+        u32 p = pilha(inv, i - 1);
+        if (!p) { con_texto(1, lin, COR_CINZA, "?"); continue; }
+        con_texto(1, lin, cor, "item n.");
+        con_numero(8, lin, cor, *(volatile s16 *)(p + 0xB8), 3);
+        con_numero(20, lin, cor, *(volatile u8 *)(p + 0xBB), 4);
+    }
+    if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
+    if (topo + VISIVEIS < n + 1) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
+    if (!inv) con_texto(1, 20, COR_CINZA, "(inventario nao achado)");
+    else con_texto(1, 20, COR_VERDE, aviso_item);
+    rodape("<> -1/+1  L R -10/+10  A da", "B volta   START fecha");
+}
+
+static void teclas_itens(u16 t, int sel) {
+    s32 d = 0;
+    if (t & TECLA_DIREITA) d += 1;
+    if (t & TECLA_ESQUERDA) d -= 1;
+    if (t & TECLA_R) d += 10;
+    if (t & TECLA_L) d -= 10;
+    u32 inv = inventario();
+    if (sel == 0) {
+        id_dar += d;
+        if (id_dar < 0) id_dar = 0;
+        if (id_dar > ID_MAXIMO) id_dar = ID_MAXIMO;
+        if (t & TECLA_A) aviso_item = dar_item(id_dar) ? "item dado" : "o jogo recusou o item";
+        else if (d) aviso_item = "";
+        return;
+    }
+    if (!d || !inv || sel - 1 >= n_pilhas(inv)) return;
+    u32 p = pilha(inv, sel - 1);
+    if (!p) return;
+    s32 q = *(volatile u8 *)(p + 0xBB) + d;
+    if (q < 1) q = 1;   /* 0 deixaria uma pilha vazia: para tirar, use o jogo */
+    if (q > 99) q = 99;
+    *(volatile u8 *)(p + 0xBB) = (u8)q;
+}
+
 /* ---- Laço do painel ---- */
 
 /* Sobe/desce `sel` numa lista de n itens (dando a volta) e acerta a rolagem. */
@@ -428,7 +537,12 @@ static void painel(void) {
             if (t & TECLA_B) return;
             mover(t, &sel_inicio, &topo, N_PAGINAS);
             topo = 0;
-            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; }
+            if (t & TECLA_A) { tela = sel_inicio; sel = topo = 0; aviso_item = ""; }
+        } else if (tela >= 0 && paginas[tela].tipo == P_ITENS) {
+            if (t & TECLA_B) tela = TELA_INICIO;
+            u32 inv = inventario();
+            mover(t, &sel, &topo, 1 + (inv ? n_pilhas(inv) : 0));
+            teclas_itens(t, sel);
         } else if (tela >= 0 && paginas[tela].tipo == P_GRUPO) {
             if (t & TECLA_B) tela = TELA_INICIO;
             mover(t, &sel_grupo, &topo_grupo, n_membros);
@@ -462,6 +576,7 @@ static void painel(void) {
             if (membro_sel < n_membros) nome_de(membros[membro_sel], titulo + 7, 20);
             desenhar_pagina(&pagina_membro, titulo, sel, topo);
         } else if (paginas[tela].tipo == P_GRUPO) desenhar_grupo(sel_grupo, topo_grupo);
+        else if (paginas[tela].tipo == P_ITENS) desenhar_itens(sel, topo);
         else desenhar_pagina(&paginas[tela], paginas[tela].titulo, sel, topo);
     }
 }

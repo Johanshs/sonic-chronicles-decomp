@@ -90,6 +90,24 @@ void teste_main(void) {
     *(volatile u32 *)0x02110F00 = (u32)esquadrao;
     *(volatile u32 *)0x02160C18 = 0x02110F00;
 
+    /* O inventário de mentira: esquadrão + 0x40 aponta para ele (vtable de
+     * CGameObjectInventory); quantas pilhas em +0x2C e o vetor em +0x34. Cada pilha é um
+     * CGameItem com o número do item em +0xB8 e a quantidade em +0xBB. Aqui não há a
+     * função do jogo que dá itens: o painel deve conferir os bytes dela e recusar. */
+    volatile u32 *inventario = (volatile u32 *)0x02111800;
+    volatile u32 *pilhas = (volatile u32 *)0x02111900;
+    for (int k = 0; k < 2; k++) {
+        volatile u8 *item = (volatile u8 *)(0x02111A00 + 0x100 * k);
+        *(volatile u32 *)item = 0x020F6120;
+        *(volatile s16 *)(item + 0xB8) = (s16)(k ? 3 : 6);
+        item[0xBB] = (u8)(k ? 2 : 87);
+        pilhas[k] = (u32)item;
+    }
+    inventario[0] = 0x020F93DC;
+    inventario[0x2C / 4] = 2;
+    inventario[0x34 / 4] = (u32)pilhas;
+    esquadrao[0x40 / 4] = (u32)inventario;
+
     CONTADOR = 0;
     for (;;) {
         esperar_vblank();

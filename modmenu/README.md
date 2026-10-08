@@ -5,7 +5,7 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.3:**
+**Situação (08/10/2026), versão 0.4:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
@@ -14,6 +14,8 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
   jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
   Power, Grit, Luck).
+- **Itens**: dar qualquer item pelo número (a linha de `Items.gda`), usando a função do
+  próprio jogo, e mudar a quantidade de cada pilha do inventário.
 - **Compatível com os cheats**: o painel mora no fim do heap do jogo, então os objetos
   do jogo ficam nos mesmos endereços da ROM original (a v0.2 os deslocava).
 
@@ -29,8 +31,8 @@ jogo/gancho.s                   a ponte entre o laço principal do jogo e o pain
 jogo/painel.ld                  onde o painel mora na memória do jogo (0x023DC000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM
-ferramentas/testar.py           testa o painel na ROM de teste (18 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (10 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (21 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (11 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -65,8 +67,8 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (18 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (10 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (21 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (11 checagens)
 ```
 
 ## Como funciona
@@ -110,7 +112,18 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (10 checagen
      entraram (vtable `0x020F9200`); cada um tem os atributos em `+0x1C` e o nome em
      `+0x98`. As posições variam (num jogo novo o Sonic é a 0; num save carregado, a 1),
      e depois do último vem lixo, então o painel percorre 16 posições e fica só com as
-     que passam na conferência.
+     que passam na conferência;
+   - **inventário**: esquadrão `+0x40` aponta para o `CGameObjectInventory` (vtable
+     `0x020F93DC`); ele tem a lista de pilhas (quantas em `+0x2C`, o vetor em `+0x34`), e
+     cada pilha é um `CGameItem` (vtable `0x020F6120`) com o número do item em `+0xB8`
+     e a quantidade em `+0xBB`.
+8. **Dar um item chamando o jogo.** Escrever bytes não basta para criar um item: o jogo
+   precisa de um objeto `CGameItem` montado do jeito dele. Então o painel chama a
+   **função do próprio jogo** que dá itens (`0x0202dc6c`), a mesma que as recompensas e
+   o roubo da Rouge usam: ela soma 1 numa pilha do mesmo item ou cria uma nova. Os
+   argumentos foram lidos no assembly de quem já a chama: (inventário, número do item,
+   um vetor onde ela anota o que mexeu, marcar como novo, 1). Antes de chamar, o painel
+   confere os primeiros bytes da função; se não baterem (outra versão), ele recusa.
 
 ## Como foi testado
 
@@ -132,6 +145,10 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (10 checagen
   ao acaso pelo mapa): o gancho roda 30 vezes por segundo também na batalha; o painel
   abre na tela de cima; baixar o HP do Sonic de 311 para 301 no painel mudou o número
   na tela da batalha; ao fechar, a batalha seguiu para o menu de ações.
+- **Itens** (Capítulo 10): dar o item 3 duas vezes criou uma pilha nova e depois somou 1
+  nela; o Inventário do jogo, em "Consumables", mostrou **POW Candy (2)**. As outras
+  quantidades do painel batem com as da tela (Med Emitter 87, Health Root 4, Refresher
+  Wave 90). Num jogo novo, com o inventário vazio, também funciona (teste automático).
 
 ## Descobertas e erros pelo caminho
 
@@ -163,6 +180,13 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (10 checagen
 ## Limites conhecidos
 
 - **DS real ainda não testado.**
+- **Itens: só o número, sem o nome** (o nome está no texto do jogo; a lista de números
+  e nomes está no [COMBATE.md](../docs/COMBATE.md#12-itens) e no `Items.gda` da sua
+  cópia). Prefira consumíveis, equipamentos e Chao: dar itens de história (esmeraldas,
+  objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287) pode
+  confundir o jogo.
+- A quantidade de uma pilha vai de 1 a 99 no painel. Que 99 é o limite do jogo é uma
+  suposição (o maior número visto no save foi 98).
 - O painel mostra todos os personagens, sem marcar quais 4 estão no time da batalha.
 - A ROM enxertada muda 12 bytes do ARM9 dentro da "área segura" (0x4000 a 0x7FFF da
   ROM: o gancho e a posição da lista de autoload). Emuladores e cartões com ROMs

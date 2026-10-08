@@ -168,6 +168,25 @@ def main(rom, pasta):
     esperado[0x6B0:0x6B4] = (10 << 12).to_bytes(4, 'little')
     confere(depois_grupo == esperado,
             'só o HP do Sonic e o PP da Amy mudaram (nada escrito no "não criatura" nem no lixo)')
+    e.apertar('B')                       # volta à lista do grupo
+    e.apertar('B')                       # volta à tela inicial
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Itens"
+    c_antes = e.u32(CONTADOR)
+    e.apertar('A')                       # "dar item": aqui não há a função do jogo
+    confere(e.u32(CONTADOR) == c_antes and e.u32(0x04001000) == 0x10100,
+            'dar item sem a função do jogo: o painel recusa e continua de pé')
+    e.captura(pasta, '4d_itens')
+    e.apertar('BAIXO')                   # pilha 1: item 6, 87 unidades
+    e.apertar('DIR')
+    e.apertar('DIR')                     # 89
+    confere(e.mem.unsigned.read_byte(0x02111ABB) == 89, f'pilha 1: {e.mem.unsigned.read_byte(0x02111ABB)} (esperado 89)')
+    e.apertar('R')                       # 99, o máximo
+    confere(e.mem.unsigned.read_byte(0x02111ABB) == 99, 'pilha 1 para em 99')
+    e.apertar('BAIXO')                   # pilha 2: item 3, 2 unidades
+    for _ in range(3):
+        e.apertar('ESQ')                 # não desce de 1
+    confere(e.mem.unsigned.read_byte(0x02111BBB) == 1, 'pilha 2 para em 1 (pilha vazia não)')
 
     print('4. fechar com START')
     e.apertar('START')

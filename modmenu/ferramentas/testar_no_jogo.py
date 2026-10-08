@@ -9,8 +9,9 @@ exploração do capítulo 1) e confere:
      e o esquadrão está no mesmo endereço que no jogo original (0x022261E0: os cheats que
      usam endereços do heap continuam valendo), e o gancho roda uma vez por volta do laço;
   2. L + R + SELECT abre o painel (a tela do motor B passa a ser a do painel);
-  3. a página "Aneis" muda a carteira (esquadrão + 0x114), e a página "Grupo" acha o
-     Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar o Luck muda o atributo de verdade;
+  3. a página "Aneis" muda a carteira (esquadrão + 0x114), a página "Grupo" acha o
+     Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar o Luck muda o atributo de verdade,
+     e a página "Itens" dá um POW Candy pela função do próprio jogo;
   4. depois de 5 segundos com o painel aberto, o relógio do jogo NÃO dá o salto (o
      tempo medido na volta seguinte é o de uma volta normal);
   5. depois de fechar, a tela do motor B volta a ser a do jogo.
@@ -47,6 +48,15 @@ def main(rom, pasta):
     e = DeSmuME()
     e.open(rom)
     e.volume_set(0)
+    # O DeSmuME guarda o save do cartão por nome de ROM (~/.config/desmume/*.dsv). Se
+    # esta ROM já rodou com um save, o jogo mostraria os slots em vez de um jogo novo.
+    # Por isso começamos com um save vazio (64 KB de 0xFF, a memória de um cartão novo).
+    vazio = os.path.join(pasta, 'save_vazio.sav')
+    with open(vazio, 'wb') as f:
+        f.write(b'\xFF' * 65536)
+    if not e.backup.import_file(vazio):
+        raise SystemExit('não consegui zerar o save do emulador')
+    e.reset()
     m = e.memory.unsigned
 
     def quadros(n):
@@ -122,6 +132,25 @@ def main(rom, pasta):
     apertar('R')                           # +10
     confere(m.read_long(atributos + 0xAC) == 13, f'Luck = {m.read_long(atributos + 0xAC)} (esperado 13)')
     captura('3_grupo')
+
+    print('3b. itens: dar 1 POW Candy (item 3) com a função do jogo')
+    def inventario():
+        inv = m.read_long(esquadrao + 0x40)
+        n, dados = m.read_long(inv + 0x2C), m.read_long(inv + 0x34)
+        pilhas = [m.read_long(dados + 4 * k) for k in range(n)]
+        return {m.read_short(p + 0xB8): m.read_byte(p + 0xBB) for p in pilhas}
+    antes = inventario()
+    apertar('B')
+    apertar('B')                           # tela inicial
+    apertar('BAIXO')
+    apertar('A')                           # "Itens"
+    for _ in range(3):
+        apertar('DIR')                     # item 3
+    apertar('A')
+    depois = inventario()
+    confere(depois.get(3, 0) == antes.get(3, 0) + 1,
+            f'POW Candy: {antes.get(3, 0)} -> {depois.get(3, 0)} (esperado +1); pilhas {len(antes)} -> {len(depois)}')
+    captura('3b_itens')
 
     print('4. relógio')
     quadros(300)                           # 5 segundos com o painel aberto
