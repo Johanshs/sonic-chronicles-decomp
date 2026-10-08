@@ -147,6 +147,34 @@ desligável sem gerar outra ROM.
 Cheats previstos depois da A2: HP/PP infinitos, anéis, todos os itens, XP ×N, vencer a
 batalha, sem encontros, nível dos POW no máximo.
 
+### Andamento: fase A0 (08/10/2026)
+- **Cartão conferido**: o SD já tinha o Pico Launcher instalado (`r4.dat` abre
+  `/_picoboot.nds`). O `picoLoader9.bin` é idêntico, byte a byte, ao da release
+  **v1.6.0, plataforma DSTT**: a plataforma certa para o R4i-SDHC Gold Pro. A v1.7.1 é
+  opcional; a v1.6.0 já roda os jogos.
+- **Banco de cheats**: o `usrcheat.dat` do cartão é o de DeadSkullzJr (12/08/2025, 4.263
+  jogos). Ele **já tem o Sonic Chronicles** (entrada `YWSE`, CRC `ACB0DF12`, que confere
+  com a nossa ROM: `~crc32` do cabeçalho de 0x200 bytes).
+- **Ferramenta**: `analise/tools/usrcheat.py` lê, extrai e grava esse formato. A ida e
+  volta do banco inteiro (55 MB) sai idêntica byte a byte.
+- **Pistas para a fase A2**, tiradas dos cheats públicos (endereços de terceiros, a
+  conferir no emulador):
+
+  | Endereço | O que o cheat diz | Observação |
+  |---|---|---|
+  | `0x022604A0` | HP (escreve 9999) | heap, mas em posição fixa |
+  | `0x022262F4` | anéis | heap |
+  | `0x02226605`/`06` + 9×n | nível e posse dos Chao | laço do AR com passo 9 |
+  | `0x021D10AC` (ponteiro) +0x114 | dinheiro | primeira cadeia de ponteiros conhecida |
+  | `0x021D10EE`, `0x021D10F8` | EXP | perto do início do heap (`arenaLo` ~0x021B9500) |
+  | `0x02160EB0` | anéis do tabuleiro | BSS: endereço estático |
+  | `0x02017A20`, `0x0209451C` | patches de código (coletar de longe, pontos de habilidade) | trechos do ARM9 a estudar |
+
+- **No cartão**: gravei `/_pico/usrcheat_projeto.dat` (2 KB), um banco só com o Sonic
+  Chronicles: os 17 cheats públicos e mais a pasta "Projeto sonic-chronicles-decomp", com
+  os 4 cheats de `cheats/YWSE.txt`. O `usrcheat.dat` original não foi tocado. Para usar o
+  banco do projeto, renomeie os dois arquivos no Windows (o original continua no cartão).
+
 ## 4. Caminho B: o mod menu
 
 ### 4.1 Como o código entra no jogo
