@@ -90,8 +90,9 @@ precisa ser reescrito do zero.
   (`decomp/tools/nitrosystem.sh` + `decomp/tools/ligar_bibliotecas.py`).
 - **2.3 Runtime C/C++ (MSL).** `memcpy`, `__register_global_object`, exceções,
   iostreams. Em geral, ligar o `.a` original do CodeWarrior já resolve.
-  🟡 as bibliotecas são as do CodeWarrior 2.0 sp2; 171 funções já têm o nome verdadeiro
-  (`decomp/tools/achar_funcoes.py`). Falta ligar o `.a` no lugar do código cortado.
+  🟡 as bibliotecas são as do CodeWarrior 2.0 sp2; 62 dos 68 arquivos do MSL que o jogo
+  usa já ligam a partir dos `.o` tirados do `.a` (`decomp/tools/msl.sh`), com a ROM
+  idêntica. Faltam seis: lista em [BUILD.md](BUILD.md#as-bibliotecas-da-nintendo-ligadas-do-fonte).
 - **2.4 Mapa de arquivos.** Definir em `delinks.txt` os limites de cada "arquivo
   fonte" (*translation unit*). O jogo foi compilado arquivo por arquivo, e as
   classes ajudam a adivinhar a divisão (ex.: tudo de `CTlkTable` num `TlkTable.cpp`).

@@ -107,18 +107,26 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 
 ## As bibliotecas da Nintendo, ligadas do fonte
 
-A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 86 dos 87
-arquivos do NitroSDK que o jogo usa não vêm mais do assembly cortado: o build compila
-os `.c` do fonte público (veja [COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida))
-e liga os `.o`, e a ROM continua idêntica. São 96 KB, **9,9% do código do ARM9** (com o ITCM). Na
-primeira vez, `montar_rom.sh` baixa e compila as bibliotecas sozinho (`nitrosdk.sh` e
-`nitrosystem.sh`, para `work/bibliotecas/`).
+A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos), 86 dos 87
+arquivos do NitroSDK e 62 dos 68 arquivos do MSL (a biblioteca C/C++ da Metrowerks) que
+o jogo usa não vêm mais do assembly cortado. O build compila os `.c` do fonte público do
+SDK e da NitroSystem (veja [COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida)),
+tira os `.o` do MSL de dentro dos `.a` do CodeWarrior 2.0 sp2, liga tudo, e a ROM
+continua idêntica. São 132 KB, **13,6% do código do ARM9** (com o ITCM). Na primeira vez,
+`montar_rom.sh` prepara as bibliotecas sozinho (`nitrosdk.sh`, `nitrosystem.sh` e
+`msl.sh`, para `work/bibliotecas/`).
 
-Falta `gx_vramcnt.c`: a função `GX_SetBankForSubBG` (`0x020d6930`) faz o mesmo que o
+Do NitroSDK falta `gx_vramcnt.c`: a função `GX_SetBankForSubBG` (`0x020d6930`) faz o mesmo que o
 fonte, mas o `switch` dela saiu com outra árvore de comparações. Não é o compilador
 (as dez versões 2.0 dão o mesmo resultado), nem a ordem dos `case`, nem as opções de
 otimização testadas: a versão do arquivo que a Nintendo compilou deve ser um pouco
 diferente da pública.
+
+Do MSL faltam seis arquivos. Dois definem um modelo de C++ (`shared_ptr<char>`,
+`move_ptr`) que o jogo também tem, numa cópia só: ligados, dariam "definido duas vezes".
+Em `CPP_locale` e `C_math_arm` as funções aparecem no jogo em outra ordem, e em
+`CPP_iostream` e `C_ansi_fp` uma função do meio não bate. A lista sai de
+`ligar_bibliotecas.py MSL ...` (as linhas "não liga").
 
 Cinco coisas no link que só apareceram com o SDK:
 
@@ -149,6 +157,38 @@ Cinco coisas no link que só apareceram com o SDK:
   depois do crt0 (em `0x02000bd4`). Ela entra pelo mesmo truque, como
   `card_backup.version.c`, e o `.lcf` pede `card_backup.o(.version)`.
 
+O MSL trouxe outros problemas, porque o linker da Nintendo recebia os `.a` inteiros e
+ficava só com o que o jogo usa, e o nosso recebe um `.o` por arquivo ao lado do
+assembly. `decomp/tools/preparar_link.py` acerta as cópias dos `.o` em `work/build`
+antes do link (os de `work/bibliotecas` ficam intactos):
+
+- **Nomes que só código descartado cita.** `powf` (do `math.o`) chama `pow`, e nenhum
+  dos dois está no jogo. O `mwldarm` exige que todo nome citado exista, mesmo em código
+  que ele vai jogar fora (e ligar os `.a` inteiros dá "Internal linker error"). Esses
+  nomes ganham uma função vazia em `work/build/mortos.c`; o `-dead` a descarta.
+- **A tabela de exceções.** O `.lcf` do `dsd` guarda toda seção `.exceptix`
+  (`KEEP_SECTION`), porque a do assembly é um bloco que ninguém cita. Mas no `.o` cada
+  função tem a sua, que aponta para ela: guardada, ela manteria viva uma função que o
+  jogo descartou. A `.exceptix` dessas funções sai do link.
+- **Dados "multidef".** O typeinfo de `std::exception` vai em todo `.o` que o usa, e o
+  linker fica com uma cópia. No jogo ficou a de um arquivo do jogo, que para nós está no
+  assembly. O `mwldarm` aceita várias cópias multidef, mas não uma multidef e uma
+  global; a cópia do `.o` cede o lugar.
+
+E três coisas que `ligar_bibliotecas.py` passou a acertar na configuração:
+
+- **Funções gêmeas.** `strtod` e `strtold` têm o mesmo código (no DS, `double` e
+  `long double` são iguais), e o jogo só guardou uma. Quem diz qual é a vizinha que a
+  chama: o `atof` do jogo pula para ela, e o do `.o` chama `strtod`. Os destrutores do
+  RTTI (`~__class_type_info`, `~__fundamental_type_info`) são iguais até nas chamadas;
+  ali quem decide é a vtable, procurada nos dados do jogo e conferida byte a byte até o
+  nome da classe.
+- **`__sinit__`**, o começo da tabela `.ctor`, é dado. Gravado como rótulo de código, o
+  linker achou que os ponteiros da tabela eram código ARM chamando Thumb e criou um
+  desvio ("veneer") para cada um. Ele está em `simbolos_linker.lcf`.
+- **A `.exception` de cada função começa num múltiplo de 4**, apesar de o `.o` dizer
+  alinhamento 1.
+
 Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.py`:
 
 1. **Qual arquivo é cada função.** O linker põe as funções de um arquivo juntas e na
@@ -169,6 +209,15 @@ Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.
 python3 decomp/tools/ligar_bibliotecas.py NitroSystem work/NitroSystem \
     work/bibliotecas/nitrosystem 0x020c8278 0x020d4394            # só mostra
 python3 decomp/tools/ligar_bibliotecas.py ... --aplicar           # grava
+```
+
+A configuração versionada sai das três, nesta ordem, a partir da de antes da Fase 2.2
+(o commit `af53d17`):
+
+```
+python3 decomp/tools/ligar_bibliotecas.py NitroSystem work/NitroSystem work/bibliotecas/nitrosystem 0x020c8278 0x020d4394 --aplicar
+python3 decomp/tools/ligar_bibliotecas.py NitroSDK work/NitroSDK work/bibliotecas/nitrosdk 0x020d4394 0x020e09d0 --aplicar
+python3 decomp/tools/ligar_bibliotecas.py MSL - work/bibliotecas/msl 0x020e09d0 0x020eccb4 --aplicar
 ```
 
 ## As ferramentas e as versões

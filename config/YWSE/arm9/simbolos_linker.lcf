@@ -8,3 +8,5 @@
     SDK_SECTION_ARENA_EX_START = 0x023e0000;
     SDK_IRQ_STACKSIZE = 0x800;
     SDK_SYS_STACKSIZE = 0;
+    /* O começo da tabela .ctor, que __call_static_initializers (MSL) percorre. */
+    __sinit__ = ARM9_CTOR_START;

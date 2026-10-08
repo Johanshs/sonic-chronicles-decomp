@@ -673,3 +673,302 @@ NitroSDK/libraries/math/src/math.c:
 NitroSDK/libraries/card/src/card_backup.version.c:
     complete
     .text       start:0x02000bd4 end:0x02000bec
+
+MSL/C_abort_exit_arm.c:
+    complete
+    .text       start:0x020e09d0 end:0x020e0ac0
+    .exceptix   start:0x020ed01c end:0x020ed040
+    .bss        start:0x021b8bd0 end:0x021b8ce0
+
+MSL/C_ansi_files.c:
+    complete
+    .text       start:0x020e0adc end:0x020e0b18
+    .exceptix   start:0x020ed058 end:0x020ed064
+    .data       start:0x0210828c end:0x02108370
+    .bss        start:0x021b8e00 end:0x021b9100
+
+MSL/C_arith.c:
+    complete
+    .text       start:0x020e0b18 end:0x020e0b28
+
+MSL/C_buffer_io.c:
+    complete
+    .text       start:0x020e0b28 end:0x020e0bec
+    .exceptix   start:0x020ed064 end:0x020ed07c
+
+MSL/C_char_io.c:
+    complete
+    .text       start:0x020e0bec end:0x020e0db4
+    .exceptix   start:0x020ed07c end:0x020ed0a0
+
+MSL/C_direct_io.c:
+    complete
+    .text       start:0x020e0db4 end:0x020e1024
+    .exceptix   start:0x020ed0a0 end:0x020ed0b8
+
+MSL/C_file_io.c:
+    complete
+    .text       start:0x020e1024 end:0x020e10b0
+    .exceptix   start:0x020ed0b8 end:0x020ed0c4
+
+MSL/C_mbstring.c:
+    complete
+    .text       start:0x020e10b0 end:0x020e1158
+    .exceptix   start:0x020ed0c4 end:0x020ed0e8
+
+MSL/C_mem.c:
+    complete
+    .text       start:0x020e1158 end:0x020e1228
+    .exceptix   start:0x020ed0e8 end:0x020ed0f4
+
+MSL/C_mem_funcs.c:
+    complete
+    .text       start:0x020e1228 end:0x020e129c
+
+MSL/C_printf.c:
+    complete
+    .text       start:0x020e129c end:0x020e293c
+    .exception  start:0x020eccb4 end:0x020eccc4
+    .exceptix   start:0x020ed0f4 end:0x020ed154
+    .data       start:0x0210859c end:0x021085dc
+
+MSL/C_qsort.c:
+    complete
+    .text       start:0x020e293c end:0x020e2a38
+    .exceptix   start:0x020ed154 end:0x020ed160
+
+MSL/C_rand.c:
+    complete
+    .text       start:0x020e2a38 end:0x020e2a6c
+    .data       start:0x021085dc end:0x021085e0
+
+MSL/C_scanf.c:
+    complete
+    .text       start:0x020e2a6c end:0x020e368c
+    .exception  start:0x020eccc4 end:0x020ecccc
+    .exceptix   start:0x020ed160 end:0x020ed184
+    .rodata     start:0x020f4c50 end:0x020f4c78
+
+MSL/C_signal.c:
+    complete
+    .text       start:0x020e368c end:0x020e3740
+    .exceptix   start:0x020ed184 end:0x020ed190
+    .bss        start:0x021b9104 end:0x021b9120
+
+MSL/C_string.c:
+    complete
+    .text       start:0x020e3740 end:0x020e3988
+
+MSL/C_strtold.c:
+    complete
+    .text       start:0x020e3988 end:0x020e4564
+    .exception  start:0x020ecccc end:0x020eccd4
+    .exceptix   start:0x020ed190 end:0x020ed1b4
+    .rodata     start:0x020f4c78 end:0x020f4c88
+
+MSL/C_strtoul.c:
+    complete
+    .text       start:0x020e4564 end:0x020e4ac8
+    .exceptix   start:0x020ed1b4 end:0x020ed1e4
+
+MSL/C_wchar_io.c:
+    complete
+    .text       start:0x020e4ac8 end:0x020e4b1c
+
+MSL/C_wmem.c:
+    complete
+    .text       start:0x020e4b1c end:0x020e4b28
+    .exceptix   start:0x020ed1e4 end:0x020ed1f0
+
+MSL/C_e_exp.c:
+    complete
+    .text       start:0x020e4b28 end:0x020e4e70
+    .exceptix   start:0x020ed1f0 end:0x020ed1fc
+    .rodata     start:0x020f4f88 end:0x020f4fb8
+
+MSL/C_e_pow.c:
+    complete
+    .text       start:0x020e4e70 end:0x020e5a2c
+    .exception  start:0x020eccd4 end:0x020eccdc
+    .exceptix   start:0x020ed1fc end:0x020ed208
+    .rodata     start:0x020f4fb8 end:0x020f4fe8
+
+MSL/C_s_copysign.c:
+    complete
+    .text       start:0x020e5a2c end:0x020e5a4c
+
+MSL/C_s_fabs.c:
+    complete
+    .text       start:0x020e5a4c end:0x020e5a64
+
+MSL/C_s_frexp.c:
+    complete
+    .text       start:0x020e5a64 end:0x020e5ae4
+    .exceptix   start:0x020ed208 end:0x020ed214
+
+MSL/C_s_ldexp.c:
+    complete
+    .text       start:0x020e5ae4 end:0x020e5c5c
+    .exceptix   start:0x020ed214 end:0x020ed220
+
+MSL/C_w_exp.c:
+    complete
+    .text       start:0x020e5c5c end:0x020e5c64
+    .exceptix   start:0x020ed220 end:0x020ed22c
+
+MSL/C_w_pow.c:
+    complete
+    .text       start:0x020e5c64 end:0x020e5c6c
+    .exceptix   start:0x020ed22c end:0x020ed238
+
+MSL/C_math_api.c:
+    complete
+    .text       start:0x020e6918 end:0x020e69ec
+
+MSL/C_math_sun.c:
+    complete
+    .text       start:0x020e69ec end:0x020e6a08
+    .exceptix   start:0x020ed298 end:0x020ed2a4
+
+MSL/C_pool_alloc_2.c:
+    complete
+    .text       start:0x020e6a08 end:0x020e6a18
+    .exceptix   start:0x020ed2a4 end:0x020ed2b0
+
+MSL/Math__d_add.c:
+    complete
+    .text       start:0x020e8fd8 end:0x020e92f0
+
+MSL/Math__d_dtof.c:
+    complete
+    .text       start:0x020e92f0 end:0x020e93f4
+
+MSL/Math__d_dtoi.c:
+    complete
+    .text       start:0x020e93f4 end:0x020e9440
+
+MSL/Math__d_dtoull.c:
+    complete
+    .text       start:0x020e9440 end:0x020e94cc
+
+MSL/Math__d_itod.c:
+    complete
+    .text       start:0x020e94cc end:0x020e9548
+
+MSL/Math__d_mul.c:
+    complete
+    .text       start:0x020e9548 end:0x020e98ac
+
+MSL/Math__d_sqrt.c:
+    complete
+    .text       start:0x020e98ac end:0x020e9a48
+
+MSL/Math__d_sub.c:
+    complete
+    .text       start:0x020e9a48 end:0x020e9e14
+
+MSL/Math__f_add.c:
+    complete
+    .text       start:0x020e9e14 end:0x020ea038
+
+MSL/Math__f_cmp.c:
+    complete
+    .text       start:0x020ea038 end:0x020ea384
+
+MSL/Math__f_div.c:
+    complete
+    .text       start:0x020ea384 end:0x020ea748
+
+MSL/Math__f_ftod.c:
+    complete
+    .text       start:0x020ea748 end:0x020ea7cc
+
+MSL/Math__f_ftoi.c:
+    complete
+    .text       start:0x020ea7cc end:0x020ea800
+
+MSL/Math__f_ftou.c:
+    complete
+    .text       start:0x020ea800 end:0x020ea840
+
+MSL/Math__f_itof.c:
+    complete
+    .text       start:0x020ea840 end:0x020ea8d0
+
+MSL/Math__f_mul.c:
+    complete
+    .text       start:0x020ea8d0 end:0x020eaab0
+
+MSL/Math__f_sub.c:
+    complete
+    .text       start:0x020eaab0 end:0x020ead34
+
+MSL/Math__ll_div.c:
+    complete
+    .text       start:0x020ead34 end:0x020eaf3c
+
+MSL/Math__ll_mul.c:
+    complete
+    .text       start:0x020eaf3c end:0x020eaf5c
+
+MSL/Math__s32_div_f.c:
+    complete
+    .text       start:0x020eaf5c end:0x020eb168
+
+MSL/Math__u32_div_f.c:
+    complete
+    .text       start:0x020eb168 end:0x020eb34c
+
+MSL/Math__d_div.c:
+    complete
+    .text       start:0x020eb34c end:0x020eb8a8
+
+MSL/Runtime_semihosted_conso.c:
+    complete
+    .text       start:0x020eb8ac end:0x020eb91c
+    .exceptix   start:0x020ed814 end:0x020ed82c
+
+MSL/Runtime_compressednumber.c:
+    complete
+    .text       start:0x020eb91c end:0x020eb9d8
+
+MSL/Runtime_exceptionhandler.c:
+    complete
+    .text       start:0x020eb9d8 end:0x020ec6d4
+    .exception  start:0x020ecf60 end:0x020ecfa4
+    .exceptix   start:0x020ed82c end:0x020ed8b0
+    .data       start:0x02108f58 end:0x02108fdc
+
+MSL/Runtime_staticinitialize.c:
+    complete
+    .text       start:0x020ec6d4 end:0x020ec718
+    .exceptix   start:0x020ed8b0 end:0x020ed8c8
+    .bss        start:0x021b94fc end:0x021b9500
+
+MSL/Runtime_cxxabi_alloc.c:
+    complete
+    .text       start:0x020ec718 end:0x020ec918
+    .exception  start:0x020ecfa4 end:0x020ed01c
+    .exceptix   start:0x020ed8c8 end:0x020ed910
+
+MSL/Runtime_cxxabi_rtti.c:
+    complete
+    .text       start:0x020ec918 end:0x020ec9a4
+    .exceptix   start:0x020ed910 end:0x020ed970
+    .data       start:0x02109028 end:0x02109094
+
+MSL/Runtime_mwexception.c:
+    complete
+    .text       start:0x020ec9a4 end:0x020ecb0c
+    .exceptix   start:0x020ed970 end:0x020ed9a0
+    .data       start:0x021090bc end:0x021090c4
+
+MSL/Runtime_exceptionhandler_2.c:
+    complete
+    .text       start:0x020ecb0c end:0x020eccac
+    .exceptix   start:0x020ed9a0 end:0x020ed9b8
+
+MSL/Runtime___nitro_eabi_ini.c:
+    complete
+    .text       start:0x020eccac end:0x020eccb4
+    .exceptix   start:0x020ed9b8 end:0x020ed9c4

@@ -151,9 +151,9 @@ func_02003324 kind:function(thumb,size=0x24) addr:0x02003324
 func_02003348 kind:function(thumb,size=0x34) addr:0x02003348
 func_0200337c kind:function(thumb,size=0x38) addr:0x0200337c
 func_020033b4 kind:function(thumb,size=0x34) addr:0x020033b4
-func_020033e8 kind:function(thumb,size=0x34) addr:0x020033e8
-func_0200341c kind:function(thumb,size=0x1a) addr:0x0200341c
-func_02003438 kind:function(thumb,size=0x1a) addr:0x02003438
+_Znam kind:function(thumb,size=0x34) addr:0x020033e8
+_ZdlPv kind:function(thumb,size=0x1a) addr:0x0200341c
+_ZdaPv kind:function(thumb,size=0x1a) addr:0x02003438
 func_02003454 kind:function(thumb,size=0x98) addr:0x02003454
 func_020034ec kind:function(thumb,size=0x2) addr:0x020034ec
 func_020034f0 kind:function(thumb,size=0x2) addr:0x020034f0
@@ -6073,14 +6073,14 @@ nan kind:function(thumb,size=0x10) addr:0x020e0ac0
 func_020e0ad0 kind:function(thumb,size=0xc) addr:0x020e0ad0
 __flush_all kind:function(thumb,size=0x3c) addr:0x020e0adc
 abs kind:function(thumb,size=0x8) addr:0x020e0b18
-func_020e0b20 kind:function(thumb,size=0x8) addr:0x020e0b20
-func_020e0b28 kind:function(thumb,size=0x2) addr:0x020e0b28
-func_020e0b2c kind:function(thumb,size=0x2) addr:0x020e0b2c
+labs kind:function(thumb,size=0x8) addr:0x020e0b20
+__convert_from_newlines kind:function(thumb,size=0x2) addr:0x020e0b28
+__convert_to_newlines kind:function(thumb,size=0x2) addr:0x020e0b2c
 __prep_buffer kind:function(thumb,size=0x18) addr:0x020e0b30
 __load_buffer kind:function(thumb,size=0x54) addr:0x020e0b48
 __flush_buffer kind:function(thumb,size=0x4e) addr:0x020e0b9c
 __get_char kind:function(thumb,size=0xa6) addr:0x020e0bec
-func_020e0c94 kind:function(thumb,size=0xa8) addr:0x020e0c94
+ungetc kind:function(thumb,size=0xa8) addr:0x020e0c94
 __ungetc kind:function(thumb,size=0x76) addr:0x020e0d3c
 fwrite kind:function(thumb,size=0xc0) addr:0x020e0db4
 __fwrite kind:function(thumb,size=0x1b0) addr:0x020e0e74
@@ -6092,31 +6092,29 @@ wctomb kind:function(thumb,size=0x10) addr:0x020e10f8
 wcstombs kind:function(thumb,size=0x50) addr:0x020e1108
 memcpy kind:function(thumb,size=0x1a) addr:0x020e1158
 memmove kind:function(thumb,size=0x38) addr:0x020e1174
-func_020e11ac kind:function(thumb,size=0xc) addr:0x020e11ac
+memset kind:function(thumb,size=0xc) addr:0x020e11ac
 memchr kind:function(thumb,size=0x1c) addr:0x020e11b8
 __memrchr kind:function(thumb,size=0x1a) addr:0x020e11d4
 memcmp kind:function(thumb,size=0x36) addr:0x020e11f0
 __fill_mem kind:function(thumb,size=0x72) addr:0x020e1228
-func_020e129c kind:function(thumb,size=0x3a2) addr:0x020e129c
-long2str kind:function(thumb,size=0x1ac) addr:0x020e1640
-longlong2str kind:function(thumb,size=0x214) addr:0x020e17ec
-double2hex kind:function(thumb,size=0x338) addr:0x020e1a00
-round_decimal kind:function(thumb,size=0xb6) addr:0x020e1d38
-float2str kind:function(thumb,size=0x4e8) addr:0x020e1df0
-__pformatter kind:function(thumb,size=0x5e0) addr:0x020e22d8
+parse_format kind:function(thumb,size=0x3a2) addr:0x020e129c local
+long2str kind:function(thumb,size=0x1ac) addr:0x020e1640 local
+longlong2str kind:function(thumb,size=0x214) addr:0x020e17ec local
+double2hex kind:function(thumb,size=0x338) addr:0x020e1a00 local
+round_decimal kind:function(thumb,size=0xb6) addr:0x020e1d38 local
+float2str kind:function(thumb,size=0x4e8) addr:0x020e1df0 local
+__pformatter kind:function(thumb,size=0x5e0) addr:0x020e22d8 local
 __StringWrite kind:function(thumb,size=0x26) addr:0x020e28b8
 vsnprintf kind:function(thumb,size=0x3c) addr:0x020e28e0
 sprintf kind:function(thumb,size=0x1e) addr:0x020e291c
 qsort kind:function(thumb,size=0xfa) addr:0x020e293c
 rand kind:function(thumb,size=0x28) addr:0x020e2a38
 srand kind:function(thumb,size=0xc) addr:0x020e2a60
-func_020e2a6c kind:function(thumb,size=0x336) addr:0x020e2a6c
-__sformatter kind:function(thumb,size=0x84e) addr:0x020e2da4
-.L_020e2dce kind:label(thumb) addr:0x020e2dce local
-.L_020e35d2 kind:label(thumb) addr:0x020e35d2 local
+parse_format kind:function(thumb,size=0x336) addr:0x020e2a6c local
+__sformatter kind:function(thumb,size=0x84e) addr:0x020e2da4 local
 __StringRead kind:function(thumb,size=0x48) addr:0x020e35f4
 vsscanf kind:function(thumb,size=0x34) addr:0x020e363c
-func_020e3670 kind:function(thumb,size=0x1a) addr:0x020e3670
+sscanf kind:function(thumb,size=0x1a) addr:0x020e3670
 raise kind:function(thumb,size=0xb4) addr:0x020e368c
 strlen kind:function(thumb,size=0x14) addr:0x020e3740
 strcpy kind:function(thumb,size=0x7c) addr:0x020e3754
@@ -6127,23 +6125,22 @@ strncmp kind:function(thumb,size=0x26) addr:0x020e38f0
 strchr kind:function(thumb,size=0x2c) addr:0x020e3918
 strstr kind:function(thumb,size=0x44) addr:0x020e3944
 __strtold kind:function(thumb,size=0xb44) addr:0x020e3988
-.L_020e3a0a kind:label(thumb) addr:0x020e3a0a
-func_020e44cc kind:function(thumb,size=0x8c) addr:0x020e44cc
+strtod kind:function(thumb,size=0x8c) addr:0x020e44cc
 atof kind:function(thumb,size=0xc) addr:0x020e4558
 __strtoul kind:function(thumb,size=0x24c) addr:0x020e4564
 __strtoull kind:function(thumb,size=0x290) addr:0x020e47b0
 strtol kind:function(thumb,size=0x7c) addr:0x020e4a40
-func_020e4abc kind:function(thumb,size=0xc) addr:0x020e4abc
+atoi kind:function(thumb,size=0xc) addr:0x020e4abc
 fwide kind:function(thumb,size=0x54) addr:0x020e4ac8
-func_020e4b1c kind:function(thumb,size=0xc) addr:0x020e4b1c
+wmemcpy kind:function(thumb,size=0xc) addr:0x020e4b1c
 __ieee754_exp kind:function(thumb,size=0x348) addr:0x020e4b28
 __ieee754_pow kind:function(thumb,size=0xbba) addr:0x020e4e70
 copysign kind:function(thumb,size=0x20) addr:0x020e5a2c
 fabs kind:function(thumb,size=0x18) addr:0x020e5a4c
 frexp kind:function(thumb,size=0x80) addr:0x020e5a64
 ldexp kind:function(thumb,size=0x178) addr:0x020e5ae4
-func_020e5c5c kind:function(thumb,size=0x8) addr:0x020e5c5c
-func_020e5c64 kind:function(thumb,size=0x8) addr:0x020e5c64
+exp kind:function(thumb,size=0x8) addr:0x020e5c5c
+pow kind:function(thumb,size=0x8) addr:0x020e5c64
 __must_round kind:function(thumb,size=0x4a) addr:0x020e5c6c
 func_020e5cb8 kind:function(thumb,size=0x32) addr:0x020e5cb8
 func_020e5cec kind:function(thumb,size=0x2) addr:0x020e5cec
@@ -6162,7 +6159,7 @@ __msl_generic_count_bits64 kind:function(thumb,size=0x74) addr:0x020e6918
 __signbitd kind:function(thumb,size=0xe) addr:0x020e698c
 __fpclassifyd kind:function(thumb,size=0x50) addr:0x020e699c
 scalbn kind:function(thumb,size=0x1a) addr:0x020e69ec
-func_020e6a08 kind:function(thumb,size=0x10) addr:0x020e6a08
+__sys_free kind:function(thumb,size=0x10) addr:0x020e6a08
 func_020e6a18 kind:function(thumb,size=0x28) addr:0x020e6a18
 func_020e6a40 kind:function(thumb,size=0x4c) addr:0x020e6a40
 func_020e6a8c kind:function(thumb,size=0x28) addr:0x020e6a8c
@@ -6339,87 +6336,135 @@ func_020e8f5c kind:function(thumb,size=0x24) addr:0x020e8f5c
 func_020e8f80 kind:function(thumb,size=0x24) addr:0x020e8f80
 _ZNSt3tr16detail25shared_ptr_deleter_common7releaseEv kind:function(thumb,size=0x1a) addr:0x020e8fa4
 _ZNSt3tr16detail25shared_ptr_deleter_common12release_weakEv kind:function(thumb,size=0x16) addr:0x020e8fc0
-func_020e8fd8 kind:function(arm,size=0x318) addr:0x020e8fd8
-func_020e92f0 kind:function(arm,size=0x104) addr:0x020e92f0
-func_020e93f4 kind:function(arm,size=0x4c) addr:0x020e93f4
-func_020e9440 kind:function(arm,size=0x8c) addr:0x020e9440
-func_020e94cc kind:function(arm,size=0x40) addr:0x020e94cc
-func_020e950c kind:function(arm,size=0x3c) addr:0x020e950c
-func_020e9548 kind:function(arm,size=0x364) addr:0x020e9548
-func_020e98ac kind:function(arm,size=0x19c) addr:0x020e98ac
-func_020e9a60 kind:function(arm,size=0x3b4) addr:0x020e9a60
-Float_Add kind:function(arm,size=0x21c) addr:0x020e9e14
-func_020ea030 kind:function(arm,size=0x8) addr:0x020ea030
-func_020ea038 kind:function(arm,size=0x98) addr:0x020ea038
-func_020ea0d0 kind:function(arm,size=0xa4) addr:0x020ea0d0
-func_020ea174 kind:function(arm,size=0x9c) addr:0x020ea174
-func_020ea210 kind:function(arm,size=0x8c) addr:0x020ea210
-func_020ea29c kind:function(arm,size=0x8c) addr:0x020ea29c
-func_020ea328 kind:function(arm,size=0x5c) addr:0x020ea328
-Float_Div kind:function(arm,size=0x3b8) addr:0x020ea390
-func_020ea748 kind:function(arm,size=0x84) addr:0x020ea748
-Float_ToInt kind:function(arm,size=0x34) addr:0x020ea7cc
-func_020ea800 kind:function(arm,size=0x40) addr:0x020ea800
-Float_FromInt kind:function(arm,size=0x48) addr:0x020ea840
-func_020ea888 kind:function(arm,size=0x48) addr:0x020ea888
-Float_Mul kind:function(arm,size=0x1e0) addr:0x020ea8d0
-func_020eaabc kind:function(arm,size=0x278) addr:0x020eaabc
+_d_add kind:function(arm,size=0x318) addr:0x020e8fd8
+_dadd kind:label(arm) addr:0x020e8fd8
+__dadd_start kind:data(byte[0x308]) addr:0x020e8fe8
+_d2f kind:function(arm,size=0x104) addr:0x020e92f0
+_d_dtof kind:label(arm) addr:0x020e92f0
+_f_qtof kind:label(arm) addr:0x020e92f0
+__f_result_zero kind:data(byte[0x60]) addr:0x020e9370
+__f_very_tiny_result kind:data(byte[0x10]) addr:0x020e93d0
+__f_underflow kind:data(byte[0x14]) addr:0x020e93e0
+_d_dtoi kind:function(arm,size=0x4c) addr:0x020e93f4
+_dfix kind:label(arm) addr:0x020e93f4
+_d_dtoull kind:function(arm,size=0x8c) addr:0x020e9440
+_ll_ufrom_d kind:label(arm) addr:0x020e9440
+_d_itod kind:function(arm,size=0x40) addr:0x020e94cc
+_dflt kind:label(arm) addr:0x020e94cc
+__d_itod_common kind:data(byte[0x34]) addr:0x020e94d8
+_d_utod kind:function(arm,size=0x3c) addr:0x020e950c
+_dfltu kind:label(arm) addr:0x020e950c
+__d_utod_common kind:data(byte[0x38]) addr:0x020e9510
+_d_mul kind:function(arm,size=0x364) addr:0x020e9548
+_dmul kind:label(arm) addr:0x020e9548
+_dsqrt kind:function(arm,size=0x19c) addr:0x020e98ac
+_drsb kind:data(byte[0x18]) addr:0x020e9a48
+_d_sub kind:function(arm,size=0x3b4) addr:0x020e9a60
+_dsub kind:label(arm) addr:0x020e9a60
+__dsub_start kind:data(byte[0x3a4]) addr:0x020e9a70
+_f_add kind:function(arm,size=0x21c) addr:0x020e9e14
+Float_Add kind:label(arm) addr:0x020e9e14
+_fadd kind:label(arm) addr:0x020e9e14
+__fadd_start kind:data(byte[0x218]) addr:0x020e9e20
+_d_fgt kind:function(arm,size=0x98) addr:0x020ea038
+_dgr kind:label(arm) addr:0x020ea038
+_d_fle kind:function(arm,size=0xa4) addr:0x020ea0d0
+_dleq kind:label(arm) addr:0x020ea0d0
+_d_flt kind:function(arm,size=0x9c) addr:0x020ea174
+_dls kind:label(arm) addr:0x020ea174
+_d_feq kind:function(arm,size=0x8c) addr:0x020ea210
+_deq kind:label(arm) addr:0x020ea210
+_d_fne kind:function(arm,size=0x8c) addr:0x020ea29c
+_dneq kind:label(arm) addr:0x020ea29c
+_f_fgt kind:function(arm,size=0x5c) addr:0x020ea328
+_fgr kind:label(arm) addr:0x020ea328
+_frdiv kind:data(byte[0xc]) addr:0x020ea384
+_f_div kind:function(arm,size=0x3b8) addr:0x020ea390
+Float_Div kind:label(arm) addr:0x020ea390
+_fdiv kind:label(arm) addr:0x020ea390
+_f2d kind:function(arm,size=0x84) addr:0x020ea748
+_f_ftod kind:label(arm) addr:0x020ea748
+_f_ftoi kind:function(arm,size=0x34) addr:0x020ea7cc
+Float_ToInt kind:label(arm) addr:0x020ea7cc
+_ffix kind:label(arm) addr:0x020ea7cc
+_f_ftou kind:function(arm,size=0x40) addr:0x020ea800
+_ffixu kind:label(arm) addr:0x020ea800
+_f_itof kind:function(arm,size=0x48) addr:0x020ea840
+Float_FromInt kind:label(arm) addr:0x020ea840
+_fflt kind:label(arm) addr:0x020ea840
+__f_itof_common kind:data(byte[0x3c]) addr:0x020ea84c
+_f_utof kind:function(arm,size=0x48) addr:0x020ea888
+_ffltu kind:label(arm) addr:0x020ea888
+__f_utof_common kind:data(byte[0x44]) addr:0x020ea88c
+_f_mul kind:function(arm,size=0x1e0) addr:0x020ea8d0
+Float_Mul kind:label(arm) addr:0x020ea8d0
+_fmul kind:label(arm) addr:0x020ea8d0
+__f_result_INF kind:data(byte[0xc]) addr:0x020eaa68
+__f_result_x_NaN kind:data(byte[0x8]) addr:0x020eaa74
+__f_result_invalid kind:data(byte[0x34]) addr:0x020eaa7c
+_frsb kind:data(byte[0xc]) addr:0x020eaab0
+_f_sub kind:function(arm,size=0x278) addr:0x020eaabc
+_fsub kind:label(arm) addr:0x020eaabc
+__fsub_start kind:data(byte[0x26c]) addr:0x020eaac8
 _ll_mod kind:function(arm,size=0x1c0) addr:0x020ead34
-.L_020ead44 kind:label(arm) addr:0x020ead44
 _ll_sdiv kind:label(arm) addr:0x020ead44
+_ll_div kind:label(arm) addr:0x020ead44
 _ll_udiv kind:function(arm,size=0x48) addr:0x020eaef4
-.L_020eaf00 kind:label(arm) addr:0x020eaf00
+_ull_div kind:label(arm) addr:0x020eaef4
+_ull_mod kind:data(byte[0x3c]) addr:0x020eaf00
 _ll_mul kind:function(arm,size=0x20) addr:0x020eaf3c
 _ull_mul kind:label(arm) addr:0x020eaf3c
-IntDivMod kind:function(arm,size=0x20c) addr:0x020eaf5c
-_s32_div_f kind:label(arm) addr:0x020eaf5c
+_s32_div_f kind:function(arm,size=0x20c) addr:0x020eaf5c
+IntDivMod kind:label(arm) addr:0x020eaf5c
 _u32_div_f kind:function(arm,size=0x1e4) addr:0x020eb168
-.L_020eb170 kind:label(arm) addr:0x020eb170
-func_020eb364 kind:function(arm,size=0x544) addr:0x020eb364
+_u32_div_not_0_f kind:data(byte[0x1dc]) addr:0x020eb170
+_drdiv kind:data(byte[0x18]) addr:0x020eb34c
+_d_div kind:function(arm,size=0x544) addr:0x020eb364
+_ddiv kind:label(arm) addr:0x020eb364
 func_020eb8a8 kind:function(arm,size=0x4) addr:0x020eb8a8
-sys_writec kind:function(thumb,size=0xa) addr:0x020eb8ac
-sys_readc kind:function(thumb,size=0xa) addr:0x020eb8b8
+sys_writec kind:function(thumb,size=0xa) addr:0x020eb8ac local
+sys_readc kind:function(thumb,size=0xa) addr:0x020eb8b8 local
 sys_exit kind:function(thumb,size=0x8) addr:0x020eb8c4
 __read_console kind:function(thumb,size=0x2e) addr:0x020eb8cc
 __write_console kind:function(thumb,size=0x1c) addr:0x020eb8fc
-func_020eb918 kind:function(thumb,size=0x4) addr:0x020eb918
+__close_console kind:function(thumb,size=0x4) addr:0x020eb918
 _Z20__DecodeSignedNumberPcPl kind:function(thumb,size=0x5e) addr:0x020eb91c
 _Z22__DecodeUnsignedNumberPcPm kind:function(thumb,size=0x5c) addr:0x020eb97c
-_Z12BinarySearchP19ExceptionTableIndexmPc kind:function(thumb,size=0x38) addr:0x020eb9d8
-_Z19FindExceptionRecordPcP13ExceptionInfo kind:function(thumb,size=0x8c) addr:0x020eba10
-_Z13CurrentActionPK14ActionIterator kind:function(thumb,size=0x16) addr:0x020eba9c
-_Z10NextActionP14ActionIterator kind:function(thumb,size=0x248) addr:0x020ebab4
-_Z11UnwindStackP12ThrowContextP13ExceptionInfoPc kind:function(thumb,size=0x60e) addr:0x020ebcfc
-_Z23FindMostRecentExceptionP12ThrowContextP13ExceptionInfo kind:function(thumb,size=0xbc) addr:0x020ec30c
-_Z17IsInSpecificationPcP16ex_specification kind:function(thumb,size=0x4c) addr:0x020ec3c8
+_Z12BinarySearchP19ExceptionTableIndexmPc kind:function(thumb,size=0x38) addr:0x020eb9d8 local
+_Z19FindExceptionRecordPcP13ExceptionInfo kind:function(thumb,size=0x8c) addr:0x020eba10 local
+_Z13CurrentActionPK14ActionIterator kind:function(thumb,size=0x16) addr:0x020eba9c local
+_Z10NextActionP14ActionIterator kind:function(thumb,size=0x248) addr:0x020ebab4 local
+_Z11UnwindStackP12ThrowContextP13ExceptionInfoPc kind:function(thumb,size=0x60e) addr:0x020ebcfc local
+_Z23FindMostRecentExceptionP12ThrowContextP13ExceptionInfo kind:function(thumb,size=0xbc) addr:0x020ec30c local
+_Z17IsInSpecificationPcP16ex_specification kind:function(thumb,size=0x4c) addr:0x020ec3c8 local
 __unexpected kind:function(thumb,size=0x80) addr:0x020ec414
-St13bad_exception__vfunc00_020ec494 kind:function(thumb,size=0x2) addr:0x020ec494
-_Z16HandleUnexpectedP12ThrowContextP13ExceptionInfoP16ex_specificationPc kind:function(thumb,size=0x34) addr:0x020ec498
-_Z20FindExceptionHandlerP12ThrowContextP13ExceptionInfoPl kind:function(thumb,size=0x10e) addr:0x020ec4cc
-_Z14SetupCatchInfoP12ThrowContextll kind:function(thumb,size=0x36) addr:0x020ec5dc
+_ZNSt13bad_exceptionD1Ev kind:function(thumb,size=0x2) addr:0x020ec494
+_Z16HandleUnexpectedP12ThrowContextP13ExceptionInfoP16ex_specificationPc kind:function(thumb,size=0x34) addr:0x020ec498 local
+_Z20FindExceptionHandlerP12ThrowContextP13ExceptionInfoPl kind:function(thumb,size=0x10e) addr:0x020ec4cc local
+_Z14SetupCatchInfoP12ThrowContextll kind:function(thumb,size=0x36) addr:0x020ec5dc local
 _Z14__ThrowHandlerP12ThrowContext kind:function(thumb,size=0x94) addr:0x020ec614
 __end__catch kind:function(thumb,size=0x18) addr:0x020ec6a8
-St13bad_exception__vfunc01_020ec6c0 kind:function(thumb,size=0xc) addr:0x020ec6c0
-St13bad_exception__vfunc02_020ec6cc kind:function(thumb,size=0x8) addr:0x020ec6cc
+_ZNSt13bad_exceptionD0Ev kind:function(thumb,size=0xc) addr:0x020ec6c0
+_ZNKSt13bad_exception4whatEv kind:function(thumb,size=0x8) addr:0x020ec6cc
 __call_static_initializers kind:function(thumb,size=0x1c) addr:0x020ec6d4
 __destroy_global_chain kind:function(thumb,size=0x28) addr:0x020ec6f0
-func_020ec718 kind:function(thumb,size=0x38) addr:0x020ec718
+_ZN26@unnamed@cxxabi_alloc_cpp@17DestroyArrayRangeEPhS0_mPFvPvE kind:function(thumb,size=0x38) addr:0x020ec718 local
 __cxa_vec_new kind:function(thumb,size=0x94) addr:0x020ec750
 __cxa_vec_ctor kind:function(thumb,size=0x6c) addr:0x020ec7e4
 __cxa_vec_dtor kind:function(thumb,size=0x64) addr:0x020ec850
 __cxa_vec_cleanup kind:function(thumb,size=0x40) addr:0x020ec8b4
 __cxa_vec_delete kind:function(thumb,size=0x22) addr:0x020ec8f4
-func_020ec918 kind:function(thumb,size=0x2) addr:0x020ec918
+_ZNSt9type_infoD2Ev kind:function(thumb,size=0x2) addr:0x020ec918
 _ZNKSt9type_infoeqERKS_ kind:function(thumb,size=0x1a) addr:0x020ec91c
-__cxxabiv1____class_type_info__vfunc00_020ec938 kind:function(thumb,size=0xc) addr:0x020ec938
-__cxxabiv1____class_type_info__vfunc01_020ec944 kind:function(thumb,size=0x12) addr:0x020ec944
-func_020ec958 kind:function(thumb,size=0xc) addr:0x020ec958
-__cxxabiv1____si_class_type_info__vfunc00_020ec964 kind:function(thumb,size=0xc) addr:0x020ec964
-__cxxabiv1____si_class_type_info__vfunc01_020ec970 kind:function(thumb,size=0x12) addr:0x020ec970
-__cxxabiv1____vmi_class_type_info__vfunc00_020ec984 kind:function(thumb,size=0xc) addr:0x020ec984
-__cxxabiv1____vmi_class_type_info__vfunc01_020ec990 kind:function(thumb,size=0x12) addr:0x020ec990
-func_020ec9a4 kind:function(thumb,size=0x8) addr:0x020ec9a4
-func_020ec9ac kind:function(thumb,size=0x8) addr:0x020ec9ac
+_ZN10__cxxabiv117__class_type_infoD1Ev kind:function(thumb,size=0xc) addr:0x020ec938
+_ZN10__cxxabiv117__class_type_infoD0Ev kind:function(thumb,size=0x12) addr:0x020ec944
+_ZN10__cxxabiv117__class_type_infoD2Ev kind:function(thumb,size=0xc) addr:0x020ec958
+_ZN10__cxxabiv120__si_class_type_infoD1Ev kind:function(thumb,size=0xc) addr:0x020ec964
+_ZN10__cxxabiv120__si_class_type_infoD0Ev kind:function(thumb,size=0x12) addr:0x020ec970
+_ZN10__cxxabiv121__vmi_class_type_infoD1Ev kind:function(thumb,size=0xc) addr:0x020ec984
+_ZN10__cxxabiv121__vmi_class_type_infoD0Ev kind:function(thumb,size=0x12) addr:0x020ec990
+_ZSt9dthandlerv kind:function(thumb,size=0x8) addr:0x020ec9a4 local
+_ZSt9duhandlerv kind:function(thumb,size=0x8) addr:0x020ec9ac local
 _ZSt9terminatev kind:function(thumb,size=0x10) addr:0x020ec9b4
 _ZSt10unexpectedv kind:function(thumb,size=0x10) addr:0x020ec9c4
 __register_global_object kind:function(thumb,size=0x18) addr:0x020ec9d4
@@ -6429,14 +6474,14 @@ _Z16__SetupFrameInfoP12ThrowContextP13ExceptionInfo kind:function(thumb,size=0x8
 _Z20__FindExceptionTableP13ExceptionInfoPc kind:function(thumb,size=0x14) addr:0x020ecbe4
 _Z16__SkipUnwindInfoPc kind:function(thumb,size=0x1e) addr:0x020ecbf8
 _Z17__TransferControlP12ThrowContextP13ExceptionInfoPc kind:function(thumb,size=0x24) addr:0x020ecc18
-func_020ecc3d_unk kind:function(thumb,size=0x0,unknown) addr:0x020ecc3c
-func_020ecc75_unk kind:function(thumb,size=0x0,unknown) addr:0x020ecc74
-func_020eccac kind:function(thumb,size=0x8) addr:0x020eccac
-@ET@020e1a01 kind:data(any) addr:0x020eccb4
-@ET@020e22d9 kind:data(any) addr:0x020eccbc
-@ET@020e2da5 kind:data(any) addr:0x020eccc4
-@ET@020e3989 kind:data(any) addr:0x020ecccc
-@ET@020e4e71 kind:data(any) addr:0x020eccd4
+__throw kind:function(thumb,size=0x36,unknown) addr:0x020ecc3c
+__rethrow kind:function(thumb,size=0x36,unknown) addr:0x020ecc74
+_ExitProcess kind:function(thumb,size=0x8) addr:0x020eccac
+@ET@double2hex kind:data(byte[0x5]) addr:0x020eccb4 local
+@ET@__pformatter kind:data(byte[0x5]) addr:0x020eccbc local
+@ET@__sformatter kind:data(byte[0x5]) addr:0x020eccc4 local
+@ET@__strtold kind:data(byte[0x5]) addr:0x020ecccc local
+@ET@__ieee754_pow kind:data(byte[0x5]) addr:0x020eccd4 local
 @ET@020e6535 kind:data(any) addr:0x020eccdc
 @ET@020e6bf1 kind:data(any) addr:0x020ecce4
 @ET@020e6c55 kind:data(any) addr:0x020eccfc
@@ -6457,62 +6502,62 @@ func_020eccac kind:function(thumb,size=0x8) addr:0x020eccac
 @ET@020e7cd1 kind:data(any) addr:0x020ecf20
 @ET@020e8939 kind:data(any) addr:0x020ecf30
 @ET@020e8aa5 kind:data(any) addr:0x020ecf48
-@ET@020ebab5 kind:data(any) addr:0x020ecf60
-@ET@020ebcfd kind:data(any) addr:0x020ecf68
-@ET@020ec30d kind:data(any) addr:0x020ecf78
-@ET@020ec415 kind:data(any) addr:0x020ecf80
-@ET@020ec499 kind:data(any) addr:0x020ecf94
-@ET@020ec4cd kind:data(any) addr:0x020ecf9c
-@ET@020ec719 kind:data(any) addr:0x020ecfa4
-@ET@020ec751 kind:data(any) addr:0x020ecfb8
-@ET@020ec7e5 kind:data(any) addr:0x020ecfcc
-@ET@020ec851 kind:data(any) addr:0x020ecfe0
-@ET@020ec8b5 kind:data(any) addr:0x020ed008
-@EX@020e09d1 kind:data(word[3]) addr:0x020ed01c
-@EX@020e09e9 kind:data(word[3]) addr:0x020ed028
-@EX@020e0a15 kind:data(word[3]) addr:0x020ed034
+@ET@_Z10NextActionP14ActionIterator kind:data(byte[0x5]) addr:0x020ecf60 local
+@ET@_Z11UnwindStackP12ThrowContextP13ExceptionInfoPc kind:data(byte[0xd]) addr:0x020ecf68 local
+@ET@_Z23FindMostRecentExceptionP12ThrowContextP13ExceptionInfo kind:data(byte[0x5]) addr:0x020ecf78 local
+@ET@__unexpected kind:data(byte[0x14]) addr:0x020ecf80 local
+@ET@_Z16HandleUnexpectedP12ThrowContextP13ExceptionInfoP16ex_specificationPc kind:data(byte[0x8]) addr:0x020ecf94 local
+@ET@_Z20FindExceptionHandlerP12ThrowContextP13ExceptionInfoPl kind:data(byte[0x5]) addr:0x020ecf9c local
+@ET@_ZN26@unnamed@cxxabi_alloc_cpp@17DestroyArrayRangeEPhS0_mPFvPvE kind:data(byte[0x14]) addr:0x020ecfa4 local
+@ET@__cxa_vec_new kind:data(byte[0x14]) addr:0x020ecfb8 local
+@ET@__cxa_vec_ctor kind:data(byte[0x14]) addr:0x020ecfcc local
+@ET@__cxa_vec_dtor kind:data(byte[0x25]) addr:0x020ecfe0 local
+@ET@__cxa_vec_cleanup kind:data(byte[0x14]) addr:0x020ed008 local
+@EX@abort kind:data(byte[0xc]) addr:0x020ed01c local
+@EX@exit kind:data(byte[0xc]) addr:0x020ed028 local
+@EX@__exit kind:data(byte[0xc]) addr:0x020ed034 local
 @EX@020e0ac1 kind:data(word[3]) addr:0x020ed040
 @EX@020e0ad1 kind:data(word[3]) addr:0x020ed04c
-@EX@020e0add kind:data(word[3]) addr:0x020ed058
-@EX@020e0b49 kind:data(word[3]) addr:0x020ed064
-@EX@020e0b9d kind:data(word[3]) addr:0x020ed070
-@EX@020e0bed kind:data(word[3]) addr:0x020ed07c
-@EX@020e0c95 kind:data(word[3]) addr:0x020ed088
-@EX@020e0d3d kind:data(word[3]) addr:0x020ed094
-@EX@020e0db5 kind:data(word[3]) addr:0x020ed0a0
-@EX@020e0e75 kind:data(word[3]) addr:0x020ed0ac
-@EX@020e1025 kind:data(word[3]) addr:0x020ed0b8
-@EX@020e10b1 kind:data(word[3]) addr:0x020ed0c4
-@EX@020e10f9 kind:data(word[3]) addr:0x020ed0d0
-@EX@020e1109 kind:data(word[3]) addr:0x020ed0dc
-@EX@020e11ad kind:data(word[3]) addr:0x020ed0e8
-@EX@020e1641 kind:data(word[3]) addr:0x020ed0f4
-@EX@020e17ed kind:data(word[3]) addr:0x020ed100
-@EX@020e1a01 kind:data(word[3]) addr:0x020ed10c
-@EX@020e1df1 kind:data(word[3]) addr:0x020ed118
-@EX@020e22d9 kind:data(word[3]) addr:0x020ed124
-@EX@020e28b9 kind:data(word[3]) addr:0x020ed130
-@EX@020e28e1 kind:data(word[3]) addr:0x020ed13c
-@EX@020e291d kind:data(word[3]) addr:0x020ed148
-@EX@020e293d kind:data(word[3]) addr:0x020ed154
-@EX@020e2da5 kind:data(word[3]) addr:0x020ed160
-@EX@020e363d kind:data(word[3]) addr:0x020ed16c
-@EX@020e3671 kind:data(word[3]) addr:0x020ed178
-@EX@020e368d kind:data(word[3]) addr:0x020ed184
-@EX@020e3989 kind:data(word[3]) addr:0x020ed190
-@EX@020e44cd kind:data(word[3]) addr:0x020ed19c
-@EX@020e4559 kind:data(word[3]) addr:0x020ed1a8
-@EX@020e4565 kind:data(word[3]) addr:0x020ed1b4
-@EX@020e47b1 kind:data(word[3]) addr:0x020ed1c0
-@EX@020e4a41 kind:data(word[3]) addr:0x020ed1cc
-@EX@020e4abd kind:data(word[3]) addr:0x020ed1d8
-@EX@020e4b1d kind:data(word[3]) addr:0x020ed1e4
-@EX@020e4b29 kind:data(word[3]) addr:0x020ed1f0
-@EX@020e4e71 kind:data(word[3]) addr:0x020ed1fc
-@EX@020e5a65 kind:data(word[3]) addr:0x020ed208
-@EX@020e5ae5 kind:data(word[3]) addr:0x020ed214
-@EX@020e5c5d kind:data(word[3]) addr:0x020ed220
-@EX@020e5c65 kind:data(word[3]) addr:0x020ed22c
+@EX@__flush_all kind:data(byte[0xc]) addr:0x020ed058 local
+@EX@__load_buffer kind:data(byte[0xc]) addr:0x020ed064 local
+@EX@__flush_buffer kind:data(byte[0xc]) addr:0x020ed070 local
+@EX@__get_char kind:data(byte[0xc]) addr:0x020ed07c local
+@EX@ungetc kind:data(byte[0xc]) addr:0x020ed088 local
+@EX@__ungetc kind:data(byte[0xc]) addr:0x020ed094 local
+@EX@fwrite kind:data(byte[0xc]) addr:0x020ed0a0 local
+@EX@__fwrite kind:data(byte[0xc]) addr:0x020ed0ac local
+@EX@fflush kind:data(byte[0xc]) addr:0x020ed0b8 local
+@EX@mbtowc kind:data(byte[0xc]) addr:0x020ed0c4 local
+@EX@wctomb kind:data(byte[0xc]) addr:0x020ed0d0 local
+@EX@wcstombs kind:data(byte[0xc]) addr:0x020ed0dc local
+@EX@memset kind:data(byte[0xc]) addr:0x020ed0e8 local
+@EX@long2str kind:data(byte[0xc]) addr:0x020ed0f4 local
+@EX@longlong2str kind:data(byte[0xc]) addr:0x020ed100 local
+@EX@double2hex kind:data(byte[0xc]) addr:0x020ed10c local
+@EX@float2str kind:data(byte[0xc]) addr:0x020ed118 local
+@EX@__pformatter kind:data(byte[0xc]) addr:0x020ed124 local
+@EX@__StringWrite kind:data(byte[0xc]) addr:0x020ed130 local
+@EX@vsnprintf kind:data(byte[0xc]) addr:0x020ed13c local
+@EX@sprintf kind:data(byte[0xc]) addr:0x020ed148 local
+@EX@qsort kind:data(byte[0xc]) addr:0x020ed154 local
+@EX@__sformatter kind:data(byte[0xc]) addr:0x020ed160 local
+@EX@vsscanf kind:data(byte[0xc]) addr:0x020ed16c local
+@EX@sscanf kind:data(byte[0xc]) addr:0x020ed178 local
+@EX@raise kind:data(byte[0xc]) addr:0x020ed184 local
+@EX@__strtold kind:data(byte[0xc]) addr:0x020ed190 local
+@EX@strtod kind:data(byte[0xc]) addr:0x020ed19c local
+@EX@atof kind:data(byte[0xc]) addr:0x020ed1a8 local
+@EX@__strtoul kind:data(byte[0xc]) addr:0x020ed1b4 local
+@EX@__strtoull kind:data(byte[0xc]) addr:0x020ed1c0 local
+@EX@strtol kind:data(byte[0xc]) addr:0x020ed1cc local
+@EX@atoi kind:data(byte[0xc]) addr:0x020ed1d8 local
+@EX@wmemcpy kind:data(byte[0xc]) addr:0x020ed1e4 local
+@EX@__ieee754_exp kind:data(byte[0xc]) addr:0x020ed1f0 local
+@EX@__ieee754_pow kind:data(byte[0xc]) addr:0x020ed1fc local
+@EX@frexp kind:data(byte[0xc]) addr:0x020ed208 local
+@EX@ldexp kind:data(byte[0xc]) addr:0x020ed214 local
+@EX@exp kind:data(byte[0xc]) addr:0x020ed220 local
+@EX@pow kind:data(byte[0xc]) addr:0x020ed22c local
 @EX@020e5cf1 kind:data(word[3]) addr:0x020ed238
 @EX@020e5d15 kind:data(word[3]) addr:0x020ed244
 @EX@020e5d89 kind:data(word[3]) addr:0x020ed250
@@ -6521,8 +6566,8 @@ func_020eccac kind:function(thumb,size=0x8) addr:0x020eccac
 @EX@020e63dd kind:data(word[3]) addr:0x020ed274
 @EX@020e64d5 kind:data(word[3]) addr:0x020ed280
 @EX@020e6535 kind:data(word[3]) addr:0x020ed28c
-@EX@020e69ed kind:data(word[3]) addr:0x020ed298
-@EX@020e6a09 kind:data(word[3]) addr:0x020ed2a4
+@EX@scalbn kind:data(byte[0xc]) addr:0x020ed298 local
+@EX@__sys_free kind:data(byte[0xc]) addr:0x020ed2a4 local
 @EX@020e6abd kind:data(word[3]) addr:0x020ed2b0
 @EX@020e6b45 kind:data(word[3]) addr:0x020ed2bc
 @EX@020e6b65 kind:data(word[3]) addr:0x020ed2c8
@@ -6638,42 +6683,42 @@ func_020eccac kind:function(thumb,size=0x8) addr:0x020eccac
 @EX@020e8e71 kind:data(word[3]) addr:0x020ed7f0
 @EX@020e8fa5 kind:data(word[3]) addr:0x020ed7fc
 @EX@020e8fc1 kind:data(word[3]) addr:0x020ed808
-@EX@020eb8cd kind:data(word[3]) addr:0x020ed814
-@EX@020eb8fd kind:data(word[3]) addr:0x020ed820
-@EX@020eba11 kind:data(word[3]) addr:0x020ed82c
-@EX@020ebab5 kind:data(word[3]) addr:0x020ed838
-@EX@020ebcfd kind:data(word[3]) addr:0x020ed844
-@EX@020ec30d kind:data(word[3]) addr:0x020ed850
-@EX@020ec3c9 kind:data(word[3]) addr:0x020ed85c
-@EX@020ec415 kind:data(word[3]) addr:0x020ed868
-@EX@020ec499 kind:data(word[3]) addr:0x020ed874
-@EX@020ec4cd kind:data(word[3]) addr:0x020ed880
-@EX@020ec615 kind:data(word[3]) addr:0x020ed88c
-@EX@020ec6a9 kind:data(word[3]) addr:0x020ed898
-@EX@020ec6c1 kind:data(word[3]) addr:0x020ed8a4
-@EX@020ec6d5 kind:data(word[3]) addr:0x020ed8b0
-@EX@020ec6f1 kind:data(word[3]) addr:0x020ed8bc
-@EX@020ec719 kind:data(word[3]) addr:0x020ed8c8
-@EX@020ec751 kind:data(word[3]) addr:0x020ed8d4
-@EX@020ec7e5 kind:data(word[3]) addr:0x020ed8e0
-@EX@020ec851 kind:data(word[3]) addr:0x020ed8ec
-@EX@020ec8b5 kind:data(word[3]) addr:0x020ed8f8
-@EX@020ec8f5 kind:data(word[3]) addr:0x020ed904
-@EX@020ec91d kind:data(word[3]) addr:0x020ed910
-@EX@020ec939 kind:data(word[3]) addr:0x020ed91c
-@EX@020ec945 kind:data(word[3]) addr:0x020ed928
-@EX@020ec959 kind:data(word[3]) addr:0x020ed934
-@EX@020ec965 kind:data(word[3]) addr:0x020ed940
-@EX@020ec971 kind:data(word[3]) addr:0x020ed94c
-@EX@020ec985 kind:data(word[3]) addr:0x020ed958
-@EX@020ec991 kind:data(word[3]) addr:0x020ed964
-@EX@020ec9a5 kind:data(word[3]) addr:0x020ed970
-@EX@020ec9ad kind:data(word[3]) addr:0x020ed97c
-@EX@020ec9b5 kind:data(word[3]) addr:0x020ed988
-@EX@020ec9c5 kind:data(word[3]) addr:0x020ed994
-@EX@020ecb55 kind:data(word[3]) addr:0x020ed9a0
-@EX@020ecbf9 kind:data(word[3]) addr:0x020ed9ac
-@EX@020eccad kind:data(word[3]) addr:0x020ed9b8
+@EX@__read_console kind:data(byte[0xc]) addr:0x020ed814 local
+@EX@__write_console kind:data(byte[0xc]) addr:0x020ed820 local
+@EX@_Z19FindExceptionRecordPcP13ExceptionInfo kind:data(byte[0xc]) addr:0x020ed82c local
+@EX@_Z10NextActionP14ActionIterator kind:data(byte[0xc]) addr:0x020ed838 local
+@EX@_Z11UnwindStackP12ThrowContextP13ExceptionInfoPc kind:data(byte[0xc]) addr:0x020ed844 local
+@EX@_Z23FindMostRecentExceptionP12ThrowContextP13ExceptionInfo kind:data(byte[0xc]) addr:0x020ed850 local
+@EX@_Z17IsInSpecificationPcP16ex_specification kind:data(byte[0xc]) addr:0x020ed85c local
+@EX@__unexpected kind:data(byte[0xc]) addr:0x020ed868 local
+@EX@_Z16HandleUnexpectedP12ThrowContextP13ExceptionInfoP16ex_specificationPc kind:data(byte[0xc]) addr:0x020ed874 local
+@EX@_Z20FindExceptionHandlerP12ThrowContextP13ExceptionInfoPl kind:data(byte[0xc]) addr:0x020ed880 local
+@EX@_Z14__ThrowHandlerP12ThrowContext kind:data(byte[0xc]) addr:0x020ed88c local
+@EX@__end__catch kind:data(byte[0xc]) addr:0x020ed898 local
+@EX@_ZNSt13bad_exceptionD0Ev kind:data(byte[0xc]) addr:0x020ed8a4 local
+@EX@__call_static_initializers kind:data(byte[0xc]) addr:0x020ed8b0 local
+@EX@__destroy_global_chain kind:data(byte[0xc]) addr:0x020ed8bc local
+@EX@_ZN26@unnamed@cxxabi_alloc_cpp@17DestroyArrayRangeEPhS0_mPFvPvE kind:data(byte[0xc]) addr:0x020ed8c8 local
+@EX@__cxa_vec_new kind:data(byte[0xc]) addr:0x020ed8d4 local
+@EX@__cxa_vec_ctor kind:data(byte[0xc]) addr:0x020ed8e0 local
+@EX@__cxa_vec_dtor kind:data(byte[0xc]) addr:0x020ed8ec local
+@EX@__cxa_vec_cleanup kind:data(byte[0xc]) addr:0x020ed8f8 local
+@EX@__cxa_vec_delete kind:data(byte[0xc]) addr:0x020ed904 local
+@EX@_ZNKSt9type_infoeqERKS_ kind:data(byte[0xc]) addr:0x020ed910 local
+@EX@_ZN10__cxxabiv117__class_type_infoD1Ev kind:data(byte[0xc]) addr:0x020ed91c local
+@EX@_ZN10__cxxabiv117__class_type_infoD0Ev kind:data(byte[0xc]) addr:0x020ed928 local
+@EX@_ZN10__cxxabiv117__class_type_infoD2Ev kind:data(byte[0xc]) addr:0x020ed934 local
+@EX@_ZN10__cxxabiv120__si_class_type_infoD1Ev kind:data(byte[0xc]) addr:0x020ed940 local
+@EX@_ZN10__cxxabiv120__si_class_type_infoD0Ev kind:data(byte[0xc]) addr:0x020ed94c local
+@EX@_ZN10__cxxabiv121__vmi_class_type_infoD1Ev kind:data(byte[0xc]) addr:0x020ed958 local
+@EX@_ZN10__cxxabiv121__vmi_class_type_infoD0Ev kind:data(byte[0xc]) addr:0x020ed964 local
+@EX@_ZSt9dthandlerv kind:data(byte[0xc]) addr:0x020ed970 local
+@EX@_ZSt9duhandlerv kind:data(byte[0xc]) addr:0x020ed97c local
+@EX@_ZSt9terminatev kind:data(byte[0xc]) addr:0x020ed988 local
+@EX@_ZSt10unexpectedv kind:data(byte[0xc]) addr:0x020ed994 local
+@EX@_Z16__SetupFrameInfoP12ThrowContextP13ExceptionInfo kind:data(byte[0xc]) addr:0x020ed9a0 local
+@EX@_Z16__SkipUnwindInfoPc kind:data(byte[0xc]) addr:0x020ed9ac local
+@EX@_ExitProcess kind:data(byte[0xc]) addr:0x020ed9b8 local
 __sinit_020ed9c4 kind:function(thumb,size=0x28) addr:0x020ed9c4
 __sinit_020ed9ec kind:function(thumb,size=0x1c) addr:0x020ed9ec
 __sinit_020eda08 kind:function(thumb,size=0x1c) addr:0x020eda08
@@ -6885,18 +6930,18 @@ PitchTable kind:data(byte[0x600]) addr:0x020f4158 local
 VolumeTable kind:data(byte[0x2d4]) addr:0x020f4758 local
 fsi_default_command kind:data(byte[0x24]) addr:0x020f4a2c
 __lower_map kind:data(any) addr:0x020f4a50
-data_020f4ad0 kind:data(any) addr:0x020f4ad0
-data_020f4b50 kind:data(any) addr:0x020f4b50
-data_020f4c50 kind:data(any) addr:0x020f4c50
-data_020f4c78 kind:data(any) addr:0x020f4c78
-data_020f4c7d kind:data(any) addr:0x020f4c7d
+__upper_mapC kind:data(any) addr:0x020f4ad0
+__ctype_mapC kind:data(any) addr:0x020f4b50
+@881 kind:data(byte[0x28]) addr:0x020f4c50 local
+@627 kind:data(byte[0x5]) addr:0x020f4c78 local
+@609 kind:data(byte[0x9]) addr:0x020f4c7d local
 data_020f4d88 kind:data(any) addr:0x020f4d88
-data_020f4f88 kind:data(any) addr:0x020f4f88
-data_020f4f98 kind:data(any) addr:0x020f4f98
-data_020f4fa8 kind:data(any) addr:0x020f4fa8
-data_020f4fb8 kind:data(any) addr:0x020f4fb8
-data_020f4fc8 kind:data(any) addr:0x020f4fc8
-data_020f4fd8 kind:data(any) addr:0x020f4fd8
+ln2HI kind:data(byte[0x10]) addr:0x020f4f88 local
+halF kind:data(byte[0x10]) addr:0x020f4f98 local
+ln2LO kind:data(byte[0x10]) addr:0x020f4fa8 local
+dp_h kind:data(byte[0x10]) addr:0x020f4fb8 local
+bp kind:data(byte[0x10]) addr:0x020f4fc8 local
+dp_l kind:data(byte[0x10]) addr:0x020f4fd8 local
 data_020f4fe8 kind:data(any) addr:0x020f4fe8
 .p__sinit_020ed9c4 kind:data(word) addr:0x020f4ff0
 .p__sinit_020ed9ec kind:data(word) addr:0x020f4ff4
@@ -9352,12 +9397,10 @@ OSi_ConsoleTypeCache kind:data(byte[0x4]) addr:0x0210824c local
 @8637 kind:data(byte[0x4]) addr:0x02108254 local
 sDayOfYear kind:data(byte[0x30]) addr:0x02108258 local
 cardi_rom_header_addr kind:data(byte[0x4]) addr:0x02108288
-data_0210828c kind:data(any) addr:0x0210828c
-data_021082d8 kind:data(any) addr:0x021082d8
-data_02108324 kind:data(any) addr:0x02108324
-data_02108370 kind:data(any) addr:0x02108370
-data_02108374 kind:data(any) addr:0x02108374
-data_02108378 kind:data(any) addr:0x02108378
+__files kind:data(byte[0xe4]) addr:0x0210828c
+__float_huge kind:data(any) addr:0x02108370
+__float_nan kind:data(any) addr:0x02108374
+__double_huge kind:data(any) addr:0x02108378
 data_02108380 kind:data(any) addr:0x02108380
 data_02108384 kind:data(any) addr:0x02108384
 data_02108388 kind:data(any) addr:0x02108388
@@ -9366,23 +9409,23 @@ data_02108398 kind:data(any) addr:0x02108398
 data_021083a8 kind:data(any) addr:0x021083a8
 data_021083c8 kind:data(any) addr:0x021083c8
 data_02108488 kind:data(any) addr:0x02108488
-data_02108494 kind:data(any) addr:0x02108494
+_current_locale kind:data(any) addr:0x02108494
 data_021084a0 kind:data(any) addr:0x021084a0
 data_021084ac kind:data(any) addr:0x021084ac
 data_021084bc kind:data(any) addr:0x021084bc
 data_02108514 kind:data(any) addr:0x02108514
-data_0210859c kind:data(any) addr:0x0210859c
-data_021085a4 kind:data(any) addr:0x021085a4
-data_021085ac kind:data(any) addr:0x021085ac
-data_021085b4 kind:data(any) addr:0x021085b4
-data_021085b8 kind:data(any) addr:0x021085b8
-data_021085bc kind:data(any) addr:0x021085bc
-data_021085c4 kind:data(any) addr:0x021085c4
-data_021085cc kind:data(any) addr:0x021085cc
-data_021085d0 kind:data(any) addr:0x021085d0
-data_021085d4 kind:data(any) addr:0x021085d4
-data_021085d8 kind:data(any) addr:0x021085d8
-data_021085dc kind:data(any) addr:0x021085dc
+@2297 kind:data(byte[0x6]) addr:0x0210859c local
+@2298 kind:data(byte[0x5]) addr:0x021085a4 local
+@2299 kind:data(byte[0x5]) addr:0x021085ac local
+@2300 kind:data(byte[0x4]) addr:0x021085b4 local
+@2301 kind:data(byte[0x4]) addr:0x021085b8 local
+@2302 kind:data(byte[0x5]) addr:0x021085bc local
+@2303 kind:data(byte[0x5]) addr:0x021085c4 local
+@2304 kind:data(byte[0x4]) addr:0x021085cc local
+@2305 kind:data(byte[0x4]) addr:0x021085d0 local
+@2708 kind:data(byte[0x2]) addr:0x021085d4 local
+@2709 kind:data(byte[0x1]) addr:0x021085d8 local
+random_next kind:data(byte[0x4]) addr:0x021085dc local
 data_021085e0 kind:data(any) addr:0x021085e0
 data_02108620 kind:data(any) addr:0x02108620
 data_02108650 kind:data(any) addr:0x02108650
@@ -9408,7 +9451,7 @@ data_021086f0 kind:data(any) addr:0x021086f0
 data_021086f4 kind:data(any) addr:0x021086f4
 data_0210871c kind:data(any) addr:0x0210871c
 data_02108724 kind:data(any) addr:0x02108724
-data_02108750 kind:data(any) addr:0x02108750
+_ZTISt9exception kind:data(any) addr:0x02108750
 data_02108758 kind:data(any) addr:0x02108758
 data_02108760 kind:data(any) addr:0x02108760
 data_02108768 kind:data(any) addr:0x02108768
@@ -9416,7 +9459,7 @@ data_02108770 kind:data(any) addr:0x02108770
 data_0210877c kind:data(any) addr:0x0210877c
 data_02108788 kind:data(any) addr:0x02108788
 data_02108794 kind:data(any) addr:0x02108794
-data_021087a0 kind:data(any) addr:0x021087a0
+_ZTSSt9exception kind:data(any) addr:0x021087a0
 data_021087b8 kind:data(any) addr:0x021087b8
 data_021087c8 kind:data(any) addr:0x021087c8
 data_021087dc kind:data(any) addr:0x021087dc
@@ -9481,24 +9524,25 @@ data_02108e78 kind:data(any) addr:0x02108e78
 data_02108ec0 kind:data(any) addr:0x02108ec0
 data_02108f00 kind:data(any) addr:0x02108f00
 data_02108f30 kind:data(any) addr:0x02108f30
-data_02108f58 kind:data(any) addr:0x02108f58
-data_02108f64 kind:data(any) addr:0x02108f64
-data_02108f74 kind:data(any) addr:0x02108f74
-data_02108f90 kind:data(any) addr:0x02108f90
-data_02108f9c kind:data(any) addr:0x02108f9c
-data_02108fb4 kind:data(any) addr:0x02108fb4
-data_02108fdc kind:data(any) addr:0x02108fdc
+_ZTISt13bad_exception kind:data(byte[0xc]) addr:0x02108f58
+_ZZNKSt13bad_exception4whatEvEs kind:data(byte[0xe]) addr:0x02108f64
+_ZTSSt13bad_exception kind:data(byte[0x12]) addr:0x02108f74
+_ZTVSt13bad_exception kind:data(byte[0x14]) addr:0x02108f88
+@2198 kind:data(byte[0x16]) addr:0x02108f9c local
+@2199 kind:data(byte[0x26]) addr:0x02108fb4 local
+_ZTISt9type_info kind:data(any) addr:0x02108fdc
 data_02108fe4 kind:data(any) addr:0x02108fe4
-data_02108ff0 kind:data(any) addr:0x02108ff0
-data_02108ffc kind:data(any) addr:0x02108ffc
-data_02109008 kind:data(any) addr:0x02109008
+_ZTIN10__cxxabiv120__si_class_type_infoE kind:data(any) addr:0x02108ff0
+_ZTIN10__cxxabiv117__class_type_infoE kind:data(any) addr:0x02108ffc
+_ZTSSt9type_info kind:data(any) addr:0x02109008
 data_02109020 kind:data(any) addr:0x02109020
-data_02109030 kind:data(any) addr:0x02109030
-data_02109040 kind:data(any) addr:0x02109040
-data_02109048 kind:data(any) addr:0x02109048
-data_0210906c kind:data(any) addr:0x0210906c
+_ZTVN10__cxxabiv120__si_class_type_infoE kind:data(byte[0x10]) addr:0x02109028
+_ZTVN10__cxxabiv117__class_type_infoE kind:data(byte[0x10]) addr:0x02109038
+_ZTSN10__cxxabiv117__class_type_infoE kind:data(byte[0x22]) addr:0x02109048
+_ZTSN10__cxxabiv120__si_class_type_infoE kind:data(byte[0x25]) addr:0x0210906c
 data_02109094 kind:data(any) addr:0x02109094
-data_021090bc kind:data(any) addr:0x021090bc
+_ZSt8thandler kind:data(byte[0x4]) addr:0x021090bc local
+_ZSt8uhandler kind:data(byte[0x4]) addr:0x021090c0 local
 data_021090e0 kind:bss addr:0x021090e0
 data_02109158 kind:bss addr:0x02109158
 data_02109160 kind:bss addr:0x02109160
@@ -10433,17 +10477,20 @@ CTRDGTaskList$8471 kind:bss(size=0xe8) addr:0x021b86c0 local
 ctrdgi_task_work kind:bss(size=0x4) addr:0x021b87a8 local
 ctrdgi_task_list kind:bss(size=0x24) addr:0x021b87ac local
 ctrdg_task_stack kind:bss(size=0x400) addr:0x021b87d0
-data_021b8bd0 kind:bss addr:0x021b8bd0
-data_021b8be0 kind:bss addr:0x021b8be0
-data_021b8ce0 kind:bss addr:0x021b8ce0
-data_021b8d04 kind:bss addr:0x021b8d04
-data_021b8d28 kind:bss addr:0x021b8d28
+__console_exit kind:bss(size=0x4) addr:0x021b8bd0
+__stdio_exit kind:bss(size=0x4) addr:0x021b8bd4
+__atexit_curr_func kind:bss(size=0x4) addr:0x021b8bd8 local
+__aborting kind:bss(size=0x4) addr:0x021b8bdc
+__atexit_funcs kind:bss(size=0x100) addr:0x021b8be0 local
+__cs_id kind:bss addr:0x021b8ce0
+__cs_ref kind:bss addr:0x021b8d04
+__cs kind:bss addr:0x021b8d28
 data_021b8dd0 kind:bss addr:0x021b8dd0
-data_021b8e00 kind:bss addr:0x021b8e00
-data_021b8f00 kind:bss addr:0x021b8f00
-data_021b9000 kind:bss addr:0x021b9000
-data_021b9100 kind:bss addr:0x021b9100
-data_021b9104 kind:bss addr:0x021b9104
+stderr_buff kind:bss(size=0x100) addr:0x021b8e00 local
+stdout_buff kind:bss(size=0x100) addr:0x021b8f00 local
+stdin_buff kind:bss(size=0x100) addr:0x021b9000 local
+errno kind:bss addr:0x021b9100
+signal_funcs kind:bss(size=0x1c) addr:0x021b9104
 data_021b9120 kind:bss addr:0x021b9120
 data_021b9121 kind:bss addr:0x021b9121
 data_021b9154 kind:bss addr:0x021b9154
@@ -10470,4 +10517,4 @@ data_021b93fc kind:bss addr:0x021b93fc
 data_021b943c kind:bss addr:0x021b943c
 data_021b947c kind:bss addr:0x021b947c
 data_021b94bc kind:bss addr:0x021b94bc
-data_021b94fc kind:bss addr:0x021b94fc
+__global_destructor_chain kind:bss(size=0x4) addr:0x021b94fc

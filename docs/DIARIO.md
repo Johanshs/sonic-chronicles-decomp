@@ -279,6 +279,40 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   compilador, as 24 ordens dos `case`, `case` a mais ou a menos, outras otimizações.
   Nenhum bateu; o arquivo que a Nintendo compilou deve ser diferente do público.
 
+## 18. O MSL ligado
+- **De onde vêm os `.o`.** O MSL não tem fonte público: vem pronto nos `.a` do
+  CodeWarrior. `msl.sh` tira de dentro deles os 204 `.o` (o C, o C++, o Runtime e a
+  matemática de ponto flutuante, que é assembly). 68 arquivos estão no jogo e 62 ligam.
+- **O primeiro link nem fechava.** O `mwldarm` quer que todo nome citado exista, mesmo
+  em código que ele vai descartar: `powf` chama `pow`, e nenhum dos dois está no jogo.
+  Ligar os `.a` inteiros dava "Internal linker error", e definir os nomes como 0 no
+  `.lcf` também. A saída foi um `.o` de funções vazias para esses nomes, gerado no build.
+- **Depois fechou, e a ROM saiu diferente.** Nove causas, achadas comparando o mapa do
+  linker com os endereços do jogo, da primeira diferença para a frente:
+  - um rótulo automático (`.L_020ead44`) que o `.o` não define: o `mwldarm` o resolveu
+    como 0, **sem erro**, e pôs um desvio de 8 bytes no meio do código. Agora o build
+    para se o código do jogo citar um nome que ninguém define;
+  - funções gêmeas com o nome trocado: `strtold` no lugar de `strtod`, os stubs de
+    8 bytes `exp`/`pow` com nomes do `math.o`, os destrutores do RTTI. Cada troca
+    mantinha viva uma função a mais;
+  - a tabela de exceções guardava a entrada de toda função, e com ela a função que o
+    jogo descartou;
+  - a `.exception` de cada função começa num múltiplo de 4 (Erro nº 10, abaixo);
+  - `__sinit__` gravado como rótulo de código: o linker criou um desvio para cada
+    ponteiro da tabela `.ctor`;
+  - o typeinfo de `std::exception` é "multidef": o jogo ficou com a cópia de um arquivo
+    dele, e a do `.o` precisava ceder o lugar;
+  - os buffers de `stdin`/`stdout` e a vtable de `__si_class_type_info` só aparecem por
+    ponteiros dentro de dados, que a ferramenta não seguia: o linker os deixou de fora e
+    pôs 0 nos ponteiros;
+  - um `b .` de 2 bytes no fim de outra função parecia o `__rt_div0` inteiro.
+  Com isso a ROM saiu idêntica: 132 KB (13,6% do código do ARM9) vêm de bibliotecas
+  ligadas. A configuração gerada do zero sai igual à versionada, e o NitroSDK e a
+  NitroSystem saem iguais aos de antes (menos o `.L_020ead44`).
+- **Erro nº 10:** a ferramenta não arredondava o fim da `.exception` de um arquivo para
+  múltiplo de 4, porque o `.o` diz alinhamento 1 e eu acreditei. O linker alinha a 4
+  mesmo assim, e o pedaço do jogo seguinte começava 3 bytes antes do que devia.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de

@@ -52,9 +52,9 @@ for f in json.load(sys.stdin)["files"]:
         print(f["name"], f["object_to_link"])' | while read -r fonte objeto; do
     echo "   $fonte"
     case "$fonte" in
-        # bibliotecas da Nintendo: o .o já compilado por nitrosdk.sh/nitrosystem.sh,
-        # com o compilador e as flags delas (não as do jogo)
-        NitroSDK/*|NitroSystem/*)
+        # bibliotecas: o .o já compilado por nitrosdk.sh/nitrosystem.sh, com o
+        # compilador e as flags delas (não as do jogo), ou tirado do .a por msl.sh
+        NitroSDK/*|NitroSystem/*|MSL/*)
             lib="${fonte%%/*}"; resto="${fonte#*/}"
             # "x.itcm.c", "x.dtcm.c", "x.version.c": partes de x.c (veja o passo 3)
             resto="${resto/.itcm.c/.c}"; resto="${resto/.dtcm.c/.c}"; resto="${resto/.version.c/.c}"
@@ -94,7 +94,9 @@ for l in open("config/YWSE/arm9/symbols.txt").readlines() + open("config/YWSE/ar
     if m and not l.rstrip().endswith(" local"):
         jogo.add(m.group(1))
 nomes = []
-for f in sorted(glob.glob("work/build/NitroS*/**/*.o", recursive=True)):
+bibliotecas = [f for lib in ("NitroSystem", "NitroSDK", "MSL")
+               for f in sorted(glob.glob(f"work/build/{lib}/**/*.o", recursive=True))]
+for f in bibliotecas:
     for s in ELFFile(open(f, "rb")).get_section_by_name(".symtab").iter_symbols():
         if (s["st_info"]["type"] == "STT_FUNC" and s["st_info"]["bind"] == "STB_GLOBAL"
                 and s["st_shndx"] != "SHN_UNDEF" and s.name in jogo):
@@ -110,6 +112,9 @@ if nomes:
 fim = lcf.rstrip().rindex("}")
 lcf = lcf[:fim] + open("config/YWSE/arm9/simbolos_linker.lcf").read() + lcf[fim:]
 open("work/build/arm9.lcf", "w").write(lcf)'
+
+# os .o das bibliotecas: multidef, .exceptix e nomes de código descartado (veja lá)
+python3 decomp/tools/preparar_link.py "$F"
 
 echo "== 4. link (mwldarm)"
 # -dead: descarta o que ninguém usa; -m Entry: ponto de entrada; -map: gera
@@ -132,7 +137,8 @@ dsd check modules -c "$CFG" | sed 's/^\[INFO \] /   /'
 import glob, re, sys
 from elftools.elf.elffile import ELFFile
 divididos = set()
-for f in glob.glob("work/build/NitroS*/**/*.o", recursive=True):
+for f in [f for lib in ("NitroSystem", "NitroSDK", "MSL")
+          for f in glob.glob(f"work/build/{lib}/**/*.o", recursive=True)]:
     elf = ELFFile(open(f, "rb"))
     if any(s.name in (".itcm", ".dtcm", ".dtcm.bss", ".version") for s in elf.iter_sections()):
         divididos |= {s.name for s in elf.get_section_by_name(".symtab").iter_symbols()
