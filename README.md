@@ -54,6 +54,7 @@ SONIC_ROM=/caminho/rom.nds cargo test --release        # prova de ida e volta co
 engine/              Rust: sonic-formats (biblioteca), sonic-mod, sonic-dump
 analise/             pipeline de engenharia reversa (Python, Ghidra, emulador)
 decomp/              funções do jogo reescritas em C, testadas contra o jogo
+modmenu/             painel de controle dentro do jogo (C, ARM9), com ROM de teste nossa
 exemplos/            crate Rust mínima e didática (HERF + LZ10)
 docs/                toda a documentação (abaixo)
 ```

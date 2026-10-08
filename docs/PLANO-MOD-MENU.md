@@ -1,7 +1,7 @@
 # Plano: mod menu dentro do jogo e cheats para R4
 
-Branch: `mod-menu`. Status: **plano**. Nada aqui foi construído ainda, exceto onde está
-escrito "conferido".
+Branch: `mod-menu`. Status: **em andamento**. Vale só o que está marcado como "conferido"
+ou descrito nas seções "Andamento".
 
 O objetivo é ter um **painel de administração dentro do jogo**: aperta-se uma
 combinação de botões, o jogo pausa, aparece um menu na tela de baixo e dá para mudar
@@ -225,6 +225,20 @@ O jogo é um programa NitroSDK. Para pôr código novo:
 
 Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) → B4/B5/B6 (precisam
 da A2) → B7.
+
+### Andamento: fase B (08/10/2026)
+- **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
+  compilado com o **clang e o ld.lld** do LLVM, que já geram código para o ARM946E-S. Sem
+  libnds nem NitroSDK: o código escreve direto nos registradores. Fica em
+  [`modmenu/`](../modmenu/README.md).
+- **B2, console: feito na ROM de teste, falta no jogo.** Uma ROM de teste nossa (um "jogo
+  de mentira" que pinta a tela de baixo nos mesmos blocos de VRAM que o painel usa) prova
+  no DeSmuME, com `make testar`: o combo abre, o jogo pausa, os valores mudam na RAM com
+  os limites, e ao fechar os registradores, a paleta e os 32 KB de VRAM voltam idênticos,
+  inclusive após 100 ciclos. O critério da B2 ("no jogo") só vale depois da B1.
+- **B3, adiantada:** as páginas "Regras de combate" (regras 44, 45, 7 e 8) e
+  "Dificuldade dinâmica" já existem; falta vê-las mudar uma batalha de verdade.
+- **B1 em aberto:** precisa da ROM para achar a função que roda uma vez por quadro.
 
 ## 5. Riscos e cuidados
 
