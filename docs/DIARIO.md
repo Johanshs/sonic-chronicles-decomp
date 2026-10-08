@@ -200,6 +200,23 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   desfiz a variável temporária do hash: o build falhou apontando o byte
   `0x02009ba6`, a soma com os operandos trocados.
 
+## 16. O NitroSDK pelo fonte (começo da Fase 2)
+- **A mesma versão, decompilada.** O SDK do jogo é o 4.2.30001, o mesmo que a
+  comunidade decompilou para o Pokémon Platinum. Compilando aquele fonte, cada função
+  do SDK deveria aparecer no jogo com os mesmos bytes.
+- **Erro nº 9:** compilei em ARM, como o Platinum faz, e nada bateu. O assembly do
+  `OS_GetOwnerInfo` no jogo é Thumb: a BioWare usou a versão Thumb das bibliotecas.
+  Recompilado com `-thumb -DSDK_CODE_THUMB`, 562 funções ganharam nome.
+- **Como saber que não é coincidência.** Duas funções pequenas podem ter os mesmos
+  bytes. Por isso os nomes foram conferidos pelas chamadas: se `X` chama `Y` no fonte,
+  o `bl` da função `X` no jogo tem que cair na função `Y`. As 1.140 referências
+  bateram. A única que parecia errada era um ponteiro para *dentro* da própria função
+  (o endereço de retorno de `OSi_DisplayExContext`), e o erro era do conferidor, que
+  ignorava o deslocamento da relocação.
+- **O SDK não foi compilado com o compilador do jogo.** As bibliotecas da Nintendo
+  batem melhor com a 2.0 sp1 (652 funções) do que com a sp2 (649) que compilou o jogo:
+  a Nintendo entrega o SDK já compilado.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de

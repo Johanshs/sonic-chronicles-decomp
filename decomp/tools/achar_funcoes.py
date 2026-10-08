@@ -8,11 +8,12 @@ que batem: assim elas ganham o nome verdadeiro, e a contagem de acertos diz
 qual versão da biblioteca o jogo usou.
 
 Uso:
-  python3 achar_funcoes.py [--min 8] [--nomes] [--de 0x...] [--aplicar] lib.a [mais.a arquivo.o ...]
+  python3 achar_funcoes.py [--min 8] [--nomes] [--de 0x...] [--ate 0x...] [--aplicar] lib.a [mais.a arquivo.o ...]
     --min N    ignora funções menores que N bytes (as triviais batem com tudo)
     --nomes    lista cada função achada (endereço, nome, de onde veio)
     --de END   só considera funções do jogo a partir deste endereço (a região
                onde a biblioteca foi ligada)
+    --ate END  ... e antes deste
     --aplicar  grava os nomes em symbols.txt, mas só os sem ambiguidade: a
                função da biblioteca bate com UM endereço e o endereço com UM
                nome. Funções idênticas (abs e labs, por exemplo) ficam de fora.
@@ -82,16 +83,18 @@ def funcoes_jogo():
 
 def main():
     args = sys.argv[1:]
-    minimo, listar, aplicar, de = 8, False, False, 0
+    minimo, listar, aplicar, de, ate = 8, False, False, 0, 1 << 32
     if "--min" in args:
         i = args.index("--min"); minimo = int(args[i + 1]); del args[i:i + 2]
     if "--de" in args:
         i = args.index("--de"); de = int(args[i + 1], 16); del args[i:i + 2]
+    if "--ate" in args:
+        i = args.index("--ate"); ate = int(args[i + 1], 16); del args[i:i + 2]
     if "--nomes" in args:
         args.remove("--nomes"); listar = True
     if "--aplicar" in args:
         args.remove("--aplicar"); aplicar = True
-    jogo = {t: [f for f in fs if f[0] >= de] for t, fs in funcoes_jogo().items()}
+    jogo = {t: [f for f in fs if de <= f[0] < ate] for t, fs in funcoes_jogo().items()}
     total = achadas = 0
     pares = []
     for caminho in args:
@@ -122,19 +125,24 @@ def aplicar_nomes(pares):
         por_end.setdefault(end, set()).add(nome)
     novos = {end: nome for end, nome in set(pares)
              if len(por_nome[nome]) == 1 and len(por_end[end]) == 1 and "@" not in nome}
-    caminho = os.path.join(REPO, "config/YWSE/arm9/symbols.txt")
-    linhas = open(caminho).read().split("\n")
-    existentes = {l.split(" ", 1)[0] for l in linhas if l}
+    # só troca nomes automáticos (func_..., Classe__vfuncNN_...): os nomes
+    # dados à mão e os especiais do dsd (Entry) ficam como estão
+    automatico = re.compile(r"func_[0-9a-f]{8}$|.*__vfunc\d+_[0-9a-f]{8}$")
     trocados = 0
-    for i, linha in enumerate(linhas):
-        m = re.match(r"(\S+) (kind:function.* addr:(0x[0-9a-f]+))", linha)
-        if m and int(m.group(3), 16) in novos:
-            nome = novos[int(m.group(3), 16)]
-            if nome != m.group(1) and nome not in existentes:
-                linhas[i] = f"{nome} {m.group(2)}"
-                existentes.add(nome)
-                trocados += 1
-    open(caminho, "w").write("\n".join(linhas))
+    for caminho in (os.path.join(REPO, "config/YWSE/arm9/symbols.txt"),
+                    os.path.join(REPO, "config/YWSE/arm9/itcm/symbols.txt")):
+        linhas = open(caminho).read().split("\n")
+        existentes = {l.split(" ", 1)[0] for l in linhas if l}
+        for i, linha in enumerate(linhas):
+            m = re.match(r"(\S+) (kind:function.* addr:(0x[0-9a-f]+))", linha)
+            if m and int(m.group(3), 16) in novos and automatico.match(m.group(1)):
+                nome = novos[int(m.group(3), 16)]
+                if nome not in existentes:
+                    linhas[i] = f"{nome} {m.group(2)}"
+                    existentes.add(nome)
+                    trocados += 1
+        open(caminho, "w").write("\n".join(linhas))
+    caminho = "config/YWSE/arm9/"
     print(f"# {trocados} nomes gravados em {caminho} ({len(novos)} sem ambiguidade)")
 
 

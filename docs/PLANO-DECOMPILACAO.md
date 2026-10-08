@@ -80,6 +80,9 @@ precisa ser reescrito do zero.
   `GX_`, `G3_`, `SND_`, `MI_`, `FX_`... Gerar assinaturas e aplicar com
   `dsd sig apply`. **Pronto quando:** as funções do SDK estão nomeadas e os
   arquivos `.c` delas ligam com match.
+  🟡 562 funções nomeadas (`decomp/tools/nitrosdk.sh`, com o fonte de ntrtwl/NitroSDK
+  4.2.30001, compilado em Thumb com a 2.0/sp1p2); 1.140 de 1.140 chamadas conferem.
+  Falta ligar os `.o` do SDK no lugar do código cortado.
 - **2.2 NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`). Mesma abordagem.
 - **2.3 Runtime C/C++ (MSL).** `memcpy`, `__register_global_object`, exceções,
   iostreams. Em geral, ligar o `.a` original do CodeWarrior já resolve.

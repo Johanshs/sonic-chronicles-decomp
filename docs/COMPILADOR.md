@@ -119,15 +119,43 @@ python3 decomp/tools/achar_funcoes.py --de 0x020e09d0 --aplicar \
     $L/Runtime/Runtime_ARM/Runtime_NITRO/Lib/NITRO_Runtime_{T,Ai}_LE.a
 ```
 
+## O NitroSDK: compilado pela Nintendo, em Thumb
+
+O jogo usa o NitroSDK **4.2.30001** (o número `0x04027531` no ARM9). Essa exata versão
+foi decompilada pela comunidade ([ntrtwl/NitroSDK](https://github.com/ntrtwl/NitroSDK),
+a mesma base do decomp do Pokémon Platinum). `decomp/tools/nitrosdk.sh` baixa esse
+fonte, compila os 169 arquivos do ARM9 e procura cada função no jogo.
+
+- **Thumb, não ARM.** A primeira tentativa, em ARM (como o Platinum), achou 0 de 4
+  funções do `os_ownerInfo.c`. O `OS_GetOwnerInfo` do jogo começa com `push {r4, lr}`
+  em Thumb: a BioWare ligou a versão Thumb das bibliotecas do SDK
+  (`-thumb -DSDK_CODE_THUMB`). Com isso, 3 de 4 bateram de cara.
+- **Versão do compilador do SDK.** Funções achadas na região do SDK
+  (`0x020d4000`-`0x020e09d0`) com cada versão: `2.0/base` 627, `sp1`/`sp1p2`/`sp1p5`
+  652, `sp2` 649. O SDK foi compilado pela Nintendo com uma 2.0 sp1 (o Platinum usa a
+  `sp1p2`, a que adotamos aqui), não com a sp2 do jogo. Faz sentido: a Nintendo
+  entrega o SDK já compilado.
+- **562 funções ganharam o nome verdadeiro** (`OS_IrqHandler`, `MTX_Concat43`,
+  `FS_ReadFile`...), contando ITCM e o `crt0` (`_start`, `do_autoload`). Só entram as
+  sem ambiguidade.
+- **Prova independente:** `decomp/tools/conferir_chamadas.py` segue todas as chamadas
+  e ponteiros das funções nomeadas: das 1.140 referências, as 1.140 apontam para a
+  função com o nome que o fonte diz. Um nome errado por coincidência de bytes quebraria
+  essa conta.
+
+Com o MSL (171) e o SDK (562), as funções com nome automático (`func_...`) caíram de
+5.685 para 4.973 no ARM9.
+
 ## O que não sabemos (ainda)
 
 - **O service pack do compilador com prova direta.** As bibliotecas são da sp2, mas
   em cerca de 30 construções de C++ as versões `2.0/sp1` a `2.0/sp2p4` geraram código
   idêntico; a única diferença achada foi `while (n--)` entre a `2.0/base` e as outras.
   Se uma função futura só bater com outra versão, troca-se em `compilar.sh`.
-- **As flags do NitroSDK, da NitroSystem e do MSL** (Fase 1.3). São bibliotecas que a
-  Nintendo e a Metrowerks compilaram, em ARM, provavelmente com outras flags. Elas
-  serão testadas quando a Fase 2 as separar.
+- **A NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`) e as outras bibliotecas
+  (o vídeo VX da Actimagine, a de backup): ainda não procuradas. A NitroSystem tem
+  decompilação pública (ntrtwl/NitroSystem, versão 071126); falta saber se é a mesma
+  versão do jogo.
 - `-enum int`, `-char signed`, `-inline`, `-str`, `-ipa`: ainda sem uma função que
   dependa delas.
 
