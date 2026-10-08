@@ -170,7 +170,9 @@ batalha, sem encontros, nível dos POW no máximo.
   | `0x021D10AC` (ponteiro) +0x114 | dinheiro | aponta para o esquadrão, mas fica no heap; o caminho fixo é `0x02160C18` (conferido) |
   | `0x021D10EE`, `0x021D10F8` | EXP | `0x021D10F8` é o XP do grupo (esquadrão `+0x48` → `+0x50`, conferido) |
   | `0x02160EB0` | anéis do tabuleiro | BSS: soma 1 por anel, mas não é a carteira (conferido) |
-  | `0x02017A20`, `0x0209451C` | patches de código (coletar de longe, pontos de habilidade) | trechos do ARM9 a estudar |
+  | `0x0201763A` | patch de código (anéis ×2) | só dobra o contador da área; a carteira é `0x02017648` (conferido) |
+  | `0x02017A20` | patch de código (coletar de longe) | funciona; os testes que importam são `0x02017A56`/`88` (conferido) |
+  | `0x0209451C` | patch de código (pontos de habilidade) | compra de POW sai, mas os pontos ficam negativos (conferido) |
 
 - **No cartão** (com autorização do dono): o `usrcheat.dat` de 55 MB foi trocado por um
   banco enxuto de 7,9 MB, gerado com `usrcheat.py`: as 248 entradas dos 27 jogos que estão
@@ -220,6 +222,11 @@ batalha, sem encontros, nível dos POW no máximo.
   da lista de personagens. Novos: XP no máximo e "Itens não acabam" (patch de código).
   Chao: nível Max e os 5 de troca sem fio. As cadeias valem nos dois saves testados
   (Green Hill e Nocturne). Falta: testar no DS.
+- **A2, terceira rodada**: as três pistas públicas de código foram lidas no assembly e
+  rodadas no emulador (tabela acima). Novos, todos conferidos pelo interpretador AR no
+  emulador: multiplicador de anéis na carteira (×2, ×5, ×10), pegar todos os anéis da
+  área, e a pasta POW (compra sem gastar pontos, 99 pontos, todos os golpes no nível III).
+  Os pontos e níveis de POW são os atributos 75 e 69 a 74 do personagem.
 
 ## 4. Caminho B: o mod menu
 

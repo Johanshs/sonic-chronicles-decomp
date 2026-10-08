@@ -169,6 +169,7 @@ bate mais forte; com "−4", cai mais rápido e erra mais. O "neutro" serve de r
 |---|---|---|---|
 | Anéis sempre 999999 | ponteiro `0x02160C18` → objeto → esquadrão, `+0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
 | Itens não acabam | patch de código em `0x0202DB4C` | usar um item não gasta | [média] |
+| Pegar todos os anéis da área (de longe) | patch de código em `0x02017A56` e `0x02017A88` | todo anel da área é pego na hora | [média] |
 
 Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. A
 global `0x02160C18` (na área de variáveis fixas do programa, a BSS) aponta para um objeto
@@ -236,6 +237,99 @@ cheat antes de ir à loja se não quiser isso. A função tem só dois chamadore
 ARM9: um que tira um item depois de conferir seu número (`0x0202E09C`) e um do jardim dos
 Chao (`0x0203939E`), que tira um item e soma uma cópia a um Chao. No emulador, abrir o
 jardim com o cheat ligado chocou os ovos normalmente e o jogo não travou.
+
+**Pegar todos os anéis da área.** A cada quadro, uma função (a partir de `0x02017A00`)
+passa pela lista de coletáveis da área. Para cada um ela confere o tipo (1 = anel, 3 = o
+outro coletável do HUD, o ícone azul "x/11"), depois a distância até o Sonic em X e em Y.
+Só se as duas forem menores que `5 << 14` (5 unidades do mapa, em ponto fixo) ela chama a
+função que pega o anel (`0x0201762C`). O cheat troca os dois desvios "longe demais, pule"
+por "não faz nada":
+
+| Endereço | Original | Quer dizer | Com o cheat |
+|---|---|---|---|
+| 0x02017A56 | `D035` | `beq`: X longe demais, pule este | `46C0` (não faz nada) |
+| 0x02017A88 | `D01C` | `beq`: Y longe demais, pule este | `46C0` (não faz nada) |
+
+Sem os dois testes, todo coletável válido da área é pego no primeiro quadro.
+**Conferido no emulador:** no Green Hill a carteira foi de 8 para 183 e o HUD de "8/185"
+para "183/185" (o outro contador, de 0/11 para 10/11); no Nocturne, mais 24 anéis. Os que
+sobram ficam fora da lista dessa área (atrás de uma porta ou de um evento, por exemplo).
+
+### Pasta "Projeto: multiplicador de anéis", escolha 1
+
+| Cheat | Código | Efeito | Confiança |
+|---|---|---|---|
+| Anéis x2 na carteira | `02017648 F01F3102` | cada anel pego vale 2 | [média] |
+| Anéis x5 na carteira | `02017648 F01F3105` | cada anel pego vale 5 | [média] |
+| Anéis x10 na carteira | `02017648 F01F310A` | cada anel pego vale 10 | [média] |
+
+A função que pega um anel (`0x0201762C`) soma 1 em **dois** lugares: primeiro no contador
+da área (o "x/185" do HUD, em `0x02160EB0`), depois na carteira (esquadrão `+0x114`):
+
+| Endereço | Original | Quer dizer |
+|---|---|---|
+| 0x0201763A | `1C52` | `adds r2, r2, #1`: contador da área + 1 |
+| 0x02017648 | `1C49` | `adds r1, r1, #1`: carteira + 1 |
+
+O cheat público "×2" troca o primeiro, então ele **só dobra o contador do HUD**: a carteira
+continua subindo de 1 em 1. Os nossos trocam o segundo por `adds r1, #N` (`3102`, `3105`,
+`310A`). Como a palavra de 4 bytes em `0x02017648` tem a instrução seguinte junto, o código
+confere e escreve as duas (`F01F` é a primeira metade de um `bl`, que fica igual).
+**Conferido no emulador**, pegando o mesmo anel no Green Hill:
+
+| Cheat | Carteira | Contador da área |
+|---|---|---|
+| nenhum | 8 → 9 | 8 → 9 |
+| público ×2 (`0201763A`) | 8 → 9 | 8 → 10 |
+| Anéis x2 | 8 → 10 | 8 → 9 |
+| Anéis x5 | 8 → 13 | 8 → 9 |
+| Anéis x10 | 8 → 18 | 8 → 9 |
+
+Eles ficam numa pasta de escolha porque escrevem no mesmo endereço. Combinam com o "Pegar
+todos os anéis da área": no Green Hill, com o x10, são 1750 anéis de uma vez.
+
+### Pasta "Projeto: POW"
+
+| Cheat | Escreve | Efeito | Confiança |
+|---|---|---|---|
+| POW: compra sem gastar pontos | patch de código em `0x0209451C` e `0x02094578` | comprar um nível de golpe não exige nem gasta pontos | [média] |
+| POW: 99 pontos para o grupo | atributo 75 = 99 | 99 pontos de POW para todos | [média] |
+| POW: todos os golpes no nível III | atributos 69 a 74 = 3 | os 6 golpes de todos no nível III | [média] |
+
+Na tela de perfil, o botão "POW Moves" abre a loja de golpes: cada personagem tem 6, com
+níveis I, II e III, e cada nível custa pontos ("Points") que vêm com os níveis de
+experiência. Esses números moram no **mesmo vetor de atributos** dos cheats do grupo (o
+vetor tem 115 posições, não 47 como eu tinha visto):
+
+| Posição | Atributo | Conferido |
+|---|---|---|
+| 68 (`+0x110`) | nível do personagem | perfil (Sonic: 16) |
+| 69 a 74 (`+0x114` a `+0x128`) | nível de cada um dos 6 golpes (0 a 3) | a tela de POW, golpe por golpe |
+| 75 (`+0x12C`) | pontos de POW | "Points: 5" na tela; escrevi 77 e ela mostrou 77 |
+
+Para achar o 75, pus um vigia de leitura no campo que mudava a tela: quem lia era a função
+genérica de atributos (`0x02007AC0`), com o índice 0x4B = 75 no registrador.
+
+**Compra sem gastar pontos.** A função que diz se dá para comprar (`0x020944EC`) confere
+que o golpe tem nível menor que 3 e que o custo não passa dos pontos; a que compra
+(`0x02094548`) tira o custo dos pontos e sobe o nível:
+
+| Endereço | Original | Quer dizer | Com o cheat |
+|---|---|---|---|
+| 0x0209451C | `DC11` | `bgt`: custo maior que os pontos, não pode | `46C0` (não faz nada) |
+| 0x0209457A | `1B01` | `subs r1, r0, r4`: pontos − custo | `1C01` = `adds r1, r0, #0`: pontos iguais |
+
+O cheat público só faz a primeira troca. **Conferido no emulador** (Sonic com 5 pontos,
+comprando o Whirlwind II, que custa 10): sem cheat, nada acontece; com o público, a compra
+sai e os pontos ficam em **−5**; com o nosso, a compra sai e os pontos ficam em 5. Saindo e
+voltando à tela, o Whirlwind continua no II. Os pontos da tela só são gravados no
+personagem quando você aperta "Exit".
+
+**Cuidados:** pontos negativos (o cheat público) não travaram nada no teste, mas os
+próximos níveis vão gastar pontos para "pagar a dívida". E "todos no nível III" também liga
+golpes que o personagem ainda tinha em 0; nas telas de POW eles aparecem normais (testado
+no Sonic e no Tails), mas ainda não usamos um golpe assim numa batalha. Salvar com estes
+cheats grava os níveis no save.
 
 ### Pasta "Projeto: XP"
 
@@ -546,12 +640,25 @@ bits (a memória guarda o byte baixo primeiro, então `5842` vem antes de `1C52`
 As versões ×4, ×8 e ×16 só trocam o número (`3204`, `3208`, `3210`). A primeira linha
 (tipo 5, "se igual") é uma trava de segurança: o cheat só escreve se o código original
 estiver lá. Se o jogo fosse outra versão, ele não faria nada em vez de quebrar.
+**Conferido no emulador:** esse `adds` é o do contador da área (o "x/185" do HUD), não o da
+carteira. Com o ×2 público, o HUD sobe de 2 em 2 e a carteira de 1 em 1. Os nossos
+multiplicadores trocam o `adds` da carteira, 14 bytes depois (pasta "multiplicador de
+anéis").
 
 **Coletar itens de longe:** `52017A20 D14F2803`, depois `02017A20 46C02803`. Em 0x02017A20
 há `2803` (`cmp r0, #3`) e em 0x02017A22 há `D14F` (`bne`: "se não for 3, pule"). O cheat
 troca o `bne` por `46C0` (`mov r8, r8`, uma instrução que não faz nada). Sem o desvio, o
 jogo segue como se o teste tivesse passado. O mesmo truque é feito em 0x02017A56 e
-0x02017A88. O que exatamente cada teste confere, vamos ler no assembly com a ROM.
+0x02017A88. **Lido no assembly e conferido no emulador:** o `bne` de 0x02017A22 é o teste
+do tipo (anel ou o outro coletável) e não precisava ser trocado, porque o jogo repete esse
+teste em 0x02017A8A antes de pegar; os que fazem o trabalho são os de 0x02017A56 e
+0x02017A88 (distância em X e em Y). O nosso "Pegar todos os anéis da área" troca só esses
+dois.
+
+**Pontos de habilidade:** `5209451C 1C28DC11`, depois `0209451C 1C2846C0`. É a compra de
+níveis de POW: troca o teste "custo maior que os pontos" por "não faz nada". **Conferido
+no emulador:** a compra sai, mas o custo continua sendo descontado e os pontos ficam
+negativos (5 − 10 = −5). O nosso "POW: compra sem gastar pontos" troca também a conta.
 
 **Dinheiro (ponteiro):**
 ```
@@ -581,6 +688,8 @@ coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lug
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Inventário | conferir a loja com "Itens não acabam"; cheat para ganhar itens novos | teste na loja; ler a função que cria itens |
+| Loja | compra de graça: a compra (`0x020B3AB0`) confere `carteira >= preço` e faz `carteira − preço` em `0x020B3AD0` | achar uma loja num estado do emulador para conferir |
+| POW | usar numa batalha um golpe que estava em 0 e foi para III | batalha com "todos no nível III" |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |
 

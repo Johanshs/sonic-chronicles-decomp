@@ -263,6 +263,28 @@ mesmos toques sorteia os mesmos dados; só o valor do cheat muda. Resultados em
   o Omega. Eu tinha identificado o personagem pelo desenho; o nome certo está num ponteiro
   dentro da criatura (`+0x98`), e a conversa do painel o leu. O Eggman é o 8º da lista.
 
+## 16. Os cheats públicos de código, lidos de verdade
+Os três cheats públicos que trocam instruções do jogo (e não dados) foram lidos no
+assembly e rodados no emulador. Nenhum deles faz exatamente o que o nome diz.
+
+- **O "anéis ×2" não dobra o que você gasta.** A função que pega um anel soma 1 em dois
+  lugares: no contador da área (o "x/185" do HUD) e na carteira. O cheat público troca a
+  primeira soma. Com ele, o HUD sobe de 2 em 2 e a carteira de 1 em 1. É o mesmo engano do
+  erro nº 9, só que de outra pessoa: o efeito foi conferido na tela do HUD, não na tela
+  onde o dinheiro é gasto. O nosso multiplicador troca a segunda soma, 14 bytes depois.
+- **O "coletar de longe" funciona, mas troca um teste à toa.** A função confere o tipo do
+  coletável, a distância em X e a distância em Y. O cheat desliga os três; o do tipo é
+  repetido logo depois, então desligá-lo não muda nada. O nosso desliga só as distâncias.
+- **O "pontos de habilidade" deixa os pontos negativos.** Ele libera a compra de golpes POW
+  mesmo sem pontos, mas a compra continua descontando o custo: 5 pontos, golpe de 10,
+  sobra −5. O nosso também troca a conta (`pontos − custo` vira `pontos + 0`).
+- **O vetor de atributos é maior do que eu achava.** Eu só tinha olhado 47 posições; são
+  115. Os pontos de POW apareceram com um vigia de *leitura*: escrevi 77 num candidato,
+  a tela mostrou 77, e o vigia mostrou quem lia: a função genérica de atributos, com o
+  índice 75. Lição: quando um valor está "em lugares diferentes" em cada personagem (aqui,
+  `+0x3CC` no Sonic e um ponteiro no Eggman), o mais provável é que ele esteja numa
+  estrutura alocada à parte, e o caminho certo é o ponteiro para ela.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
