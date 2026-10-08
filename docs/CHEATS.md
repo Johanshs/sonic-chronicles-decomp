@@ -329,10 +329,16 @@ pulam as duas. A vtable é o
 | Grupo: Luck 99 | posição 43 = 99 | crítico se `1d100 < 99`: quase sempre | [média] |
 | Grupo: Speed 60 | posição 37 = 60 | 1ª ação em `max(0, 60 − 60) + 1d2`: o grupo age primeiro | [média] |
 | Grupo: Power 99 | posição 41 = 99 | dano bem maior | [média] |
+| Grupo: PP 99 | posição 46 = 99 e posição 44 = `0x63000` | PP cheio sempre: POW à vontade | [média] |
 
 [média] aqui quer dizer: no emulador, com o seu save, os valores mudaram, a tela de perfil
-mostrou os números novos e, menos o Speed, o efeito foi medido numa batalha (veja as
-medições abaixo). Ainda não foram testados no DS.
+mostrou os números novos e, menos o Speed e o PP, o efeito foi medido numa batalha (veja
+as medições abaixo). Ainda não foram testados no DS.
+
+**Por que o PP usa dois números:** o PP atual é guardado em ponto fixo (valor × 4096) e o
+PP máximo é inteiro. O Action Replay não sabe multiplicar, então não dá para copiar um no
+outro como no HP. A saída é escrever valores prontos: máximo 99 e atual
+99 × 4096 = `0x63000`. Na batalha, os 4 retratos mostraram "99 PP".
 
 **Correção (v3):** a primeira versão só cobria as posições 1 a 4, achando que eram os 4
 da batalha. Na batalha do Capítulo 10 o Omega (posição 10) tomou 164 de dano com o "HP
@@ -568,7 +574,6 @@ coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lug
 | Categoria | Falta | Como |
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
-| Grupo | PP cheio (o PP atual é ponto fixo e o máximo é inteiro: o AR não converte), XP, nível | XP: ainda não está no vetor de atributos |
 | Inventário | conferir a loja com "Itens não acabam"; cheat para ganhar itens novos | teste na loja; ler a função que cria itens |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |
