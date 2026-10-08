@@ -206,8 +206,13 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
 ## Limites conhecidos
 
 - **DS real ainda não testado.**
-- Não há "vencer a batalha" nem "nocautear": para isso o painel teria que chamar a
-  função de dano ou de nocaute do jogo, que ainda não foi achada.
+- Não há "vencer a batalha" nem "nocautear". O nocaute, no jogo, é um **efeito**: vigiando
+  no emulador quem escreve o atributo 36 de um inimigo que caiu, a pilha de chamadas
+  passa por `EffectList_Add` (0x020076f0) e pela atualização dos efeitos da criatura
+  (`CGameCreature`, vfunc 11, 0x020122a0), a partir do laço da batalha
+  (`GameModeCombat`, vfunc 4). Para nocautear pelo painel seria preciso montar esse
+  efeito como o jogo monta; fica para depois. Enquanto isso, "inimigos com HP 1" e as
+  regras 44 e 45 (multiplicadores de dano) resolvem.
 - **Itens:** prefira consumíveis, equipamentos e Chao. Dar itens de história
   (esmeraldas, objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287)
   pode confundir o jogo. Os nomes aparecem cortados em 14 letras.
