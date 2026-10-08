@@ -227,7 +227,7 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.6, e **roda dentro do jogo
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.7, e **roda dentro do jogo
 no emulador**, inclusive numa batalha. Falta o teste no DS.
 
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
@@ -256,10 +256,14 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
   jogo (as funções da mensagem "você ganhou um item"). Critério cumprido no emulador: o item
   dado continuou no inventário depois de salvar pelo menu do jogo, reiniciar e carregar.
-- **B6, combate: começada (v0.6).** Página dos inimigos da batalha (lista fixa em
-  0x02160AF8) e ações rápidas: curar o grupo e inimigos com HP 1, conferidas numa
-  batalha. Pôr HP 0 não nocauteia (o inimigo continua lutando); vencer e nocautear
-  precisam da função de dano ou de nocaute do jogo, ainda não achada.
+- **B6, combate: adiantada (v0.6 e v0.7).** Página dos inimigos da batalha (lista fixa
+  em 0x02160AF8) e ações rápidas: curar o grupo, inimigos com HP 1 e **nocautear os
+  inimigos**. Escrever HP 0 não nocauteia (o inimigo continua lutando); a v0.7 chama a
+  função que todo golpe usa para mudar um atributo (0x02007e60), e o jogo faz o resto:
+  os 4 inimigos caíram e a batalha terminou em vitória normal (VICTORY, XP, item,
+  subida de nível). Conferido em 6 encontros, todos contra 4 Nocturne Decurion; falta
+  um inimigo de outro tipo e um chefe. Faltam também forçar emboscada e ver o ajuste
+  de dificuldade no inimigo.
 - **B8: feito o enxerto, falta o teste no DS.** Novo bloco de autoload nos últimos 32 KB
   do heap (0x023D8000), fim do heap baixado para lá, ARM7 mudado para o fim da ROM. Na
   v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que

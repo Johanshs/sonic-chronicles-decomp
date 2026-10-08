@@ -5,7 +5,7 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.6:**
+**Situação (08/10/2026), versão 0.7:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
@@ -14,8 +14,10 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
   jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
   Power, Grit, Luck).
-- **Batalha**: os inimigos da luta atual (nome, HP e atributos, editáveis) e duas
-  ações rápidas: curar o grupo (HP e PP cheios) e deixar os inimigos com HP 1.
+- **Batalha**: os inimigos da luta atual (nome, HP e atributos, editáveis) e três
+  ações rápidas: curar o grupo (HP e PP cheios), deixar os inimigos com HP 1 e
+  **nocautear os inimigos**. Nocautear usa a função do próprio jogo, então a batalha
+  acaba como uma vitória normal: tela VICTORY, XP, item e subida de nível.
 - **Itens**: o inventário com o nome de cada item (o jogo dá o nome), dar qualquer item
   pelo número (a linha de `Items.gda`) usando a função do próprio jogo, e mudar a
   quantidade de cada pilha.
@@ -34,7 +36,7 @@ jogo/gancho.s                   a ponte entre o laço principal do jogo e o pain
 jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D8000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM
-ferramentas/testar.py           testa o painel na ROM de teste (24 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (25 checagens)
 ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (12 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
@@ -70,13 +72,13 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (24 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (25 checagens)
 make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagens)
 ```
 
 ## Como funciona
 
-1. **Onde o código mora.** O painel ocupa ~7 KB de código e ~5,5 KB de variáveis. Ele
+1. **Onde o código mora.** O painel ocupa ~10 KB de código e ~6 KB de variáveis. Ele
    vira um bloco novo de *autoload*: a lista que o início do programa (crt0 do NitroSDK)
    percorre para copiar blocos do ARM9 para a memória (o jogo já a usa para o ITCM e o
    DTCM). O heap do jogo vai de 0x021B9500 a 0x023E0000. O bloco vai para os últimos
@@ -136,6 +138,11 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
    informações do item, 0x0201cad0 busca o nome no texto do jogo, 0x020c2d48 libera) e
    copia as letras. Como buscar o texto pode ler o cartão, ele guarda os últimos 16
    nomes.
+10. **Nocautear também é com o jogo.** "Nocautear inimigos" chama a função que todo
+   golpe usa para mudar um atributo (0x02007e60), pedindo HP 0. Depois de mudar o
+   número, ela confere os limites da tabela de atributos e avisa a criatura que o HP
+   chegou ao mínimo; é esse aviso que faz o nocaute (atributo 36 = 2, efeitos limpos).
+   Com todos os inimigos no chão, a própria batalha percebe e termina em vitória.
 
 ## Como foi testado
 
@@ -164,7 +171,14 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
   ação "HP 0 (nocaute)". Com HP 0 os inimigos continuaram lutando (e até se curaram),
   porque o nocaute do jogo não é só o HP. Num inimigo nocauteado de verdade, o atributo
   36 vale 2, os atributos 20 a 25 ficam zerados e o objeto solta dois ponteiros. A ação
-  saiu do painel.
+  saiu do painel (e voltou na v0.7, do jeito certo: veja abaixo).
+- **Nocautear pela função do jogo** (v0.7, a mesma batalha, ROM ligada do zero):
+  "Nocautear inimigos" levou os 4 Nocturne Decurion a HP 0 com o atributo 36 = 2 (o
+  nocaute de verdade). A batalha acabou sozinha: tela **VICTORY** (nota A, 1 rodada),
+  depois a recompensa (Med Emitter 87 → 88 no inventário, 8000 de XP) e a tela de
+  **subida de nível** da Rouge. Sem dar um golpe. Repetido em mais 5 encontros (o robô
+  andando por caminhos diferentes, inimigos com HP cheio ou já ferido): os 5 terminaram
+  em VICTORY. Todos foram contra 4 Nocturne Decurion, o inimigo daquela área.
 - **Itens** (Capítulo 10): dar o item 3 duas vezes criou uma pilha nova e depois somou 1
   nela; o Inventário do jogo, em "Consumables", mostrou **POW Candy (2)**. As outras
   quantidades do painel batem com as da tela (Med Emitter 87, Health Root 4, Refresher
@@ -203,16 +217,24 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
   heap, e a v0.2 empurrava o heap 0x2EA0 bytes. Daí a mudança do painel para o fim do
   heap e a busca de um caminho que não dependa do heap (`0x02160C18`).
 
+- **Como o nocaute foi achado** (v0.7). Vigiando no emulador quem escreve o HP de um
+  inimigo durante um golpe, a pilha de chamadas sempre termina na mesma função,
+  0x02007e60, chamada por `Combat_ApplyDamage` → `EffectList_Add` →
+  `EffectFn_ModifyAttribute`. Ela muda o atributo e depois confere os limites da tabela
+  de atributos; com o HP no mínimo, avisa a criatura, e é esse aviso que nocauteia. O
+  painel passou a chamar essa função em vez de escrever o número.
+- **Erro meu na primeira tentativa:** chamei 0x02007e60 com 4 argumentos, como o
+  descompilador mostrava. O HP foi a 0, mas ninguém caiu. No assembly, a função lê um
+  **quinto argumento na pilha** (`ldr r0, [sp, #0x28]`) e só avisa a criatura se ele for
+  0; a minha chamada deixava lixo ali. Passando 0, os 4 inimigos caíram. Lição: o
+  descompilador pode perder argumentos que vêm pela pilha; conferir no assembly.
+
 ## Limites conhecidos
 
 - **DS real ainda não testado.**
-- Não há "vencer a batalha" nem "nocautear". O nocaute, no jogo, é um **efeito**: vigiando
-  no emulador quem escreve o atributo 36 de um inimigo que caiu, a pilha de chamadas
-  passa por `EffectList_Add` (0x020076f0) e pela atualização dos efeitos da criatura
-  (`CGameCreature`, vfunc 11, 0x020122a0), a partir do laço da batalha
-  (`GameModeCombat`, vfunc 4). Para nocautear pelo painel seria preciso montar esse
-  efeito como o jogo monta; fica para depois. Enquanto isso, "inimigos com HP 1" e as
-  regras 44 e 45 (multiplicadores de dano) resolvem.
+- "Nocautear inimigos" foi conferido em 6 encontros, mas todos contra o mesmo inimigo
+  (4 Nocturne Decurion, Capítulo 10). Chefes podem ter regras próprias de fim de luta (cenas, fases) que o painel não
+  conhece; se uma luta de chefe travar, use "inimigos com HP 1" e dê um golpe.
 - **Itens:** prefira consumíveis, equipamentos e Chao. Dar itens de história
   (esmeraldas, objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287)
   pode confundir o jogo. Os nomes aparecem cortados em 14 letras.

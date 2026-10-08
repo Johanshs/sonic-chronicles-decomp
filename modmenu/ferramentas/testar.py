@@ -187,6 +187,10 @@ def main(rom, pasta):
     e.apertar('BAIXO')
     e.apertar('A')                       # inimigos com HP 1
     confere(e.s32(HP_INIMIGO) == 1, f'inimigos com HP 1: {e.s32(HP_INIMIGO)}')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # nocautear: aqui não há a função do jogo
+    confere(e.s32(HP_INIMIGO) == 1 and e.u32(0x04001000) == 0x10100,
+            'nocautear sem a função do jogo: o painel recusa, não mexe no HP e continua de pé')
     e.captura(pasta, '4e_acoes')
     e.apertar('B')
     e.apertar('BAIXO')

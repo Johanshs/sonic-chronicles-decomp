@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.6"
+#define VERSAO "0.7"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -588,37 +588,60 @@ static void teclas_itens(u16 t, int sel) {
 }
 
 /* ---- Ações rápidas ----
- * Escrevem nos mesmos atributos das páginas do grupo e dos inimigos, em todos de uma
- * vez. Quem está nocauteado (HP <= 0) não é mexido: no jogo, o nocaute não é só o HP.
- * Visto numa batalha no emulador: um inimigo nocauteado de verdade tem o atributo 36
- * (+0x90) = 2, os atributos 20 a 25 zerados e dois ponteiros do objeto soltos; e um
- * inimigo com HP posto em 0 pelo painel CONTINUA lutando (e até se cura). Por isso não
- * há "nocautear": a ação útil é deixar os inimigos com HP 1, e o primeiro golpe que
- * acertar os derruba pelo caminho normal do jogo (conferido: "KO!").
+ * "Curar" e "HP 1" escrevem nos mesmos atributos das páginas do grupo e dos inimigos,
+ * em todos de uma vez. Quem está nocauteado (HP <= 0) não é mexido.
+ * No jogo, o nocaute não é só o HP: um inimigo com HP posto em 0 escrevendo o número
+ * CONTINUA lutando (visto no emulador). Quem nocauteia é a função que o jogo usa para
+ * mudar um atributo, 0x02007e60 (atributos, criatura, número do atributo, &valor em
+ * ponto fixo). Depois de mudar o valor ela confere os limites da tabela de atributos e,
+ * se o HP chegou ao mínimo, dispara o nocaute (atributo 36 = 2 etc.). Todo golpe passa
+ * por ela (a pilha de chamadas foi vista no emulador: Combat_ApplyDamage ->
+ * EffectList_Add -> EffectFn_ModifyAttribute -> 0x02007e60). "Nocautear inimigos"
+ * chama essa função com HP 0, como um golpe faria.
  * Para reviver alguém do grupo, dê um Revival Ring ou um Ring of Life (página Itens). */
 static const char *const acoes[] = {
     "Curar o grupo (HP e PP cheios)",
     "Inimigos com HP 1",
+    "Nocautear inimigos (pelo jogo)",
 };
 #define N_ACOES ((int)(sizeof acoes / sizeof acoes[0]))
 static const char *aviso_acao = "";
 
+/* Muda um atributo pela função do próprio jogo (veja acima). Os atributos ficam na
+ * criatura + 8 (o vetor de valores que as páginas mostram é o de criatura + 0x1C, o
+ * campo +0x14 desse objeto). Argumentos conferidos no emulador, nos golpes de uma
+ * batalha: (criatura + 8, criatura, 0, &HP novo << 12) e um quinto, na pilha: com 0, a
+ * função confere os limites e avisa a criatura (é o aviso que nocauteia); com outro
+ * valor, só muda o número. Na primeira tentativa o quinto ficou de fora, a pilha tinha
+ * lixo, e o HP foi a 0 sem nocaute: igual a escrever o número na mão. Antes de chamar,
+ * conferimos os primeiros bytes (push {r3-r7, lr}; sub sp, #0x10). */
+static int definir_atributo(u32 criatura, int numero, s32 valor_fx) {
+    if (*(volatile u16 *)0x02007E60 != 0xB5F8 || *(volatile u16 *)0x02007E62 != 0xB084) return 0;
+    void (*definir)(u32, u32, int, s32 *, int) = (void (*)(u32, u32, int, s32 *, int))0x02007E61u;
+    s32 v = valor_fx;
+    definir(criatura + 8, criatura, numero, &v, 0);
+    return 1;
+}
+
 static void fazer_acao(int a) {
     u32 cs[MAX_MEMBROS];
     int n = achar_criaturas(a == 0 ? FONTE_GRUPO : FONTE_INIMIGOS, cs);
-    int feitos = 0;
+    int feitos = 0, recusou = 0;
     for (int i = 0; i < n; i++) {
         s32 *at = atributos_de(cs[i]);
         if (!at || at[0] <= 0) continue;
         if (a == 0) {
             at[0] = at[0xA0 / 4];              /* HP = HP máximo */
             at[0xB0 / 4] = at[0xB8 / 4] << 12; /* PP (ponto fixo) = PP máximo */
-        } else {
+        } else if (a == 1) {
             at[0] = 1;
+        } else if (!definir_atributo(cs[i], 0, 0)) {
+            recusou = 1;
+            break;
         }
         feitos++;
     }
-    aviso_acao = feitos ? "feito" : "ninguem para mudar";
+    aviso_acao = recusou ? "recusou (funcao do jogo nao bate)" : feitos ? "feito" : "ninguem para mudar";
 }
 
 static void desenhar_acoes(int sel) {
@@ -631,8 +654,8 @@ static void desenhar_acoes(int sel) {
     con_texto(1, LINHA_1 + N_ACOES + 1, COR_VERDE, aviso_acao);
     con_texto(0, 16, COR_CINZA, "Nocauteados nao sao curados:");
     con_texto(0, 17, COR_CINZA, "use um item de reviver.");
-    con_texto(0, 18, COR_CINZA, "Inimigos com HP 1: o primeiro");
-    con_texto(0, 19, COR_CINZA, "golpe que acertar derruba.");
+    con_texto(0, 18, COR_CINZA, "Nocautear: o jogo derruba os");
+    con_texto(0, 19, COR_CINZA, "inimigos como num golpe.");
     rodape("A faz", "B volta   START fecha");
 }
 
