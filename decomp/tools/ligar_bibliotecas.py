@@ -37,13 +37,28 @@ RELOCS = os.path.join(REPO, "config/YWSE/arm9/relocs.txt")
 BASE = 0x02000000
 arm9 = open(os.path.join(REPO, "work/extract/arm9/arm9.bin"), "rb").read()
 DADOS = {".rodata": (0x020ef814, 0x020f4ff0), ".data": (0x020f5260, 0x021090e0)}
-ENDERECOS, THUMB = {}, set()                         # nome -> endereço; funções Thumb
-for _l in open(SIMBOLOS):
-    _m = re.match(r"(\S+) kind:(\S+).* addr:(0x[0-9a-f]+)", _l)
-    if _m:
-        ENDERECOS.setdefault(_m.group(1), int(_m.group(3), 16))
-        if _m.group(2).startswith("function(thumb"):
-            THUMB.add(int(_m.group(3), 16))
+ENDERECOS, THUMB, TODOS, FUNCOES = {}, set(), set(), []   # nome -> endereço; Thumb; com símbolo
+NOMES_TODOS = set()
+for _f in (SIMBOLOS, SIMBOLOS_ITCM, os.path.join(REPO, "config/YWSE/arm9/dtcm/symbols.txt")):
+    for _l in open(_f):
+        _m = re.match(r"(\S+) kind:(\S+).* addr:(0x[0-9a-f]+)", _l)
+        if _m:
+            _e = int(_m.group(3), 16)
+            TODOS.add(_e)
+            NOMES_TODOS.add(_m.group(1))
+            if _f == SIMBOLOS:
+                ENDERECOS.setdefault(_m.group(1), _e)
+                _t = re.match(r"function\((arm|thumb),size=(0x[0-9a-f]+)", _m.group(2))
+                if _t:
+                    FUNCOES.append((_e, _e + int(_t.group(2), 16)))
+                    if _t.group(1) == "thumb":
+                        THUMB.add(_e)
+FUNCOES.sort()
+
+
+def no_meio_de_funcao(end):
+    i = bisect.bisect_right(FUNCOES, (end, 1 << 32)) - 1
+    return i >= 0 and FUNCOES[i][0] < end < FUNCOES[i][1]
 
 
 class Objeto:
@@ -59,6 +74,9 @@ class Objeto:
             if s.name in (".data", ".rodata", ".bss", ".sdata", ".sbss") and s.data_size:
                 corpo = None if s.header.sh_type == "SHT_NOBITS" else s.data()
                 self.secoes[i] = (s.name, s.data_size, corpo)
+        # seções que vão para outro módulo (ITCM, DTCM) ou que o linker trata à parte
+        self.especiais = sorted({s.name for s in elf.iter_sections()
+                                 if s.name in (".itcm", ".dtcm", ".dtcm.bss", ".version")})
         self.simbolos = list(elf.get_section_by_name(".symtab").iter_symbols())
         self.rels = {}              # índice da seção -> [(offset, tipo, símbolo, addend)]
         for s in elf.iter_sections():
@@ -107,11 +125,17 @@ def dividir(objs, de, ate, conhecidos):
             j += 1
         return j - k
 
-    seq, ja, k, problemas, feitos, fora_de_ordem = [], set(), 0, [], set(), []
+    seq, ja, k, problemas, feitos = [], set(), 0, [], set()
+    quebrados = {}                                  # id(.o) -> por que ele não pode ser ligado
     while k < len(jogo):
         opcoes = {id(o): o for o, i, n in cand[k] if id(o) not in ja}
         if not opcoes:
-            problemas.append(f"{jogo[k][0]:#x} {jogo[k][1]}: nenhum .o livre tem esta função")
+            # um arquivo já usado que reaparece: alguma função no meio dele não bateu
+            opcoes = {id(o): o for o, i, n in cand[k]}
+            for o in opcoes.values():
+                quebrados.setdefault(id(o), "uma função no meio dele não bate com o fonte")
+        if not opcoes:
+            seq.append((jogo[k][0], len(jogo[k][2]), None, jogo[k][1]))
             k += 1
             continue
         # empate (dois arquivos com o mesmo código): vale o arquivo cujos ponteiros
@@ -126,14 +150,14 @@ def dividir(objs, de, ate, conhecidos):
             i, n = escolher(o, k, usados, ultima)
             usados.add(i)
             ultima = o.onde[n][0]
+            # o linker não troca a ordem das funções de um arquivo: fora de ordem quer
+            # dizer que o nosso .o saiu diferente do da Nintendo
             if any(o.onde[m][0] > ultima for m in o.onde if (o, m) in feitos):
-                fora_de_ordem.append(f"{jogo[k][0]:#x} {n}")
+                quebrados.setdefault(id(o), f"as funções saem em outra ordem ({n})")
             feitos.add((o, n))
             seq.append((jogo[k][0], len(jogo[k][2]), o, n))
             k += 1
-    # o linker não troca a ordem das funções de um arquivo: fora de ordem é engano
-    problemas += [f"fora da ordem do .o: {x}" for x in fora_de_ordem]
-    return seq, problemas
+    return seq, problemas, quebrados
 
 
 def apontam(o, ini, fim, conhecidos):
@@ -186,6 +210,28 @@ def concorda(o, nome, end):
         if d is not None:
             pontos += 1 if (d - (add if tipo == 2 else 0)) & ~1 == ENDERECOS[alvo] else -1
     return pontos
+
+
+def apontam_para_dentro(o, funcs, bases):
+    """Ponteiros do arquivo para "símbolo + deslocamento" do próprio arquivo (o fim de
+    uma pilha: OSi_IdleThreadStack + 200). O endereço final pode coincidir com o
+    começo do arquivo seguinte, então a relocação tem de dizer qual é o símbolo."""
+    achados = {}
+    origens = [(funcs[n], o.onde[n][0], o.onde[n][1], o.onde[n][2]) for n in funcs]
+    origens += [(b, sec, 0, o.secoes[sec][1]) for sec, b in bases.items()]
+    for end, sec, ini, tam in origens:
+        for off, tipo, sym, add in o.rels.get(sec, []):
+            s = o.simbolos[sym]
+            if tipo != 2 or add == 0 or not ini <= off < ini + tam:
+                continue
+            if s.name in funcs:
+                base = funcs[s.name]
+            elif s["st_shndx"] in bases:
+                base = bases[s["st_shndx"]] + s["st_value"]
+            else:
+                continue
+            achados[end + off - ini] = (base, base + add)
+    return achados
 
 
 def externos(o, funcs):
@@ -250,6 +296,8 @@ def achar_dados(o, funcs, conhecidos):
             continue
         if usadas_por.get(sec):
             continue        # só funções que o linker descartou usam: foi descartada junto
+        if not any(x["st_shndx"] == sec and x["st_info"]["bind"] == "STB_GLOBAL" for x in o.simbolos):
+            continue        # ninguém usa e ninguém de fora pode usar: descartada
         esperado, ok = bytearray(corpo), True
         for off, tipo, sym, add in o.rels.get(sec, []):
             s = o.simbolos[sym]
@@ -315,11 +363,14 @@ def nome_fonte(fonte_dir, nome_lib):
     return mapa
 
 
-def segmentos(seq, fontes):
+def segmentos(seq, fontes, quebrados):
     """As faixas de cada arquivo e o que eles usam de fora (MSL, SDK, dados globais de
-    outros arquivos), com o endereço tirado da própria instrução do jogo."""
+    outros arquivos), com o endereço tirado da própria instrução do jogo. Os arquivos
+    que não podem ser ligados ficam de fora: continuam vindo do assembly."""
     arquivos = []                                   # (fonte, objeto, {nome: end}, faixas)
     for end, tam, o, n in seq:
+        if o is None or id(o) in quebrados:
+            continue
         if not arquivos or arquivos[-1][1] is not o:
             arquivos.append([fontes[os.path.basename(o.caminho)], o, {}, [end, end]])
         arquivos[-1][2][n] = end
@@ -342,11 +393,24 @@ def main():
     # fora; a segunda os usa para desempatar arquivos de código igual
     conhecidos = dict(ENDERECOS)
     for volta in (1, 2):
-        seq, problemas = dividir(objs, de, ate, conhecidos)
-        arquivos, fora = segmentos(seq, fontes)
+        seq, problemas, quebrados = dividir(objs, de, ate, conhecidos)
+        arquivos, fora = segmentos(seq, fontes, quebrados)
         for end, nomes in fora.items():
             for n in nomes:
                 conhecidos.setdefault(n, end)
+    # um arquivo com funções no ITCM ou dados no DTCM teria de ser ligado em dois
+    # módulos ao mesmo tempo; por enquanto continua vindo do assembly
+    for o in objs:
+        if o.especiais:
+            quebrados.setdefault(id(o), f"tem partes em {', '.join(o.especiais)}")
+    # símbolos que o linker da Nintendo calculava (SDK_SYS_STACKSIZE, o fim da arena
+    # do ITCM...) não existem no nosso arquivo de link: quem usa ainda não liga
+    for fonte, o, funcs, _ in arquivos:
+        for end, nomes in externos(o, funcs).items():
+            fora_do_arm9 = not BASE <= end < 0x027e0000 and not nomes <= NOMES_TODOS
+            if fora_do_arm9 or end not in TODOS and not no_meio_de_funcao(end) and end < 0x020f5260:
+                quebrados.setdefault(id(o), f"usa símbolo do linker ({', '.join(sorted(nomes))})")
+    arquivos, fora = segmentos(seq, fontes, quebrados)
 
     por_nome = {}
     for end, nomes in fora.items():
@@ -367,6 +431,7 @@ def main():
     conhecidos.update({n: end for end, (n, _, _) in renomear.items()})
 
     saida, tamanhos = [], {}                        # tamanhos: o do .o, para o dsd não esticar
+    internos = {}                                   # de -> (símbolo, alvo): ponteiros com deslocamento
     for fonte, o, funcs, (ini, fim) in arquivos:
         bases, probs = achar_dados(o, funcs, conhecidos)
         problemas += [f"{fonte}: {p}" for p in probs]
@@ -394,14 +459,21 @@ def main():
             if base not in renomear:
                 renomear[base] = (f"{nome_sec[1:]}_{base:08x}", True, nome_sec)
                 tamanhos[base] = objetos[0][0] if objetos else tam_sec
+        internos.update(apontam_para_dentro(o, funcs, bases))
+    sem_par = [f"{e:#x} {n}" for e, _, o, n in seq if o is None]
+    if sem_par:
+        print(f"funções sem par no fonte ({len(sem_par)}): {', '.join(sem_par)}")
+    for o in objs:
+        if id(o) in quebrados:
+            print(f"não liga: {fontes[os.path.basename(o.caminho)]}: {quebrados[id(o)]}")
     for p in problemas:
         print("PROBLEMA:", p)
     print(f"# {len(saida)} arquivos, {sum(len(a[2]) for a in arquivos)} funções, {len(problemas)} problemas")
     if aplicar and not problemas:
-        gravar(saida, renomear, apelidos, tamanhos)
+        gravar(saida, renomear, apelidos, tamanhos, internos)
 
 
-def gravar(saida, renomear, apelidos, tamanhos):
+def gravar(saida, renomear, apelidos, tamanhos, internos):
     # delinks.txt: tira entradas antigas destes arquivos e acrescenta as novas
     texto = open(DELINKS).read().rstrip("\n")
     for fonte, _ in saida:
@@ -465,12 +537,18 @@ def gravar(saida, renomear, apelidos, tamanhos):
     # os símbolos de dados que o jogo não tinha: entram na ordem dos endereços
     novos = []
     for end, (nome, local, sec) in renomear.items():
-        if end not in vistos and (end < 0x020f5260 and sec == "fora" or end < BASE):
+        if end not in vistos and sec == "fora" and no_meio_de_funcao(end):
+            # uma entrada no meio de outra função (_ll_sdiv cai dentro do _ll_div)
+            novos.append((end, f"{nome} kind:label({'thumb' if end in THUMB else 'arm'}) addr:{end:#010x}"))
+        elif end not in vistos and (end < 0x020f5260 and sec == "fora" or end < BASE):
             print(f"   AVISO: {nome} em {end:#x} não tem símbolo no jogo; não foi criado")
         elif end not in vistos:
             novos.append((end, f"{nome} {tipo(end, sec, None)} addr:{end:#010x}" + (" local" if local else "")))
+    existentes = set(linhas)
     for end, a in apelidos:
-        novos.append((end, f"{a} kind:label({'thumb' if end in THUMB else 'arm'}) addr:{end:#010x}"))
+        linha = f"{a} kind:label({'thumb' if end in THUMB else 'arm'}) addr:{end:#010x}"
+        if linha not in existentes:
+            novos.append((end, linha))
     def endereco(l):
         m = re.search(r"addr:(0x[0-9a-f]+)", l)
         return int(m.group(1), 16) if m else 0
@@ -484,6 +562,16 @@ def gravar(saida, renomear, apelidos, tamanhos):
     texto, ajustadas, falsas = [], 0, []
     for linha in open(RELOCS).read().rstrip("\n").split("\n"):
         m = re.match(r"from:(0x[0-9a-f]+) kind:\S+ to:(0x[0-9a-f]+)( module:.*)$", linha)
+        de = int(m.group(1), 16) if m else None
+        if m and de in internos and internos[de][1] == int(m.group(2), 16) and internos[de][0] not in (internos[de][1],):
+            base, alvo = internos[de]
+            if alvo not in renomear:
+                pass                                # o caso geral abaixo resolve
+            else:
+                linha = linha.replace(f"to:{m.group(2)}", f"to:{base:#010x} add:{alvo - base:#x}")
+                ajustadas += 1
+                texto.append(linha)
+                continue
         if m and dentro(int(m.group(2), 16)):
             de, alvo = int(m.group(1), 16), int(m.group(2), 16)
             base = simbolos_ok[bisect.bisect_right(simbolos_ok, alvo) - 1]
