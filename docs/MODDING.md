@@ -79,6 +79,22 @@ O roteiro que prova isso é `analise/tools/testar_item_loja.py` no repositório.
 Ainda não testado: o texto só existe em inglês (se o DS estiver em outro idioma, crie
 também em `fr.csv`, `de.csv`...), e itens de equipamento ou Chao novos.
 
+### Adicionar um golpe POW novo
+1. Em `tabelas/test/combo.csv`, copie a linha de um golpe parecido para o fim e dê um
+   `ID` novo (o jogo original vai até 154). Ajuste `Cost` (PP), `Damage1..3` (dano em %
+   por nível) e as marcas (`Inescapable`, `ElementalDamage`, `ArmorPiercing`...).
+2. Textos novos em `textos/en.csv` para `NameStrRef`, `DescriptionStrRef` e os
+   `DamageStrRef1..3` (o que aparece na tela do golpe); `EffectStrRef1..3` pode
+   reaproveitar um texto do jogo.
+3. Dê o golpe a alguém: em `creatures.csv`, ponha o ID do golpe numa coluna
+   `Combo1`…`Combo10` livre do personagem (o Sonic usa de `Combo1` a `Combo6`).
+
+Testado no emulador com o golpe 155 "Sonic Boom" (3 PP) no `Combo7` do Sonic: ele
+aparece na lista de POW Moves com o nome, o custo e a descrição novos, gasta exatamente
+3 PP e, ao ser usado, o jogo calcula o dano pela linha 155 (duas vezes, o "2x" do golpe).
+Confira com `analise/tools/testar_golpe.py`. O dano em si depende do minijogo de toque,
+que ainda não sabemos jogar bem de forma automática.
+
 ### Remover um item
 Prefira **tirar o item das lojas e recompensas** a apagar a linha de `Items.csv`.
 Outras tabelas se referem aos itens pelo ID, e apagar a linha pode deixar

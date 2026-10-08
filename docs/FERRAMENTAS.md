@@ -114,6 +114,7 @@ Outras ferramentas:
 | `tools/gff4.py arquivo [saida.json]` | qualquer GFF4 → JSON (referência em Python do leitor Rust) |
 | `tools/emu_run.py rom.nds pasta "roteiro"` | roda a ROM no DeSmuME sem janela e executa ações: `w N` espera, `p TECLA` aperta, `t X Y` toca a tela, `s nome` captura, `save`/`load` estado. Precisa de `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` |
 | `tools/testar_item_loja.py rom_mod.nds save.sav ITEM LOJA PRECO CURA pasta` | prova um item novo no jogo: carrega o slot 1 do save, abre a loja LOJA chamando o tratador do próprio jogo (evento 40), compra o primeiro item da lista, usa-o no Sonic e confere na RAM o inventário, os anéis e o HP. Ver [DIARIO](DIARIO.md#20-conteúdo-novo-um-item-à-venda-numa-loja) |
+| `tools/testar_golpe.py rom_mod.nds estado.dst LINHA pasta` | prova um golpe POW novo: fica de olho em `Combat_PowDamage` e mostra qual linha de `combo.gda` o jogo usou; também joga o minijogo de toque procurando o anel verde |
 | `tools/ghidra_symbols.py` | converte os símbolos do dsd para o Ghidra |
 | `tools/manifest_pairs.py` | lista hash/nome de um manifesto (para os testes em C) |
 | `tools/combate_tabelas.py projeto [saida]` | lê um projeto do `sonic-mod unpack` e gera em Markdown os golpes, efeitos (`.SPL`), itens (`.ITM`), criaturas e regras de combate, já decodificados (ver [COMBATE.md](COMBATE.md)) |

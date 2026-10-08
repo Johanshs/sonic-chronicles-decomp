@@ -180,6 +180,22 @@ dois textos novos e um `Item288.ITM` novo (`HealHP 321`), posto nas 5 lojas.
 - Uma surpresa no caminho: aberta na tela de título (sem jogo carregado), a loja mostra o
   tutorial "Welcome to a store!" e um grupo vazio com tudo em 99.
 
+## 21. Conteúdo novo: um golpe POW novo
+Depois do item, um golpe: a linha 155 de `combo.gda`, "Sonic Boom", 3 PP, 300/350/400%
+de dano, com nome, descrição e textos de dano novos, posta no `Combo7` do Sonic
+(`creatures.gda`), que estava vazio.
+
+- Na batalha, "Sonic Boom · 3 PP" aparece na lista de POW Moves do Sonic, abaixo dos
+  seis golpes de sempre, e escolhê-lo gasta 3 PP (27 → 24): o custo veio da linha nova.
+- Para provar que não é só a interface, pus um gancho em `Combat_PowDamage`
+  (0x02010810): ele foi chamado **duas vezes com o terceiro argumento 155**. Duas
+  chamadas batem com o "2x" do texto de dano, e 155 é a linha nova.
+- **O que não consegui:** medir o dano. O dano de um POW depende do minijogo de toque, e
+  o jogador automático de `analise/tools/testar_golpe.py` (acha o anel quando o jogo o
+  pinta de verde e toca no centro) acerta 4 dos 5 anéis no melhor caso; com isso o jogo
+  marca "Missed!" e o dano sai 0. Fica registrado como está: o golpe novo existe e é
+  calculado pelo jogo, mas o dano ainda precisa de alguém jogando o minijogo à mão.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, onde quatro das cinco lojas ficam no jogo, os limites que o código impõe (número
