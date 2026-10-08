@@ -231,19 +231,34 @@ mesmos toques sorteia os mesmos dados; só o valor do cheat muda. Resultados em
   da fórmula é o atributo 41, que estava como "deduzido".
 - **Erro nº 9: o cheat de anéis mexia no contador errado.** Ele escrevia em
   `0x02160EB0` porque, no Green Hill, esse número aparecia no HUD. Abrindo o Inventário,
-  o número era outro: a carteira está no esquadrão (`0x021D10AC` → `+0x114`). No save do
+  o número era outro: a carteira está no esquadrão (`+0x114`). No save do
   Capítulo 10 a diferença salta: carteira 986967, `0x02160EB0` = 54, HUD "93/124".
   Lição: conferir um valor numa tela só prova o que aquela tela mostra. Para dinheiro, a
   tela que importa é onde ele é gasto.
 - **Erro nº 10: os cheats do grupo só cobriam 4 personagens.** A lista em `0x02160B28`
   não é o time da batalha, é todo mundo que já entrou no grupo: 11 no Capítulo 10, e o
-  Eggman, que estava lutando, é o 10º. Com o "HP sempre cheio" ligado ele tomou 164 de
-  dano. Agora os cheats percorrem as 11 posições, e o mesmo teste deixou todos cheios.
+  Omega, que estava lutando, é o 10º. Com o "HP sempre cheio" ligado ele tomou 164 de
+  dano. Agora os cheats percorrem as posições 0 a 11, e o mesmo teste deixou todos cheios.
   Lição: o save do começo do jogo (2 personagens) escondia o problema; testar no save
   mais avançado achou.
 - **As travas provaram que eram necessárias.** No começo do jogo, a posição 3 da lista
   tem lixo (`0x6C616D69`, pedaço de um nome de arquivo) e a 8 aponta para algo que não é
   uma criatura. Com todos os cheats ligados, nada fora das criaturas foi escrito.
+
+- **XP e itens.** O XP é um número só para o grupo todo, num objeto que o esquadrão aponta
+  (`+0x48`, campo `+0x50`); uma vitória somou 8000 nele. Com o cheat de XP no máximo, a
+  vitória seguinte levou o Sonic do nível 16 ao 30. Os itens: a mochila tem um vetor de
+  `CGameItem`, com a quantidade no byte `+0xBB`. Para achar quem gasta, pus um "vigia" de
+  escrita do emulador nesse byte e usei um item: ele apontou a função que tira itens da
+  mochila. Duas instruções trocadas por "não faz nada" e o item deixou de acabar.
+- **Erro nº 11: `0x021D10AC` não é uma global fixa.** Eu tinha escrito que era, porque o
+  endereço era sempre o mesmo. Ele fica dentro do heap; só se repete porque o jogo aloca
+  tudo na mesma ordem a cada boot. Quem achou foi a conversa do painel de controle, cuja
+  ROM empurra o heap. O caminho certo parte de `0x02160C18`, na BSS. Lição: "o endereço é
+  sempre o mesmo" não diz se ele é fixo; é preciso ver em que região da memória ele está.
+- **Erro nº 12: Eggman ou Omega.** Chamei de Eggman o robô vermelho e preto da batalha. É
+  o Omega. Eu tinha identificado o personagem pelo desenho; o nome certo está num ponteiro
+  dentro da criatura (`+0x98`), e a conversa do painel o leu. O Eggman é o 8º da lista.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

@@ -63,6 +63,14 @@ com `L,UP` o cheat de dano liga; com `L,R,UP`, não.
 
 ## A bateria
 
+**ROM original ou ROM do painel?** Os cheats foram feitos para a ROM original. Todos
+partem de endereços fixos do programa (as regras, a dificuldade, a lista do grupo, o
+`0x02160C18` do esquadrão) ou de trechos de código, nunca de um endereço fixo dentro do
+heap. Por isso eles também devem funcionar com a ROM do painel de controle, que muda a
+arrumação do heap na v0.2 (na v0.3 o painel vai para o fim do heap e os endereços voltam
+a bater com a ROM original). Cheats públicos que escrevem direto no heap, como o de anéis
+`022262F4`, não têm essa garantia.
+
 Confiança:
 - **[DS]**: testado no DS real em 08/10/2026, a olho (ligou, o jogo rodou e o efeito foi o
   esperado).
@@ -152,23 +160,36 @@ cada batalha (−1 se a batalha foi longa, +1 se foi curta).
 quantos ataques leva para derrubar um inimigo. Com "+6", o inimigo tem 60 de HP a mais e
 bate mais forte; com "−4", cai mais rápido e erra mais. O "neutro" serve de referência.
 
-### Pasta "Projeto: anéis"
+### Pasta "Projeto: anéis e itens"
 
 | Cheat | Código | Efeito | Confiança |
 |---|---|---|---|
-| Anéis sempre 999999 | ponteiro `0x021D10AC` + `0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
+| Anéis sempre 999999 | ponteiro `0x02160C18` → objeto → esquadrão, `+0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
+| Itens não acabam | patch de código em `0x0202DB4C` | usar um item não gasta | [média] |
 
-Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. Uma
-global fixa, `0x021D10AC`, guarda onde ele está, e a carteira fica em `+0x114`:
+Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. A
+global `0x02160C18` (na área de variáveis fixas do programa, a BSS) aponta para um objeto
+cujo primeiro campo é o esquadrão, e a carteira fica em `+0x114`:
 
 ```
-321D10AC 02400000   se o ponteiro é menor que o fim da RAM...
-421D10AC 01FFFFFF   ...e maior que o começo (trava)
-B21D10AC 00000000   offset = o esquadrão
+32160C18 02400000   se o ponteiro em 0x02160C18 é menor que o fim da RAM...
+42160C18 01FFFFFF   ...e maior que o começo (trava)
+B2160C18 00000000   offset = o objeto
+30000000 02400000   se o primeiro campo dele também aponta para a RAM...
+40000000 01FFFFFF
+B0000000 00000000   offset = o esquadrão
 50000000 020F9C08   se o primeiro campo é a vtable de CGamePlayerSquad (trava)
 00000114 000F423F   carteira = 999999
 D2000000 00000000   fim
 ```
+
+**Por que não `0x021D10AC`:** o cheat público de dinheiro (e a primeira versão deste) parte
+de `0x021D10AC`, que também aponta para o esquadrão. Mas esse endereço fica **dentro do
+heap** (que começa em `0x021B9500`): ele só é sempre o mesmo porque o jogo aloca as coisas
+na mesma ordem a cada boot. Se algo mudar a arrumação do heap, ele vira outra coisa. A
+ROM do painel de controle (v0.2) fez exatamente isso: empurrou o heap `0x2EA0` bytes. O
+`0x02160C18` foi achado pela conversa do painel e conferido aqui em 6 estados (título,
+seleção de save, Green Hill, Nocturne, batalha e depois dela).
 
 **Como foi achado (e o erro da primeira versão):** pegando um anel (8 → 9), dois
 contadores somaram 1: `0x02160EB0` (endereço fixo) e o `0x022262F4` do cheat público. A
@@ -189,13 +210,49 @@ exatamente o que é, então não há cheat para ele.
 
 **Cuidado:** se você salvar com o cheat ligado, os 999999 anéis ficam no save.
 
+**Itens não acabam.** Cada item da mochila é um objeto `CGameItem` com o número do item em
+`+0xB8` e a quantidade em `+0xBB` (um byte; o jogo recusa mais de 99, em `0x02019F20`). A
+mochila (`CGameObjectInventory`) tem um vetor de ponteiros para eles. Gastar um item passa
+pela função que tira itens da mochila; o trecho que importa é este:
+
+| Endereço | Original | Quer dizer | Com o cheat |
+|---|---|---|---|
+| 0x0202DB4C | `DD07` | `ble`: se a quantidade é 1 (ou menos), vá apagar o item | `46C0` (não faz nada) |
+| 0x0202DB4E | `1E49` | `subs r1, r1, #1`: quantidade − 1 | `46C0` (não faz nada) |
+
+Sem as duas instruções, o jogo grava a mesma quantidade de volta e nunca apaga o item. O
+código é `5202DB4C 1E49DD07` (só age se as instruções originais estiverem lá) e
+`0202DB4C 46C046C0`. **Conferido no emulador:** no menu, usar o Med Emitter duas vezes
+levou de 87 para 85 sem o cheat e deixou em 87 com ele; com a quantidade em 1, o item
+continuou lá. Numa batalha, usar o Med Emitter e vencer: 86 sem o cheat, 87 com ele.
+
+**Efeito colateral provável:** a mesma função deve ser usada para vender e para passar um
+equipamento da mochila para um personagem. Com o cheat ligado, vender pode dar anéis sem
+perder o item, e equipar pode duplicar o equipamento. Ainda não conferimos; desligue o
+cheat antes de ir à loja se não quiser isso.
+
+### Pasta "Projeto: XP"
+
+| Cheat | Código | Efeito | Confiança |
+|---|---|---|---|
+| XP no máximo | esquadrão `+0x48` → objeto, `+0x50` = 2700000 | todos sobem ao nível 30 na próxima vitória | [média] |
+
+O XP é **um só para o grupo todo** (cada personagem converte esse número em nível pela sua
+curva, `Adv_<personagem>.gda`). Ele mora num objeto apontado pelo esquadrão em `+0x48`, no
+campo `+0x50`. O nível 30 pede de 952810 (Rouge) a 2643707 (Eggman) de XP; 2700000 passa
+de todos. **Conferido no emulador:** com o cheat, uma vitória levou o Sonic do nível 16 ao
+30 (HP 570, o valor da tabela no nível 30) e a tela "Level Up!" deu os pontos de bônus.
+
+**Cuidado:** subir de nível não tem volta. Se salvar depois, os níveis ficam no save.
+Faça backup do `.sav` antes.
+
 ### Pasta "Projeto: grupo"
 
 Cada personagem é um objeto `CGamePlayerCreature` no heap. O endereço muda, mas o jogo
 guarda uma **lista dos personagens** num lugar fixo: `0x02160B28` aponta para um vetor em
 que a posição 1 é o primeiro personagem, a 2 o segundo, e assim por diante. A lista tem
 **todos** os personagens que já entraram no grupo, não só os 4 da batalha: no save do
-Capítulo 10 são 11, e o Eggman, que está no time de batalha, é o 10º. Dentro da criatura,
+Capítulo 10 são 11, e o Omega, que está no time de batalha, é o 10º. Dentro da criatura,
 `+0x1C` aponta para o vetor de atributos (4 bytes cada):
 
 | Posição no vetor | Atributo | Conferido |
@@ -211,7 +268,8 @@ Capítulo 10 são 11, e o Eggman, que está no time de batalha, é o 10º. Dentr
 | 44 (`+0xB0`) | PP atual, ×4096 (ponto fixo) | barra azul |
 | 46 (`+0xB8`) | PP máximo | perfil (PP 9/9 da Amy) |
 
-Cada cheat repete este bloco para as posições 1 a 11 (aqui, a posição 1):
+Cada cheat repete este bloco para as posições 0 a 11 (aqui, a posição 1; a posição 0 não tem
+a linha `DC`):
 
 ```
 62160B28 00000000   se a lista existe...
@@ -247,8 +305,12 @@ mostrou os números novos e, menos o Speed, o efeito foi medido numa batalha (ve
 medições abaixo). Ainda não foram testados no DS.
 
 **Correção (v3):** a primeira versão só cobria as posições 1 a 4, achando que eram os 4
-da batalha. Na batalha do Capítulo 10 o Eggman (posição 10) tomou 164 de dano com o "HP
-sempre cheio" ligado. Agora são as 11 posições, e o mesmo teste deixou todos cheios.
+da batalha. Na batalha do Capítulo 10 o Omega (posição 10) tomou 164 de dano com o "HP
+sempre cheio" ligado. Agora são as posições 0 a 11, e o mesmo teste deixou todos cheios.
+A posição 0 entrou porque, segundo a conversa do painel, num jogo novo o Sonic fica nela;
+nos saves que testamos ela estava vazia. Ordem no Capítulo 10: 1 Sonic, 2 Amy, 3 Tails,
+4 Rouge, 5 Big, 6 Knuckles, 7 Cream, 8 Eggman, 9 Shadow, 10 Omega, 11 Shade (o nome está
+num ponteiro em `+0x98` da criatura).
 
 **Tamanho:** repetir o bloco 11 vezes deixa cada cheat com cerca de 1 KB. O Pico Loader
 copia os cheats ligados para a RAM principal, no espaço livre logo depois do código do
@@ -302,7 +364,7 @@ negativo (−25): o jogo guarda o HP com sinal e a deixa nocauteada.
 com ele. Esse 1 pode ter sido um ataque que não se esquiva (Inescapable); ainda não
 conferimos.
 
-**HP sempre cheio:** com k dos inimigos em 300, sem o cheat a Rouge e o Eggman caíram;
+**HP sempre cheio:** com k dos inimigos em 300, sem o cheat a Rouge e o Omega caíram;
 com ele, os 11 personagens terminaram com HP cheio.
 
 Para repetir: com `emu_run.py`, carregue o save (`sav`), ande até uma batalha, grave um
@@ -456,9 +518,10 @@ B21D10AC 00000000    offset = o valor guardado em 0x021D10AC (o endereço de um 
 00000114 0001869F    escreve 99999 em offset + 0x114
 D2000000 00000000    fim (zera o offset)
 ```
-O dinheiro mora num objeto no heap, que muda de lugar. Mas uma global fixa
-(0x021D10AC) guarda **onde** o objeto está. O cheat segue esse ponteiro a cada quadro.
-É exatamente o que a fase A2 vai fazer para HP, PP e itens.
+O dinheiro mora num objeto no heap. Um ponteiro guarda **onde** ele está, e o cheat segue
+esse ponteiro a cada quadro. A ideia é boa, mas o ponteiro escolhido, `0x021D10AC`, também
+está no heap: ele só funciona enquanto o heap tiver a arrumação de sempre. O nosso cheat
+de anéis parte de `0x02160C18`, que está na BSS e não depende disso.
 
 **Anéis (`022262F4 000F432F`):** escreve direto num endereço do heap, sem ponteiro. Hoje
 sabemos que `0x022262F4` é a carteira (esquadrão em `0x022261E0` + `0x114`). Nos estados que
@@ -467,7 +530,8 @@ porque ele é criado cedo e não muda de lugar. Então o código público provav
 funciona nesta versão. A SuperCheats avisa que, com ele ligado, o Sonic erra todos os
 ataques; isso não apareceu no emulador. Dois detalhes: `000F432F` é 1000239, mais do que
 cabe na tela (o máximo que aparece inteiro é 999999), e um endereço fixo no heap é uma
-aposta. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lugar.
+aposta: com a ROM do painel v0.2, que empurra o heap, ele escreveria em cima de outra
+coisa. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lugar.
 
 ## O que vem depois
 
@@ -475,7 +539,7 @@ aposta. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lu
 |---|---|---|
 | Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Grupo | PP cheio (o PP atual é ponto fixo e o máximo é inteiro: o AR não converte), XP, nível | XP: ainda não está no vetor de atributos |
-| Inventário | itens, Chao (bytes em esquadrão + `0x425`, de 9 em 9), conferir a loja | busca na RAM ao comprar algo |
+| Inventário | Chao (bytes em esquadrão + `0x425`, de 9 em 9), conferir a loja com "Itens não acabam" | busca na RAM e teste na loja |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |
 
