@@ -153,6 +153,7 @@ fáceis de testar no PC. As versões *matching* (os mesmos bytes do jogo) ficam 
 | `achar_funcoes.py lib.a ...` | acha no jogo as funções de uma biblioteca compilada (e grava os nomes com `--aplicar`) |
 | `nitrosdk.sh` | baixa o NitroSDK 4.2 decompilado, compila em Thumb e nomeia as funções dele no jogo |
 | `nitrosystem.sh` | o mesmo para a NitroSystem 071126 (3D, 2D, som); precisa do `nitrosdk.sh` antes |
+| `ligar_bibliotecas.py` | divide a região de uma biblioteca em arquivos e faz o build ligar os `.o` compilados dela |
 | `conferir_chamadas.py arquivo.o ...` | confere os nomes pelas chamadas: o `bl` de X no jogo cai na função Y que o fonte chama? |
 | `versao_msl.sh` | qual versão do CodeWarrior forneceu o MSL do jogo |
 | `testar_compilador.sh` | matriz de versões × otimizações para as funções de `decomp/compilador/casos.txt` |

@@ -232,6 +232,19 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   `AlarmCallback`. Não era o nome: existem duas funções `static` com esse nome
   (`stream.c` e `capture.c`), e o conferidor comparava as chamadas de uma com o endereço
   da outra. Agora ele só usa a função do `.o` com o mesmo tamanho da do jogo: 708 de 708.
+- **Ligada do fonte.** O passo seguinte foi o build usar os `.o` compilados no lugar do
+  assembly. A primeira tentativa linkou, mas mudou 19 mil bytes. As causas, uma a uma:
+  - a `.rodata` de um arquivo terminava num endereço ímpar, e o linker alinha o próximo
+    a 4: tudo depois andou 2 bytes. O enchimento é do arquivo;
+  - o jogo aponta para campos no meio de estruturas (`NNS_G3dGlb + 0x80`), e o `.o` só
+    tem o começo; as relocações viraram "símbolo + deslocamento";
+  - funções de código idêntico (os `NNS_G3dFree*`) estavam com o nome trocado. Os bytes
+    batiam, mas o linker põe as funções na ordem do `.o`, e a ordem saiu errada.
+  Com isso, os 59 arquivos da NitroSystem entram compilados e a ROM sai idêntica.
+- **Uma "relocação" que não era.** O `dsd init` marcou o número `0x021b0fdc`, numa
+  tabela de constantes, como ponteiro para a variável `static` `sDriverInfo` do som. Uma
+  variável `static` não pode ser usada de outro arquivo, então era só um número que
+  parecia endereço. Saiu da lista de relocações.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

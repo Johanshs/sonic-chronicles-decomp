@@ -11,13 +11,14 @@ Uso: python3 conferir_chamadas.py arquivo.o [mais.o ...]
 import re, struct, sys
 from elftools.elf.elffile import ELFFile
 
-nomes, tamanhos = {}, {}
+# nome -> [(endereço, tamanho)]: funções "static" de arquivos diferentes podem ter o
+# mesmo nome (AllocFromHead existe no expheap.c e no frameheap.c)
+nomes = {}
 for f in ("config/YWSE/arm9/symbols.txt", "config/YWSE/arm9/itcm/symbols.txt"):
     for linha in open(f):
-        m = re.match(r"(\S+) kind:function\(\w+,size=(0x[0-9a-f]+).* addr:(0x[0-9a-f]+)", linha)
+        m = re.match(r"(\S+) kind:(?:function\(\w+,size=(0x[0-9a-f]+)[^)]*\)|label\(\w+\)).* addr:(0x[0-9a-f]+)", linha)
         if m:
-            nomes[m.group(1)] = int(m.group(3), 16)
-            tamanhos[m.group(1)] = int(m.group(2), 16)
+            nomes.setdefault(m.group(1), []).append((int(m.group(3), 16), int(m.group(2) or "0", 16)))
 arm9 = open("work/extract/arm9/arm9.bin", "rb").read()
 BASE = 0x02000000
 
@@ -50,32 +51,39 @@ for caminho in sys.argv[1:]:
     for rel in elf.iter_sections():
         if rel.header.sh_type not in ("SHT_REL", "SHT_RELA"):
             continue
-        funcs = [s for s in simbolos if s["st_info"]["type"] == "STT_FUNC"
-                 and s["st_shndx"] == rel.header.sh_info and s.name in nomes
-                 # funções "static" de arquivos diferentes podem ter o mesmo nome
-                 # (AlarmCallback): só vale a do mesmo tamanho que a do jogo
-                 and s["st_size"] == tamanhos[s.name]]
-        for r in rel.iter_relocations():
-            alvo_nome = simbolos[r["r_info_sym"]].name
-            if alvo_nome not in nomes:
+        relocs = list(rel.iter_relocations())
+        for f in simbolos:
+            if (f["st_info"]["type"] != "STT_FUNC" or f["st_shndx"] != rel.header.sh_info
+                    or f.name not in nomes):
                 continue
-            for f in funcs:
-                ini = f["st_value"] & ~1
-                if not ini <= r["r_offset"] < ini + f["st_size"]:
+            ini = f["st_value"] & ~1
+            # a função do jogo com este nome e o mesmo tamanho; se houver mais de uma
+            # ("static" repetida), vale a que acerta mais
+            resultados = []
+            for base, tam in nomes[f.name]:
+                if tam != f["st_size"]:
                     continue
-                end = nomes[f.name] + r["r_offset"] - ini
-                if not BASE <= end < BASE + len(arm9):
-                    continue
-                d = destino(r["r_info_type"], end)
-                if d is None:
-                    continue
-                # um ponteiro pode apontar para dentro da função (o "addend",
-                # ex.: o endereço de retorno guardado com `ldr lr, =rótulo`)
-                extra = r["r_addend"] if r["r_info_type"] == 2 and "r_addend" in r.entry else 0
-                if d == (nomes[alvo_nome] + extra) & ~1:
-                    certas += 1
-                else:
-                    erradas.append((f.name, end, alvo_nome, d))
+                ok, ruins = 0, []
+                for r in relocs:
+                    alvo_nome = simbolos[r["r_info_sym"]].name
+                    if alvo_nome not in nomes or not ini <= r["r_offset"] < ini + f["st_size"]:
+                        continue
+                    end = base + r["r_offset"] - ini
+                    d = destino(r["r_info_type"], end) if BASE <= end < BASE + len(arm9) else None
+                    if d is None:
+                        continue
+                    # um ponteiro pode apontar para dentro da função (o "addend",
+                    # ex.: o endereço de retorno guardado com `ldr lr, =rótulo`)
+                    extra = r["r_addend"] if r["r_info_type"] == 2 and "r_addend" in r.entry else 0
+                    if any(d == (a + extra) & ~1 for a, _ in nomes[alvo_nome]):
+                        ok += 1
+                    else:
+                        ruins.append((f.name, end, alvo_nome, d))
+                resultados.append((ok, ruins))
+            if resultados:
+                ok, ruins = max(resultados, key=lambda x: x[0] - len(x[1]))
+                certas += ok
+                erradas += ruins
 print(f"{certas} referências certas, {len(erradas)} erradas")
 for f, end, alvo, d in erradas[:20]:
     print(f"   {f} em {end:#x} deveria chamar {alvo}, mas aponta para {d:#x}")

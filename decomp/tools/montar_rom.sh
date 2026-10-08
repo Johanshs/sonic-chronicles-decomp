@@ -51,7 +51,21 @@ for f in json.load(sys.stdin)["files"]:
     if f["object_to_link"] != f["delink_file"]:
         print(f["name"], f["object_to_link"])' | while read -r fonte objeto; do
     echo "   $fonte"
-    decomp/tools/compilar.sh "$fonte" "$objeto"
+    case "$fonte" in
+        # bibliotecas da Nintendo: o .o já compilado por nitrosdk.sh/nitrosystem.sh,
+        # com o compilador e as flags delas (não as do jogo)
+        NitroSDK/*|NitroSystem/*)
+            lib="${fonte%%/*}"; resto="${fonte#*/}"
+            pronto="work/bibliotecas/${lib,,}/$(echo "${resto%.c}" | tr / _).o"
+            if [ ! -f "$pronto" ]; then
+                echo "   compilando a biblioteca: decomp/tools/${lib,,}.sh --so-compilar"
+                [ "$lib" = NitroSystem ] && [ ! -d work/bibliotecas/nitrosdk ] &&
+                    decomp/tools/nitrosdk.sh --so-compilar </dev/null
+                "decomp/tools/${lib,,}.sh" --so-compilar </dev/null
+            fi
+            mkdir -p "$(dirname "$objeto")" && cp "$pronto" "$objeto" ;;
+        *) decomp/tools/compilar.sh "$fonte" "$objeto" ;;
+    esac
 done
 
 echo "== 3. lcf"

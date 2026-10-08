@@ -105,6 +105,36 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 
 ---
 
+## As bibliotecas da Nintendo, ligadas do fonte
+
+A NitroSystem inteira (de `0x020c8278` a `0x020d4394`) não vem mais do assembly
+cortado: o build compila os 59 arquivos `.c` dela (o fonte público, veja
+[COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida)) e liga os `.o`, e a
+ROM continua idêntica. Na primeira vez, `montar_rom.sh` baixa e compila a biblioteca
+sozinho (`nitrosdk.sh` e `nitrosystem.sh`, para `work/bibliotecas/`).
+
+Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.py`:
+
+1. **Qual arquivo é cada função.** O linker põe as funções de um arquivo juntas e na
+   ordem do `.o`. O script percorre a região e corta onde muda o arquivo de origem.
+   Quando duas funções têm o mesmo código (os `NNS_G3dFree*`, que só chamam
+   `NNS_FndFreeToAllocator`), desempatam o destino das chamadas e a ordem no `.o`.
+2. **Onde estão os dados de cada arquivo.** Se a função X do `.o` lê `.bss+8` e no
+   jogo o ponteiro vale `0x021b0d68`, a `.bss` daquele arquivo começa em `0x021b0d60`.
+   Os bytes de `.data`/`.rodata` são conferidos, ponteiros incluídos.
+3. **Os nomes que o `.o` espera.** O `.o` chama `_s32_div_f`, `FS_ReadFile`... O endereço
+   de cada um sai da instrução do jogo, e o nome entra em `symbols.txt`. As funções
+   `static` ficam `local`, e os dados ganham o tamanho que têm no `.o`.
+4. **Quem aponta para o meio de um arquivo.** O jogo usa `NNS_G3dGlb + 0x80` (um campo
+   da estrutura). O `.o` só tem o símbolo `NNS_G3dGlb`, então a relocação vira
+   `to:NNS_G3dGlb add:0x80`.
+
+```
+python3 decomp/tools/ligar_bibliotecas.py NitroSystem work/NitroSystem \
+    work/bibliotecas/nitrosystem 0x020c8278 0x020d4394            # só mostra
+python3 decomp/tools/ligar_bibliotecas.py ... --aplicar           # grava
+```
+
 ## As ferramentas e as versões
 
 | Ferramenta | Versão | De onde |

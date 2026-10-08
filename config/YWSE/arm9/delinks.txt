@@ -14,3 +14,268 @@ src/Aurora/CExoString.cpp:
 src/Aurora/ResourceHash.cpp:
     complete
     .text       start:0x02009b78 end:0x02009bbc
+
+NitroSystem/libraries/fnd/src/list.c:
+    complete
+    .text       start:0x020c8278 end:0x020c838c
+
+NitroSystem/libraries/fnd/src/heapcommon.c:
+    complete
+    .text       start:0x020c838c end:0x020c8454
+    .bss        start:0x021add8c end:0x021add9c
+
+NitroSystem/libraries/fnd/src/expheap.c:
+    complete
+    .text       start:0x020c8454 end:0x020c8800
+
+NitroSystem/libraries/fnd/src/frameheap.c:
+    complete
+    .text       start:0x020c8800 end:0x020c89c4
+
+NitroSystem/libraries/fnd/src/unitheap.c:
+    complete
+    .text       start:0x020c89c4 end:0x020c8a0c
+
+NitroSystem/libraries/fnd/src/allocator.c:
+    complete
+    .text       start:0x020c8a0c end:0x020c8aa8
+    .rodata     start:0x020efc9c end:0x020efcbc
+
+NitroSystem/libraries/gfd/src/VramManager/gfd_TexVramMan.c:
+    complete
+    .text       start:0x020c8aa8 end:0x020c8ab4
+    .data       start:0x02107fa8 end:0x02107fb0
+
+NitroSystem/libraries/gfd/src/VramManager/gfd_PlttVramMan.c:
+    complete
+    .text       start:0x020c8ab4 end:0x020c8ac0
+    .data       start:0x02107fb0 end:0x02107fb8
+
+NitroSystem/libraries/gfd/src/VramManager/gfdi_LinkedListVramMan_Common.c:
+    complete
+    .text       start:0x020c8ac0 end:0x020c8d40
+
+NitroSystem/libraries/gfd/src/VramManager/gfd_LinkedListTexVramMan.c:
+    complete
+    .text       start:0x020c8d40 end:0x020c8f64
+    .rodata     start:0x020efcbc end:0x020efcec
+    .bss        start:0x021add9c end:0x021addb8
+
+NitroSystem/libraries/gfd/src/VramManager/gfd_LinkedListPlttVramMan.c:
+    complete
+    .text       start:0x020c8f64 end:0x020c9090
+    .bss        start:0x021addb8 end:0x021addcc
+
+NitroSystem/libraries/g2d/src/load/g2d_NAN_load.c:
+    complete
+    .text       start:0x020c9090 end:0x020c918c
+
+NitroSystem/libraries/g2d/src/load/g2d_NOB_load.c:
+    complete
+    .text       start:0x020c918c end:0x020c9250
+
+NitroSystem/libraries/g2d/src/load/g2d_NCG_load.c:
+    complete
+    .text       start:0x020c9250 end:0x020c92b0
+
+NitroSystem/libraries/g2d/src/load/g2d_NCL_load.c:
+    complete
+    .text       start:0x020c92b0 end:0x020c92e0
+
+NitroSystem/libraries/g2d/src/load/g2d_Load.c:
+    complete
+    .text       start:0x020c92e0 end:0x020c933c
+
+NitroSystem/libraries/g2d/src/g2d_Animation.c:
+    complete
+    .text       start:0x020c933c end:0x020c95a0
+
+NitroSystem/libraries/g2d/src/g2d_SRTControl.c:
+    complete
+    .text       start:0x020c95a0 end:0x020c9608
+
+NitroSystem/libraries/g2d/src/g2d_CellAnimation.c:
+    complete
+    .text       start:0x020c9608 end:0x020c9730
+
+NitroSystem/libraries/g2d/src/g2d_CellTransferManager.c:
+    complete
+    .text       start:0x020c9730 end:0x020c9758
+    .bss        start:0x021addcc end:0x021addd8
+
+NitroSystem/libraries/g2d/src/g2d_Font.c:
+    complete
+    .text       start:0x020c9758 end:0x020c9944
+    .rodata     start:0x020efd1c end:0x020efd2c
+
+NitroSystem/libraries/g2d/src/g2d_CharCanvas.c:
+    complete
+    .text       start:0x020c9944 end:0x020ca6d0
+    .rodata     start:0x020efd2c end:0x020efdbc
+
+NitroSystem/libraries/g2d/src/g2d_TextCanvas.c:
+    complete
+    .text       start:0x020ca6d0 end:0x020ca74c
+
+NitroSystem/libraries/g2d/src/load/g2d_NFT_load.c:
+    complete
+    .text       start:0x020ca74c end:0x020ca8b4
+
+NitroSystem/libraries/g2d/src/internal/g2di_BitReader.c:
+    complete
+    .text       start:0x020ca8b4 end:0x020ca8f4
+
+NitroSystem/libraries/g2d/src/internal/g2di_SplitChar.c:
+    complete
+    .text       start:0x020ca8f4 end:0x020ca98c
+
+NitroSystem/libraries/g3d/src/kernel.c:
+    complete
+    .text       start:0x020ca98c end:0x020cb198
+
+NitroSystem/libraries/g3d/src/glbstate.c:
+    complete
+    .text       start:0x020cb198 end:0x020cb66c
+    .bss        start:0x021addd8 end:0x021ae03c
+
+NitroSystem/libraries/g3d/src/anm.c:
+    complete
+    .text       start:0x020cb66c end:0x020cbb58
+    .data       start:0x02107fb8 end:0x0210802c
+
+NitroSystem/libraries/g3d/src/sbc.c:
+    complete
+    .text       start:0x020cbb58 end:0x020cd564
+    .rodata     start:0x020efdbc end:0x020efe00
+    .data       start:0x02108054 end:0x021081d4
+    .bss        start:0x021ae03c end:0x021b0d40
+
+NitroSystem/libraries/g3d/src/1mat1shp.c:
+    complete
+    .text       start:0x020cd564 end:0x020cd714
+
+NitroSystem/libraries/g3d/src/gecom.c:
+    complete
+    .text       start:0x020cd714 end:0x020cd85c
+    .bss        start:0x021b0d40 end:0x021b0d4c
+
+NitroSystem/libraries/g3d/src/util.c:
+    complete
+    .text       start:0x020cd85c end:0x020cdeec
+
+NitroSystem/libraries/g3d/src/mem.c:
+    complete
+    .text       start:0x020cdeec end:0x020cdf0c
+
+NitroSystem/libraries/g3d/src/model.c:
+    complete
+    .text       start:0x020cdf0c end:0x020ce058
+
+NitroSystem/libraries/g3d/src/binres/res_struct_accessor.c:
+    complete
+    .text       start:0x020ce058 end:0x020ce2a4
+
+NitroSystem/libraries/g3d/src/binres/res_struct_accessor_anm.c:
+    complete
+    .text       start:0x020ce2a4 end:0x020ce3f8
+
+NitroSystem/libraries/g3d/src/anm/nsbca.c:
+    complete
+    .text       start:0x020ce3f8 end:0x020cf3a0
+    .rodata     start:0x020efe00 end:0x020efe24
+
+NitroSystem/libraries/g3d/src/anm/nsbma.c:
+    complete
+    .text       start:0x020cf3a0 end:0x020cf6ac
+
+NitroSystem/libraries/g3d/src/anm/nsbta.c:
+    complete
+    .text       start:0x020cf6ac end:0x020cf9bc
+
+NitroSystem/libraries/g3d/src/anm/nsbtp.c:
+    complete
+    .text       start:0x020cf9bc end:0x020cfb78
+
+NitroSystem/libraries/g3d/src/anm/nsbva.c:
+    complete
+    .text       start:0x020cfb78 end:0x020cfbd4
+
+NitroSystem/libraries/g3d/src/cgtool/basic.c:
+    complete
+    .text       start:0x020cfbd4 end:0x020cfc50
+
+NitroSystem/libraries/g3d/src/cgtool/maya.c:
+    complete
+    .text       start:0x020cfc50 end:0x020d03a8
+    .data       start:0x021081d4 end:0x021081f4
+
+NitroSystem/libraries/g3d/src/cgtool/si3d.c:
+    complete
+    .text       start:0x020d03a8 end:0x020d08bc
+
+NitroSystem/libraries/g3d/src/cgtool/3dsmax.c:
+    complete
+    .text       start:0x020d08bc end:0x020d0f00
+    .data       start:0x021081f4 end:0x02108214
+
+NitroSystem/libraries/g3d/src/cgtool/xsi.c:
+    complete
+    .text       start:0x020d0f00 end:0x020d1568
+    .data       start:0x02108214 end:0x02108234
+
+NitroSystem/libraries/snd/src/main.c:
+    complete
+    .text       start:0x020d1568 end:0x020d1618
+    .bss        start:0x021b0d60 end:0x021b3160
+
+NitroSystem/libraries/snd/src/resource_mgr.c:
+    complete
+    .text       start:0x020d1618 end:0x020d16c0
+    .bss        start:0x021b3160 end:0x021b316c
+
+NitroSystem/libraries/snd/src/player.c:
+    complete
+    .text       start:0x020d16c0 end:0x020d1cb8
+    .bss        start:0x021b316c end:0x021b3a44
+
+NitroSystem/libraries/snd/src/stream.c:
+    complete
+    .text       start:0x020d1cb8 end:0x020d2070
+    .bss        start:0x021b3a44 end:0x021b3b14
+
+NitroSystem/libraries/snd/src/capture.c:
+    complete
+    .text       start:0x020d2070 end:0x020d2210
+    .bss        start:0x021b3b14 end:0x021b4110
+
+NitroSystem/libraries/snd/src/sndarc.c:
+    complete
+    .text       start:0x020d2210 end:0x020d2744
+    .bss        start:0x021b4110 end:0x021b4114
+
+NitroSystem/libraries/snd/src/heap.c:
+    complete
+    .text       start:0x020d2744 end:0x020d29a8
+
+NitroSystem/libraries/snd/src/sndarc_loader.c:
+    complete
+    .text       start:0x020d29a8 end:0x020d2fb8
+    .bss        start:0x021b4114 end:0x021b4150
+
+NitroSystem/libraries/snd/src/sndarc_player.c:
+    complete
+    .text       start:0x020d2fb8 end:0x020d31b4
+
+NitroSystem/libraries/snd/src/sndarc_stream.c:
+    complete
+    .text       start:0x020d31b4 end:0x020d4304
+    .rodata     start:0x020efe24 end:0x020efee8
+    .bss        start:0x021b4150 end:0x021b4fc0
+
+NitroSystem/libraries/snd/src/seqdata.c:
+    complete
+    .text       start:0x020d4304 end:0x020d4330
+
+NitroSystem/libraries/snd/src/fader.c:
+    complete
+    .text       start:0x020d4330 end:0x020d4394

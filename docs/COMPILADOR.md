@@ -136,7 +136,7 @@ fonte, compila os 169 arquivos do ARM9 e procura cada função no jogo.
   `sp1p2`, a que adotamos aqui), não com a sp2 do jogo. Faz sentido: a Nintendo
   entrega o SDK já compilado.
 - **562 funções ganharam o nome verdadeiro** (`OS_IrqHandler`, `MTX_Concat43`,
-  `FS_ReadFile`...), contando ITCM e o `crt0` (`_start`, `do_autoload`). Só entram as
+  `FS_OpenFileFast`...), contando ITCM e o `crt0` (`_start`, `do_autoload`). Só entram as
   sem ambiguidade.
 - **Prova independente:** `decomp/tools/conferir_chamadas.py` segue todas as chamadas
   e ponteiros das funções nomeadas: das 1.140 referências, as 1.140 apontam para a
