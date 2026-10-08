@@ -1,4 +1,5 @@
 WaitByLoop kind:function(thumb,size=0x4) addr:0x02000066
+SVC_WaitByLoop kind:label(thumb) addr:0x02000066
 RLUnCompReadNormalWrite8bit kind:function(thumb,size=0x4) addr:0x020000da
 HuffUnCompReadByCallback kind:function(thumb,size=0x4) addr:0x0200014c
 VBlankIntrWait kind:function(thumb,size=0x6) addr:0x020001ba
@@ -13,6 +14,7 @@ Halt kind:function(thumb,size=0x4) addr:0x020004e6
 SoftReset kind:function(thumb,size=0x4) addr:0x0200054a
 GetCRC16 kind:function(thumb,size=0x4) addr:0x020005be
 CpuSet kind:function(thumb,size=0x4) addr:0x0200063a
+SVC_CpuSet kind:label(thumb) addr:0x0200063a
 IsDebugger kind:function(thumb,size=0x4) addr:0x020006b8
 LZ77UnCompReadNormalWrite8bit kind:function(thumb,size=0x4) addr:0x02000720
 CpuFastSet kind:function(thumb,size=0x4) addr:0x02000794
@@ -5458,7 +5460,7 @@ MTX_Concat44 kind:function(arm,size=0x664) addr:0x020d5344
 MTX_PerspectiveW kind:function(arm,size=0x14c) addr:0x020d59a8
 MTX_OrthoW kind:function(arm,size=0x208) addr:0x020d5af4
 FX_Div kind:function(thumb,size=0xc) addr:0x020d5cfc
-func_020d5d08 kind:function(thumb,size=0x20) addr:0x020d5d08
+FX_DivFx64c kind:function(thumb,size=0x20) addr:0x020d5d08
 FX_InvFx64c kind:function(thumb,size=0x20) addr:0x020d5d28
 FX_GetDivResultFx64c kind:function(thumb,size=0x18) addr:0x020d5d48
 FX_GetDivResult kind:function(thumb,size=0x2c) addr:0x020d5d60
@@ -5472,7 +5474,7 @@ VEC_CrossProduct kind:function(arm,size=0x84) addr:0x020d5e78
 VEC_Mag kind:function(arm,size=0x60) addr:0x020d5efc
 VEC_Normalize kind:function(arm,size=0x118) addr:0x020d5f5c
 VEC_MultAdd kind:function(arm,size=0x5c) addr:0x020d6074
-func_020d60d0 kind:function(thumb,size=0x2) addr:0x020d60d0
+FX_Init kind:function(thumb,size=0x2) addr:0x020d60d0
 FX_MulFunc kind:function(arm,size=0x18) addr:0x020d60d4
 FX_Mul32x64cFunc kind:function(arm,size=0x20) addr:0x020d60ec
 GX_Init kind:function(thumb,size=0xd0) addr:0x020d610c
@@ -5501,15 +5503,15 @@ resetBankForX_ kind:function(thumb,size=0x20) addr:0x020d6a2c
 func_020d6a4c kind:function(thumb,size=0x10) addr:0x020d6a4c
 func_020d6a5c kind:function(thumb,size=0x10) addr:0x020d6a5c
 func_020d6a6c kind:function(thumb,size=0x20) addr:0x020d6a6c
-func_020d6a8c kind:function(thumb,size=0x20) addr:0x020d6a8c
-func_020d6aac kind:function(thumb,size=0x10) addr:0x020d6aac
-func_020d6abc kind:function(thumb,size=0x10) addr:0x020d6abc
-func_020d6acc kind:function(thumb,size=0x10) addr:0x020d6acc
+GX_ResetBankForOBJExtPltt kind:function(thumb,size=0x20) addr:0x020d6a8c
+GX_ResetBankForTex kind:function(thumb,size=0x10) addr:0x020d6aac
+GX_ResetBankForTexPltt kind:function(thumb,size=0x10) addr:0x020d6abc
+GX_ResetBankForClearImage kind:function(thumb,size=0x10) addr:0x020d6acc
 func_020d6adc kind:function(thumb,size=0x10) addr:0x020d6adc
 func_020d6aec kind:function(thumb,size=0x10) addr:0x020d6aec
 func_020d6afc kind:function(thumb,size=0x10) addr:0x020d6afc
 func_020d6b0c kind:function(thumb,size=0x20) addr:0x020d6b0c
-func_020d6b2c kind:function(thumb,size=0x20) addr:0x020d6b2c
+GX_ResetBankForSubOBJExtPltt kind:function(thumb,size=0x20) addr:0x020d6b2c
 disableBankForX_ kind:function(thumb,size=0xac) addr:0x020d6b4c
 func_020d6bf8 kind:function(thumb,size=0x10) addr:0x020d6bf8
 GX_GetBankForTex kind:function(thumb,size=0xc) addr:0x020d6c08
@@ -5539,7 +5541,7 @@ G3X_SetClearColor kind:function(thumb,size=0x24) addr:0x020d7178
 G3X_InitTable kind:function(thumb,size=0x64) addr:0x020d719c
 G3X_GetMtxStackLevelPV kind:function(thumb,size=0x24) addr:0x020d7200
 G3X_GetMtxStackLevelPJ kind:function(thumb,size=0x24) addr:0x020d7224
-GXi_NopClearFifo128_ kind:function(arm,size=0x94) addr:0x020d7248
+GXi_NopClearFifo128_ kind:function(arm,size=0x94) addr:0x020d7248 local
 GX_LoadBGPltt kind:function(thumb,size=0x3c) addr:0x020d72dc
 GXS_LoadBGPltt kind:function(thumb,size=0x3c) addr:0x020d7318
 GX_LoadOBJPltt kind:function(thumb,size=0x3c) addr:0x020d7354
@@ -5548,13 +5550,13 @@ GX_LoadOAM kind:function(thumb,size=0x3c) addr:0x020d73cc
 GXS_LoadOAM kind:function(thumb,size=0x3c) addr:0x020d7408
 GX_LoadOBJ kind:function(thumb,size=0x38) addr:0x020d7444
 GXS_LoadOBJ kind:function(thumb,size=0x38) addr:0x020d747c
-func_020d74b4 kind:function(thumb,size=0x3c) addr:0x020d74b4
-func_020d74f0 kind:function(thumb,size=0x3c) addr:0x020d74f0
-func_020d752c kind:function(thumb,size=0x3c) addr:0x020d752c
-func_020d7568 kind:function(thumb,size=0x3c) addr:0x020d7568
-func_020d75a4 kind:function(thumb,size=0x3c) addr:0x020d75a4
-func_020d75e0 kind:function(thumb,size=0x3c) addr:0x020d75e0
-func_020d761c kind:function(thumb,size=0x3c) addr:0x020d761c
+GX_LoadBG2Scr kind:function(thumb,size=0x3c) addr:0x020d74b4
+GXS_LoadBG2Scr kind:function(thumb,size=0x3c) addr:0x020d74f0
+GX_LoadBG3Scr kind:function(thumb,size=0x3c) addr:0x020d752c
+GXS_LoadBG3Scr kind:function(thumb,size=0x3c) addr:0x020d7568
+GX_LoadBG1Char kind:function(thumb,size=0x3c) addr:0x020d75a4
+GXS_LoadBG1Char kind:function(thumb,size=0x3c) addr:0x020d75e0
+GX_LoadBG2Char kind:function(thumb,size=0x3c) addr:0x020d761c
 GX_BeginLoadOBJExtPltt kind:function(thumb,size=0x30) addr:0x020d7658
 GX_LoadOBJExtPltt kind:function(thumb,size=0x44) addr:0x020d7688
 GX_EndLoadOBJExtPltt kind:function(thumb,size=0x2c) addr:0x020d76cc
@@ -5592,21 +5594,21 @@ OS_DisableIrqMask kind:function(thumb,size=0x24) addr:0x020d7c7c
 OS_ResetRequestIrqMask kind:function(thumb,size=0x20) addr:0x020d7ca0
 OS_SetIrqStackChecker kind:function(thumb,size=0x2c) addr:0x020d7cc0
 OS_InitLock kind:function(thumb,size=0x80) addr:0x020d7cec
-OSi_DoLockByWord kind:function(thumb,size=0x2c) addr:0x020d7d6c
-func_020d7d98 kind:function(thumb,size=0xa) addr:0x020d7d98
-OSi_DoUnlockByWord kind:function(thumb,size=0x48) addr:0x020d7da4
-func_020d7dec kind:function(thumb,size=0xa) addr:0x020d7dec
-OSi_DoTryLockByWord kind:function(thumb,size=0x4a) addr:0x020d7df8
-func_020d7e44 kind:function(thumb,size=0x18) addr:0x020d7e44
-func_020d7e5c kind:function(thumb,size=0x8) addr:0x020d7e5c
-func_020d7e64 kind:function(thumb,size=0x18) addr:0x020d7e64
-OSi_AllocateCartridgeBus kind:function(thumb,size=0x10) addr:0x020d7e7c
-OSi_FreeCartridgeBus kind:function(thumb,size=0x10) addr:0x020d7e8c
-func_020d7e9c kind:function(thumb,size=0x14) addr:0x020d7e9c
-func_020d7eb0 kind:function(thumb,size=0x14) addr:0x020d7eb0
-OSi_AllocateCardBus kind:function(thumb,size=0x14) addr:0x020d7ec4
-OSi_FreeCardBus kind:function(thumb,size=0x10) addr:0x020d7ed8
-func_020d7ee8 kind:function(thumb,size=0x4) addr:0x020d7ee8
+OSi_DoLockByWord kind:function(thumb,size=0x2c) addr:0x020d7d6c local
+OS_LockByWord kind:function(thumb,size=0xa) addr:0x020d7d98
+OSi_DoUnlockByWord kind:function(thumb,size=0x48) addr:0x020d7da4 local
+OS_UnlockByWord kind:function(thumb,size=0xa) addr:0x020d7dec
+OSi_DoTryLockByWord kind:function(thumb,size=0x4a) addr:0x020d7df8 local
+OS_UnlockCartridge kind:function(thumb,size=0x18) addr:0x020d7e44
+OS_UnLockCartridge kind:function(thumb,size=0x8) addr:0x020d7e5c
+OS_TryLockCartridge kind:function(thumb,size=0x18) addr:0x020d7e64
+OSi_AllocateCartridgeBus kind:function(thumb,size=0x10) addr:0x020d7e7c local
+OSi_FreeCartridgeBus kind:function(thumb,size=0x10) addr:0x020d7e8c local
+OS_LockCard kind:function(thumb,size=0x14) addr:0x020d7e9c
+OS_UnlockCard kind:function(thumb,size=0x14) addr:0x020d7eb0
+OSi_AllocateCardBus kind:function(thumb,size=0x14) addr:0x020d7ec4 local
+OSi_FreeCardBus kind:function(thumb,size=0x10) addr:0x020d7ed8 local
+OS_ReadOwnerOfLockWord kind:function(thumb,size=0x4) addr:0x020d7ee8
 OS_GetLockID kind:function(arm,size=0x68) addr:0x020d7eec
 OS_ReleaseLockID kind:function(arm,size=0x48) addr:0x020d7f54
 OSi_GetUnusedThreadId kind:function(thumb,size=0x10) addr:0x020d7f9c
@@ -5639,7 +5641,7 @@ func_020d85fc kind:function(thumb,size=0x6) addr:0x020d85fc
 OS_InitContext kind:function(arm,size=0x84) addr:0x020d8604
 OS_SaveContext kind:function(arm,size=0x4c) addr:0x020d8688
 OS_LoadContext kind:function(arm,size=0x44) addr:0x020d86d4
-func_020d8718 kind:function(thumb,size=0x4) addr:0x020d8718
+OS_IsRunOnEmulator kind:function(thumb,size=0x4) addr:0x020d8718
 OS_GetConsoleType kind:function(thumb,size=0x10) addr:0x020d871c
 OS_InitMessageQueue kind:function(thumb,size=0x14) addr:0x020d872c
 OS_SendMessage kind:function(thumb,size=0x5c) addr:0x020d8740
@@ -5661,7 +5663,7 @@ DC_FlushRange kind:function(arm,size=0x24) addr:0x020d8a50
 DC_WaitWriteBufferEmpty kind:function(arm,size=0xc) addr:0x020d8a74
 IC_InvalidateAll kind:function(arm,size=0xc) addr:0x020d8a80
 IC_InvalidateRange kind:function(arm,size=0x1c) addr:0x020d8a8c
-OSi_WaitVCount0 kind:function(arm,size=0x20) addr:0x020d8aa8
+OSi_WaitVCount0 kind:function(arm,size=0x20) addr:0x020d8aa8 local
 OS_Init kind:function(thumb,size=0x44) addr:0x020d8ac8
 OS_InitArena kind:function(thumb,size=0xb0) addr:0x020d8b0c
 OS_InitArenaEx kind:function(thumb,size=0x4c) addr:0x020d8bbc
@@ -5672,9 +5674,9 @@ OS_GetInitArenaLo kind:function(thumb,size=0x70) addr:0x020d8cbc
 OS_SetArenaHi kind:function(thumb,size=0xc) addr:0x020d8d2c
 OS_SetArenaLo kind:function(thumb,size=0xc) addr:0x020d8d38
 OS_AllocFromArenaHi kind:function(thumb,size=0x3a) addr:0x020d8d44
-DLAddFront kind:function(thumb,size=0x10) addr:0x020d8d80
-DLExtract kind:function(thumb,size=0x1a) addr:0x020d8d90
-DLInsert kind:function(thumb,size=0x5e) addr:0x020d8dac
+DLAddFront kind:function(thumb,size=0x10) addr:0x020d8d80 local
+DLExtract kind:function(thumb,size=0x1a) addr:0x020d8d90 local
+DLInsert kind:function(thumb,size=0x5e) addr:0x020d8dac local
 OS_AllocFromHeap kind:function(thumb,size=0xa4) addr:0x020d8e0c
 OS_FreeToHeap kind:function(thumb,size=0x44) addr:0x020d8eb0
 OS_SetCurrentHeap kind:function(thumb,size=0x20) addr:0x020d8ef4
@@ -5693,8 +5695,8 @@ OSi_SetExContext kind:function(arm,size=0x90) addr:0x020d9118
 OSi_DisplayExContext kind:function(arm,size=0x7c) addr:0x020d91a8
 OSi_SetTimerReserved kind:function(thumb,size=0x14) addr:0x020d9224
 OS_InitTick kind:function(thumb,size=0x4c) addr:0x020d9238
-func_020d9284 kind:function(thumb,size=0xc) addr:0x020d9284
-OSi_CountUpTick kind:function(thumb,size=0x40) addr:0x020d9290
+OS_IsTickAvailable kind:function(thumb,size=0xc) addr:0x020d9284
+OSi_CountUpTick kind:function(thumb,size=0x40) addr:0x020d9290 local
 OS_GetTick kind:function(thumb,size=0x74) addr:0x020d92d0
 OSi_SetTimer kind:function(thumb,size=0x68) addr:0x020d9344
 OS_InitAlarm kind:function(thumb,size=0x28) addr:0x020d93ac
@@ -5721,11 +5723,11 @@ OSi_SendToPxi kind:function(arm,size=0x2c) addr:0x020d9798
 OS_ResetSystem kind:function(arm,size=0xbc) addr:0x020d97c4
 OS_GetMacAddress kind:function(thumb,size=0x14) addr:0x020d9880
 OS_GetOwnerInfo kind:function(thumb,size=0x58) addr:0x020d9894
-func_020d98ec kind:function(arm,size=0x8) addr:0x020d98ec
+OsCountZeroBits kind:function(arm,size=0x8) addr:0x020d98ec local
 OSi_InitVramExclusive kind:function(thumb,size=0x20) addr:0x020d98f4
 OSi_UnlockVram kind:function(thumb,size=0x58) addr:0x020d9914
-OS_Terminate kind:function(thumb,size=0xc) addr:0x020d996c
-OS_Halt kind:function(arm,size=0xc) addr:0x020d9978
+OS_Terminate kind:function(thumb,size=0xc) addr:0x020d996c weak
+OS_Halt kind:function(arm,size=0xc) addr:0x020d9978 weak
 MI_SetWramBank kind:function(thumb,size=0xc) addr:0x020d9984
 MI_DmaFill32 kind:function(thumb,size=0x60) addr:0x020d9990
 MI_DmaCopy32 kind:function(thumb,size=0x50) addr:0x020d99f0
@@ -5783,10 +5785,10 @@ SND_InvalidateWaveData kind:function(thumb,size=0x18) addr:0x020da808
 SND_SetOutputSelector kind:function(thumb,size=0x1c) addr:0x020da820
 SNDi_SetPlayerParam kind:function(thumb,size=0x1c) addr:0x020da83c
 SNDi_SetTrackParam kind:function(thumb,size=0x20) addr:0x020da858
-PushCommand_impl kind:function(thumb,size=0x26) addr:0x020da878
+PushCommand_impl kind:function(thumb,size=0x26) addr:0x020da878 local
 SND_Init kind:function(thumb,size=0x28) addr:0x020da8a0
-func_020da8c8 kind:function(thumb,size=0x10) addr:0x020da8c8
-func_020da8d8 kind:function(thumb,size=0x10) addr:0x020da8d8
+SNDi_LockMutex kind:function(thumb,size=0x10) addr:0x020da8c8
+SNDi_UnlockMutex kind:function(thumb,size=0x10) addr:0x020da8d8
 SND_CommandInit kind:function(thumb,size=0x88) addr:0x020da8e8
 SND_RecvCommandReply kind:function(thumb,size=0xa8) addr:0x020da970
 SND_AllocCommand kind:function(thumb,size=0x5c) addr:0x020daa18
@@ -5798,11 +5800,11 @@ SND_IsFinishedCommandTag kind:function(thumb,size=0x40) addr:0x020dac14
 SND_CountFreeCommand kind:function(thumb,size=0x24) addr:0x020dac54
 SND_CountReservedCommand kind:function(thumb,size=0x24) addr:0x020dac78
 SND_CountWaitingCommand kind:function(thumb,size=0x16) addr:0x020dac9c
-PxiFifoCallback kind:function(thumb,size=0x18) addr:0x020dacb4
-InitPXI kind:function(thumb,size=0x3c) addr:0x020daccc
-RequestCommandProc kind:function(thumb,size=0x16) addr:0x020dad08
-AllocCommand kind:function(thumb,size=0x30) addr:0x020dad20
-IsCommandAvailable kind:function(thumb,size=0x30) addr:0x020dad50
+PxiFifoCallback kind:function(thumb,size=0x18) addr:0x020dacb4 local
+InitPXI kind:function(thumb,size=0x3c) addr:0x020daccc local
+RequestCommandProc kind:function(thumb,size=0x16) addr:0x020dad08 local
+AllocCommand kind:function(thumb,size=0x30) addr:0x020dad20 local
+IsCommandAvailable kind:function(thumb,size=0x30) addr:0x020dad50 local
 SND_AlarmInit kind:function(thumb,size=0x1c) addr:0x020dad80
 SNDi_IncAlarmId kind:function(thumb,size=0x14) addr:0x020dad9c
 SNDi_SetAlarmHandler kind:function(thumb,size=0x20) addr:0x020dadb0
@@ -5819,7 +5821,7 @@ SND_GetNextInstData kind:function(thumb,size=0xf6) addr:0x020dafdc
 SND_GetWaveDataCount kind:function(thumb,size=0x4) addr:0x020db0d4
 SND_SetWaveDataAddress kind:function(thumb,size=0x20) addr:0x020db0d8
 SND_GetWaveDataAddress kind:function(thumb,size=0x2a) addr:0x020db0f8
-func_020db124 kind:function(thumb,size=0x8) addr:0x020db124
+PXI_Init kind:function(thumb,size=0x8) addr:0x020db124
 PXI_InitFifo kind:function(thumb,size=0xac) addr:0x020db12c
 PXI_SetFifoRecvCallback kind:function(thumb,size=0x4c) addr:0x020db1d8
 PXI_IsCallbackReady kind:function(thumb,size=0x24) addr:0x020db224
@@ -5828,21 +5830,21 @@ PXIi_HandlerRecvFifoNotEmpty kind:function(thumb,size=0xbc) addr:0x020db2bc
 FSi_ReleaseCommand kind:function(thumb,size=0x3c) addr:0x020db378
 FSi_TranslateCommand kind:function(thumb,size=0x118) addr:0x020db3b4
 FSi_StrNICmp kind:function(thumb,size=0x32) addr:0x020db4cc
-FSi_ReadTable kind:function(thumb,size=0x88) addr:0x020db500
-FSi_SeekDirDirect kind:function(thumb,size=0x20) addr:0x020db588
-FSi_ReadFileCommand kind:function(thumb,size=0x16) addr:0x020db5a8
-FSi_WriteFileCommand kind:function(thumb,size=0x16) addr:0x020db5c0
-FSi_SeekDirCommand kind:function(thumb,size=0x64) addr:0x020db5d8
-FSi_ReadDirCommand kind:function(thumb,size=0xa8) addr:0x020db63c
-FSi_FindPathCommand kind:function(thumb,size=0x130) addr:0x020db6e4
-FSi_GetPathCommand kind:function(thumb,size=0x284) addr:0x020db814
-FSi_OpenFileFastCommand kind:function(thumb,size=0x44) addr:0x020dba98
-FSi_OpenFileDirectCommand kind:function(thumb,size=0x14) addr:0x020dbadc
-func_020dbaf0 kind:function(thumb,size=0x4) addr:0x020dbaf0
-FSi_GetPackedName kind:function(thumb,size=0x34) addr:0x020dbaf4
-FSi_ReadMemCallback kind:function(thumb,size=0x10) addr:0x020dbb28
-FSi_WriteMemCallback kind:function(thumb,size=0x14) addr:0x020dbb38
-FSi_ReadMemoryCore kind:function(thumb,size=0xe) addr:0x020dbb4c
+FSi_ReadTable kind:function(thumb,size=0x88) addr:0x020db500 local
+FSi_SeekDirDirect kind:function(thumb,size=0x20) addr:0x020db588 local
+FSi_ReadFileCommand kind:function(thumb,size=0x16) addr:0x020db5a8 local
+FSi_WriteFileCommand kind:function(thumb,size=0x16) addr:0x020db5c0 local
+FSi_SeekDirCommand kind:function(thumb,size=0x64) addr:0x020db5d8 local
+FSi_ReadDirCommand kind:function(thumb,size=0xa8) addr:0x020db63c local
+FSi_FindPathCommand kind:function(thumb,size=0x130) addr:0x020db6e4 local
+FSi_GetPathCommand kind:function(thumb,size=0x284) addr:0x020db814 local
+FSi_OpenFileFastCommand kind:function(thumb,size=0x44) addr:0x020dba98 local
+FSi_OpenFileDirectCommand kind:function(thumb,size=0x14) addr:0x020dbadc local
+FSi_CloseFileCommand kind:function(thumb,size=0x4) addr:0x020dbaf0 local
+FSi_GetPackedName kind:function(thumb,size=0x34) addr:0x020dbaf4 local
+FSi_ReadMemCallback kind:function(thumb,size=0x10) addr:0x020dbb28 local
+FSi_WriteMemCallback kind:function(thumb,size=0x14) addr:0x020dbb38 local
+FSi_ReadMemoryCore kind:function(thumb,size=0xe) addr:0x020dbb4c local
 FSi_NextCommand kind:function(thumb,size=0x16c) addr:0x020dbb5c
 FSi_ExecuteAsyncCommand kind:function(thumb,size=0x5e) addr:0x020dbcc8
 FSi_ExecuteSyncCommand kind:function(thumb,size=0x2e) addr:0x020dbd28
@@ -5860,11 +5862,11 @@ FS_ResumeArchive kind:function(thumb,size=0x4c) addr:0x020dc188
 FS_SetArchiveProc kind:function(thumb,size=0x14) addr:0x020dc1d4
 FS_NotifyArchiveAsyncEnd kind:function(thumb,size=0x64) addr:0x020dc1e8
 FS_Init kind:function(thumb,size=0x18) addr:0x020dc24c
-func_020dc264 kind:function(thumb,size=0xc) addr:0x020dc264
+FS_IsAvailable kind:function(thumb,size=0xc) addr:0x020dc264
 FS_End kind:function(thumb,size=0x38) addr:0x020dc270
 FS_InitFile kind:function(thumb,size=0x14) addr:0x020dc2a8
-FSi_FindPath kind:function(thumb,size=0xd0) addr:0x020dc2bc
-FSi_ReadFileCore kind:function(thumb,size=0x50) addr:0x020dc38c
+FSi_FindPath kind:function(thumb,size=0xd0) addr:0x020dc2bc local
+FSi_ReadFileCore kind:function(thumb,size=0x50) addr:0x020dc38c local
 FS_ConvertPathToFileID kind:function(thumb,size=0x2a) addr:0x020dc3dc
 FS_OpenFileDirect kind:function(thumb,size=0x2c) addr:0x020dc408
 FS_OpenFileFast kind:function(thumb,size=0x48) addr:0x020dc434
@@ -5872,21 +5874,21 @@ FS_OpenFile kind:function(thumb,size=0x2a) addr:0x020dc47c
 FS_CloseFile kind:function(thumb,size=0x26) addr:0x020dc4a8
 FS_WaitAsync kind:function(thumb,size=0x98) addr:0x020dc4d0
 FS_CancelFile kind:function(thumb,size=0x2e) addr:0x020dc568
-func_020dc598 kind:function(thumb,size=0xa) addr:0x020dc598
+FS_ReadFileAsync kind:function(thumb,size=0xa) addr:0x020dc598
 FS_ReadFile kind:function(thumb,size=0xa) addr:0x020dc5a4
 FS_SeekFile kind:function(thumb,size=0x3a) addr:0x020dc5b0
-FSi_OnRomReadDone kind:function(thumb,size=0x1a) addr:0x020dc5ec
-FSi_ReadRomCallback kind:function(thumb,size=0x2c) addr:0x020dc608
-func_020dc634 kind:function(thumb,size=0x4) addr:0x020dc634
-FSi_RomArchiveProc kind:function(thumb,size=0x3c) addr:0x020dc638
-func_020dc674 kind:function(thumb,size=0x4) addr:0x020dc674
-func_020dc678 kind:function(thumb,size=0x4) addr:0x020dc678
+FSi_OnRomReadDone kind:function(thumb,size=0x1a) addr:0x020dc5ec local
+FSi_ReadRomCallback kind:function(thumb,size=0x2c) addr:0x020dc608 local
+FSi_WriteDummyCallback kind:function(thumb,size=0x4) addr:0x020dc634 local
+FSi_RomArchiveProc kind:function(thumb,size=0x3c) addr:0x020dc638 local
+FSi_ReadDummyCallback kind:function(thumb,size=0x4) addr:0x020dc674 local
+FSi_EmptyArchiveProc kind:function(thumb,size=0x4) addr:0x020dc678 local
 FSi_InitRom kind:function(thumb,size=0xdc) addr:0x020dc67c
 FS_SetDefaultDMA kind:function(thumb,size=0x34) addr:0x020dc758
-func_020dc78c kind:function(thumb,size=0x14) addr:0x020dc78c
+FS_TryLoadTable kind:function(thumb,size=0x14) addr:0x020dc78c
 CP_SaveContext kind:function(arm,size=0x40) addr:0x020dc7a0
 CPi_RestoreContext kind:function(arm,size=0x3c) addr:0x020dc7e0
-TPi_TpCallback kind:function(thumb,size=0x170) addr:0x020dc81c
+TPi_TpCallback kind:function(thumb,size=0x170) addr:0x020dc81c local
 TP_Init kind:function(thumb,size=0x48) addr:0x020dc98c
 TP_GetUserInfo kind:function(thumb,size=0x78) addr:0x020dc9d4
 TP_SetCalibrateParam kind:function(thumb,size=0xb0) addr:0x020dca4c
@@ -5895,25 +5897,25 @@ TP_WaitRawResult kind:function(thumb,size=0x2c) addr:0x020dcb5c
 TP_CalcCalibrateParam kind:function(thumb,size=0x17c) addr:0x020dcb88
 TP_GetCalibratedPoint kind:function(thumb,size=0xb0) addr:0x020dcd04
 TP_WaitBusy kind:function(thumb,size=0x10) addr:0x020dcdb4
-PMi_Lock kind:function(thumb,size=0x28) addr:0x020dcdc4
-PMi_WaitBusy kind:function(thumb,size=0x28) addr:0x020dcdec
-func_020dce14 kind:function(thumb,size=0x4) addr:0x020dce14
-PMi_CallCallbackAndUnlock kind:function(thumb,size=0x24) addr:0x020dce18
+PMi_Lock kind:function(thumb,size=0x28) addr:0x020dcdc4 local
+PMi_WaitBusy kind:function(thumb,size=0x28) addr:0x020dcdec local
+PMi_DummyCallback kind:function(thumb,size=0x4) addr:0x020dce14 local
+PMi_CallCallbackAndUnlock kind:function(thumb,size=0x24) addr:0x020dce18 local
 PM_Init kind:function(thumb,size=0x64) addr:0x020dce3c
 PMi_CommonCallback kind:function(thumb,size=0x84) addr:0x020dcea0
 PMi_SendSleepStart kind:function(thumb,size=0x64) addr:0x020dcf24
 PM_SendUtilityCommandAsync kind:function(thumb,size=0x44) addr:0x020dcf88
 PMi_ReadRegisterAsync kind:function(thumb,size=0x48) addr:0x020dcfcc
-func_020dd014 kind:function(thumb,size=0x1c) addr:0x020dd014
+PMi_ReadRegister kind:function(thumb,size=0x1c) addr:0x020dd014
 PMi_WriteRegisterAsync kind:function(thumb,size=0x44) addr:0x020dd030
-func_020dd074 kind:function(thumb,size=0x1c) addr:0x020dd074
+PMi_WriteRegister kind:function(thumb,size=0x1c) addr:0x020dd074
 PMi_SetLEDAsync kind:function(thumb,size=0x30) addr:0x020dd090
-func_020dd0c0 kind:function(thumb,size=0x1c) addr:0x020dd0c0
+PMi_SetLED kind:function(thumb,size=0x1c) addr:0x020dd0c0
 PM_SetBackLightAsync kind:function(thumb,size=0x50) addr:0x020dd0dc
-func_020dd12c kind:function(thumb,size=0x1c) addr:0x020dd12c
+PM_SetBackLight kind:function(thumb,size=0x1c) addr:0x020dd12c
 PM_ForceToPowerOffAsync kind:function(thumb,size=0x6c) addr:0x020dd148
 PM_ForceToPowerOff kind:function(thumb,size=0x1c) addr:0x020dd1b4
-PMi_SetAmp kind:function(thumb,size=0x1c) addr:0x020dd1d0
+PMi_SetAmp kind:function(thumb,size=0x1c) addr:0x020dd1d0 local
 PM_GetBackLight kind:function(thumb,size=0x40) addr:0x020dd1ec
 PMi_SendPxiData kind:function(thumb,size=0x18) addr:0x020dd22c
 PM_GoSleepMode kind:function(thumb,size=0x19c) addr:0x020dd244
@@ -5930,17 +5932,17 @@ PM_DeletePreSleepCallback kind:function(thumb,size=0x10) addr:0x020dd530
 PM_DeletePostSleepCallback kind:function(thumb,size=0x10) addr:0x020dd540
 RTC_Init kind:function(thumb,size=0x40) addr:0x020dd550
 RTC_GetDateAsync kind:function(thumb,size=0x48) addr:0x020dd590
-func_020dd5d8 kind:function(thumb,size=0x24) addr:0x020dd5d8
+RTC_GetDate kind:function(thumb,size=0x24) addr:0x020dd5d8
 RTC_GetTimeAsync kind:function(thumb,size=0x48) addr:0x020dd5fc
-func_020dd644 kind:function(thumb,size=0x24) addr:0x020dd644
-RtcCommonCallback kind:function(thumb,size=0x31c) addr:0x020dd668
-RtcBCD2HEX kind:function(thumb,size=0x46) addr:0x020dd984
-RtcGetResultCallback kind:function(thumb,size=0xc) addr:0x020dd9cc
-func_020dd9d8 kind:function(arm,size=0x18) addr:0x020dd9d8
+RTC_GetTime kind:function(thumb,size=0x24) addr:0x020dd644
+RtcCommonCallback kind:function(thumb,size=0x31c) addr:0x020dd668 local
+RtcBCD2HEX kind:function(thumb,size=0x46) addr:0x020dd984 local
+RtcGetResultCallback kind:function(thumb,size=0xc) addr:0x020dd9cc local
+RtcWaitBusy kind:function(arm,size=0x18) addr:0x020dd9d8 local
 RTCi_ReadRawDateAsync kind:function(thumb,size=0xc) addr:0x020dd9f0
 RTCi_ReadRawTimeAsync kind:function(thumb,size=0xc) addr:0x020dd9fc
 RTCi_WriteRawStatus2Async kind:function(thumb,size=0xc) addr:0x020dda08
-RtcSendPxiCommand kind:function(thumb,size=0x20) addr:0x020dda14
+RtcSendPxiCommand kind:function(thumb,size=0x20) addr:0x020dda14 local
 RTC_ConvertDateToDay kind:function(thumb,size=0x60) addr:0x020dda34
 RTCi_ConvertTimeToSecond kind:function(thumb,size=0x18) addr:0x020dda94
 RTC_ConvertDateTimeToSecond kind:function(thumb,size=0x44) addr:0x020ddaac
@@ -5949,16 +5951,16 @@ RTCi_ConvertSecondToTime kind:function(thumb,size=0x40) addr:0x020ddb90
 RTC_ConvertSecondToDateTime kind:function(thumb,size=0x60) addr:0x020ddbd0
 RTC_GetDayOfWeek kind:function(thumb,size=0x60) addr:0x020ddc30
 CARDi_SetTask kind:function(thumb,size=0x38) addr:0x020ddc90
-CARDi_LockResource kind:function(thumb,size=0x5c) addr:0x020ddcc8
-CARDi_UnlockResource kind:function(thumb,size=0x58) addr:0x020ddd24
+CARDi_LockResource kind:function(thumb,size=0x5c) addr:0x020ddcc8 local
+CARDi_UnlockResource kind:function(thumb,size=0x58) addr:0x020ddd24 local
 CARDi_InitCommon kind:function(thumb,size=0xcc) addr:0x020ddd7c
-func_020dde48 kind:function(thumb,size=0xc) addr:0x020dde48
+CARD_IsEnabled kind:function(thumb,size=0xc) addr:0x020dde48
 CARD_CheckEnabled kind:function(thumb,size=0x10) addr:0x020dde54
-func_020dde64 kind:function(thumb,size=0xc) addr:0x020dde64
+CARD_Enable kind:function(thumb,size=0xc) addr:0x020dde64
 CARDi_WaitAsync kind:function(thumb,size=0x3c) addr:0x020dde70
 CARDi_TryWaitAsync kind:function(thumb,size=0x1c) addr:0x020ddeac
 CARD_LockRom kind:function(thumb,size=0x12) addr:0x020ddec8
-func_020ddedc kind:function(thumb,size=0x12) addr:0x020ddedc
+CARD_UnlockRom kind:function(thumb,size=0x12) addr:0x020ddedc
 CARD_LockBackup kind:function(thumb,size=0xc) addr:0x020ddef0
 CARD_UnlockBackup kind:function(thumb,size=0x1a) addr:0x020ddefc
 CARDi_IdentifyBackupCore kind:function(thumb,size=0x274) addr:0x020ddf18
@@ -5968,43 +5970,43 @@ CARD_GetBackupTotalSize kind:function(thumb,size=0xc) addr:0x020de3c0
 CARD_GetBackupSectorSize kind:function(thumb,size=0xc) addr:0x020de3cc
 CARD_GetBackupPageSize kind:function(thumb,size=0xc) addr:0x020de3d8
 CARD_IdentifyBackup kind:function(thumb,size=0xf8) addr:0x020de3e4
-func_020de4dc kind:function(thumb,size=0x8) addr:0x020de4dc
-func_020de4e4 kind:function(thumb,size=0x8) addr:0x020de4e4
-CARDi_ReadFromCache kind:function(thumb,size=0x58) addr:0x020de4ec
-CARDi_SetRomOp kind:function(thumb,size=0x3c) addr:0x020de544
-CARDi_SetCardDma kind:function(thumb,size=0x3c) addr:0x020de580
-CARDi_OnReadCard kind:function(thumb,size=0x9c) addr:0x020de5bc
+CARD_WaitBackupAsync kind:function(thumb,size=0x8) addr:0x020de4dc
+CARD_TryWaitBackupAsync kind:function(thumb,size=0x8) addr:0x020de4e4
+CARDi_ReadFromCache kind:function(thumb,size=0x58) addr:0x020de4ec local
+CARDi_SetRomOp kind:function(thumb,size=0x3c) addr:0x020de544 local
+CARDi_SetCardDma kind:function(thumb,size=0x3c) addr:0x020de580 local
+CARDi_OnReadCard kind:function(thumb,size=0x9c) addr:0x020de5bc local
 CARDi_TryReadCardDma kind:function(thumb,size=0x13c) addr:0x020de658
 CARDi_ReadCard kind:function(thumb,size=0xbc) addr:0x020de794
 CARDi_ReadRomIDCore kind:function(thumb,size=0x48) addr:0x020de850
-CARDi_ReadRomSyncCore kind:function(thumb,size=0x70) addr:0x020de898
+CARDi_ReadRomSyncCore kind:function(thumb,size=0x70) addr:0x020de898 local
 CARDi_ReadRom kind:function(thumb,size=0xbc) addr:0x020de908
 CARD_Init kind:function(thumb,size=0x40) addr:0x020de9c4
-func_020dea04 kind:function(thumb,size=0x8) addr:0x020dea04
-func_020dea0c kind:function(thumb,size=0x8) addr:0x020dea0c
+CARD_WaitRomAsync kind:function(thumb,size=0x8) addr:0x020dea04
+CARDi_GetRomAccessor kind:function(thumb,size=0x8) addr:0x020dea0c
 CARDi_OnFifoRecv kind:function(thumb,size=0x28) addr:0x020dea14
 CARDi_TaskThread kind:function(thumb,size=0x3c) addr:0x020dea3c
 CARDi_Request kind:function(thumb,size=0xdc) addr:0x020dea78
 CARD_InitPulledOutCallback kind:function(thumb,size=0x20) addr:0x020deb54
-CARDi_PulledOutCallback kind:function(thumb,size=0x34) addr:0x020deb74
-func_020deba8 kind:function(thumb,size=0xc) addr:0x020deba8
-func_020debb4 kind:function(thumb,size=0xc) addr:0x020debb4
+CARDi_PulledOutCallback kind:function(thumb,size=0x34) addr:0x020deb74 local
+CARD_SetPulledOutCallback kind:function(thumb,size=0xc) addr:0x020deba8
+CARD_IsPulledOut kind:function(thumb,size=0xc) addr:0x020debb4
 CARD_TerminateForPulledOut kind:function(thumb,size=0x60) addr:0x020debc0
 CARDi_CheckPulledOutCore kind:function(thumb,size=0x40) addr:0x020dec20
-CARDi_SendtoPxi kind:function(thumb,size=0x2e) addr:0x020dec60
+CARDi_SendtoPxi kind:function(thumb,size=0x2e) addr:0x020dec60 local
 WM_Init kind:function(thumb,size=0x1c) addr:0x020dec90
-WmInitCore kind:function(thumb,size=0x138) addr:0x020decac
+WmInitCore kind:function(thumb,size=0x138) addr:0x020decac local
 WM_Finish kind:function(thumb,size=0x48) addr:0x020dede4
 WMi_SetCallbackTable kind:function(thumb,size=0x10) addr:0x020dee2c
-WmGetCommandBuffer4Arm7 kind:function(thumb,size=0x3c) addr:0x020dee3c
+WmGetCommandBuffer4Arm7 kind:function(thumb,size=0x3c) addr:0x020dee3c local
 WMi_SendCommand kind:function(thumb,size=0x7c) addr:0x020dee78
 WMi_SendCommandDirect kind:function(thumb,size=0x4c) addr:0x020deef4
-func_020def40 kind:function(thumb,size=0xc) addr:0x020def40
+WMi_GetSystemWork kind:function(thumb,size=0xc) addr:0x020def40
 WMi_CheckInitialized kind:function(thumb,size=0x14) addr:0x020def4c
 WMi_CheckIdle kind:function(thumb,size=0x30) addr:0x020def60
 WMi_CheckStateEx kind:function(thumb,size=0x50) addr:0x020def90
-WmReceiveFifo kind:function(thumb,size=0x28c) addr:0x020defe0
-WmClearFifoRecvFlag kind:function(thumb,size=0x18) addr:0x020df26c
+WmReceiveFifo kind:function(thumb,size=0x28c) addr:0x020defe0 local
+WmClearFifoRecvFlag kind:function(thumb,size=0x18) addr:0x020df26c local
 WM_GetAID kind:function(thumb,size=0x24) addr:0x020df284
 WM_GetConnectedAIDs kind:function(thumb,size=0x28) addr:0x020df2a8
 WM_SetIndCallback kind:function(thumb,size=0x2e) addr:0x020df2d0
@@ -6021,7 +6023,7 @@ WM_PowerOn kind:function(thumb,size=0x28) addr:0x020df594
 WM_PowerOff kind:function(thumb,size=0x28) addr:0x020df5bc
 WM_Reset kind:function(thumb,size=0x24) addr:0x020df5e4
 WM_SetParentParameter kind:function(thumb,size=0x90) addr:0x020df608
-WmCheckParentParameter kind:function(thumb,size=0x2e) addr:0x020df698
+WmCheckParentParameter kind:function(thumb,size=0x2e) addr:0x020df698 local
 WMi_StartParentEx kind:function(thumb,size=0x3c) addr:0x020df6c8
 WM_StartParent kind:function(thumb,size=0xc) addr:0x020df704
 WM_StartScanEx kind:function(thumb,size=0xd8) addr:0x020df710
@@ -6032,16 +6034,16 @@ WM_StartMP kind:function(thumb,size=0x3c) addr:0x020df994
 WM_SetMPDataToPortEx kind:function(thumb,size=0xcc) addr:0x020df9d0
 WM_StartDataSharing kind:function(thumb,size=0x1c8) addr:0x020dfa9c
 WM_EndDataSharing kind:function(thumb,size=0x34) addr:0x020dfc64
-WmDataSharingSetDataCallback kind:function(thumb,size=0x90) addr:0x020dfc98
-WmDataSharingReceiveCallback_Parent kind:function(thumb,size=0xbc) addr:0x020dfd28
-WmDataSharingReceiveCallback_Child kind:function(thumb,size=0xa4) addr:0x020dfde4
-WmDataSharingReceiveData kind:function(thumb,size=0x8c) addr:0x020dfe88
-WmDataSharingSendDataSet kind:function(thumb,size=0xf8) addr:0x020dff14
-WmGetSharedDataAddress kind:function(thumb,size=0x1e) addr:0x020e000c
+WmDataSharingSetDataCallback kind:function(thumb,size=0x90) addr:0x020dfc98 local
+WmDataSharingReceiveCallback_Parent kind:function(thumb,size=0xbc) addr:0x020dfd28 local
+WmDataSharingReceiveCallback_Child kind:function(thumb,size=0xa4) addr:0x020dfde4 local
+WmDataSharingReceiveData kind:function(thumb,size=0x8c) addr:0x020dfe88 local
+WmDataSharingSendDataSet kind:function(thumb,size=0xf8) addr:0x020dff14 local
+WmGetSharedDataAddress kind:function(thumb,size=0x1e) addr:0x020e000c local
 WM_SetGameInfo kind:function(thumb,size=0x70) addr:0x020e002c
 WM_MeasureChannel kind:function(thumb,size=0x48) addr:0x020e009c
 CTRDGi_InitCommon kind:function(thumb,size=0x28) addr:0x020e00e4
-func_020e010c kind:function(thumb,size=0x1a) addr:0x020e010c
+CTRDG_IsOptionCartridge kind:function(thumb,size=0x1a) addr:0x020e010c
 CTRDGi_IsAgbCartridgeAtInit kind:function(thumb,size=0x10) addr:0x020e0128
 CTRDG_IsExisting kind:function(thumb,size=0xac) addr:0x020e0138
 CTRDGi_ChangeLatestAccessCycle kind:function(thumb,size=0x34) addr:0x020e01e4
@@ -6052,13 +6054,13 @@ CTRDGi_SendtoPxi kind:function(thumb,size=0x2e) addr:0x020e0294
 CTRDG_Enable kind:function(thumb,size=0x38) addr:0x020e02c4
 CTRDG_Init kind:function(thumb,size=0x78) addr:0x020e02fc
 CTRDGi_InitModuleInfo kind:function(thumb,size=0x150) addr:0x020e0374
-CTRDGi_CallbackForInitModuleInfo kind:function(thumb,size=0x1c) addr:0x020e04c4
-CTRDGi_PulledOutCallback kind:function(thumb,size=0x38) addr:0x020e04e0
+CTRDGi_CallbackForInitModuleInfo kind:function(thumb,size=0x1c) addr:0x020e04c4 local
+CTRDGi_PulledOutCallback kind:function(thumb,size=0x38) addr:0x020e04e0 local
 CTRDG_TerminateForPulledOut kind:function(thumb,size=0xe) addr:0x020e0518
-func_020e0528 kind:function(thumb,size=0xc) addr:0x020e0528
+CTRDGi_CallbackForSetPhi kind:function(thumb,size=0xc) addr:0x020e0528 local
 CTRDGi_InitTaskThread kind:function(thumb,size=0x64) addr:0x020e0534
 CTRDGi_InitTaskInfo kind:function(thumb,size=0xc) addr:0x020e0598
-CTRDGi_TaskThread kind:function(thumb,size=0x98) addr:0x020e05a4
+CTRDGi_TaskThread kind:function(thumb,size=0x98) addr:0x020e05a4 local
 MATH_CountLeadingZerosFunc kind:function(arm,size=0x8) addr:0x020e063c
 MATH_CountPopulation kind:function(thumb,size=0x38) addr:0x020e0644
 func_020e067c kind:function(arm,size=0x2f0) addr:0x020e067c
@@ -6361,8 +6363,9 @@ Float_FromInt kind:function(arm,size=0x48) addr:0x020ea840
 func_020ea888 kind:function(arm,size=0x48) addr:0x020ea888
 Float_Mul kind:function(arm,size=0x1e0) addr:0x020ea8d0
 func_020eaabc kind:function(arm,size=0x278) addr:0x020eaabc
-func_020ead34 kind:function(arm,size=0x1c0) addr:0x020ead34
+_ll_mod kind:function(arm,size=0x1c0) addr:0x020ead34
 .L_020ead44 kind:label(arm) addr:0x020ead44
+_ll_sdiv kind:label(arm) addr:0x020ead44
 _ll_udiv kind:function(arm,size=0x48) addr:0x020eaef4
 .L_020eaf00 kind:label(arm) addr:0x020eaf00
 _ll_mul kind:function(arm,size=0x20) addr:0x020eaf3c
@@ -6873,13 +6876,13 @@ pivotUtil_ kind:data(byte[0x24]) addr:0x020efe00 local
 cAdpcmIndexTable kind:data(byte[0x10]) addr:0x020efe24 local
 cAdpcmStepSizeTable kind:data(byte[0xb2]) addr:0x020efe34 local
 data_020efee8 kind:data(any) addr:0x020efee8
-data_020f3ee8 kind:data(any) addr:0x020f3ee8
-data_020f3ef8 kind:data(any) addr:0x020f3ef8
-data_020f3efa kind:data(any) addr:0x020f3efa
-data_020f3efc kind:data(any) addr:0x020f3efc
-SNDi_DecibelTable kind:data(any) addr:0x020f4058
-data_020f4758 kind:data(any) addr:0x020f4758
-data_020f4a2c kind:data(any) addr:0x020f4a2c
+sTexPlttStartAddrTable kind:data(byte[0x10]) addr:0x020f3ee8 local
+sTexStartAddrTable kind:data(byte[0x60]) addr:0x020f3ef8 local
+SNDi_DecibelSquareTable kind:data(byte[0x100]) addr:0x020f3f58
+SNDi_DecibelTable kind:data(byte[0x100]) addr:0x020f4058
+PitchTable kind:data(byte[0x600]) addr:0x020f4158 local
+VolumeTable kind:data(byte[0x2d4]) addr:0x020f4758 local
+fsi_default_command kind:data(byte[0x24]) addr:0x020f4a2c
 __lower_map kind:data(any) addr:0x020f4a50
 data_020f4ad0 kind:data(any) addr:0x020f4ad0
 data_020f4b50 kind:data(any) addr:0x020f4b50
@@ -9340,15 +9343,14 @@ NNS_G3dFuncSbcTable kind:data(byte[0x80]) addr:0x02108154
 calcTexMtx_ kind:data(byte[0x20]) addr:0x021081d4 local
 calcTexMtx_ kind:data(byte[0x20]) addr:0x021081f4 local
 calcTexMtx_ kind:data(byte[0x20]) addr:0x02108214 local
-data_02108234 kind:data(any) addr:0x02108234
-GXi_DmaId kind:data(any) addr:0x02108238
+sIsDispOn kind:data(byte[0x2]) addr:0x02108234 local
+GXi_DmaId kind:data(byte[0x4]) addr:0x02108238
 data_0210823c kind:data(any) addr:0x0210823c
-data_0210824c kind:data(any) addr:0x0210824c
-data_02108250 kind:data(any) addr:0x02108250
-data_02108254 kind:data(any) addr:0x02108254
-data_02108258 kind:data(any) addr:0x02108258
-data_02108284 kind:data(any) addr:0x02108284
-data_02108288 kind:data(any) addr:0x02108288
+OSi_ConsoleTypeCache kind:data(byte[0x4]) addr:0x0210824c local
+@9187 kind:data(byte[0x3]) addr:0x02108250 local
+@8637 kind:data(byte[0x4]) addr:0x02108254 local
+sDayOfYear kind:data(byte[0x30]) addr:0x02108258 local
+cardi_rom_header_addr kind:data(byte[0x4]) addr:0x02108288
 data_0210828c kind:data(any) addr:0x0210828c
 data_021082d8 kind:data(any) addr:0x021082d8
 data_02108324 kind:data(any) addr:0x02108324
@@ -10303,32 +10305,33 @@ sLoadCommandBuffer kind:bss(size=0x180) addr:0x021b4180 local
 sStrmThread kind:bss(size=0x4ec) addr:0x021b4300 local
 sStrmPlayer kind:bss(size=0x5d0) addr:0x021b47ec local
 sDecodeBufferArea kind:bss(size=0x200) addr:0x021b4dc0 local
-data_021b4fc0 kind:bss addr:0x021b4fc0
-data_021b4fc2 kind:bss addr:0x021b4fc2
-data_021b4fc4 kind:bss addr:0x021b4fc4
-data_021b4fc6 kind:bss addr:0x021b4fc6
-data_021b4fc8 kind:bss addr:0x021b4fc8
-data_021b4fca kind:bss addr:0x021b4fca
-data_021b4fcc kind:bss addr:0x021b4fcc
-data_021b4fce kind:bss addr:0x021b4fce
-data_021b4fd0 kind:bss addr:0x021b4fd0
-data_021b4fd2 kind:bss addr:0x021b4fd2
-data_021b4fd4 kind:bss addr:0x021b4fd4
-data_021b4fd6 kind:bss addr:0x021b4fd6
-data_021b4fd8 kind:bss addr:0x021b4fd8
-data_021b4fda kind:bss addr:0x021b4fda
-data_021b4fdc kind:bss addr:0x021b4fdc
-data_021b4fe0 kind:bss addr:0x021b4fe0
-data_021b4ffc kind:bss addr:0x021b4ffc
+sDispMode kind:bss(size=0x2) addr:0x021b4fc0 local
+GXi_VRamLockId kind:bss(size=0x2) addr:0x021b4fc2
+gGXState kind:bss(size=0x1a) addr:0x021b4fc4
+sSubBGExtPltt kind:bss(size=0x4) addr:0x021b4fe0 local
+sOBJExtPlttLCDCBlk kind:bss(size=0x4) addr:0x021b4fe4 local
+sOBJExtPltt kind:bss(size=0x4) addr:0x021b4fe8 local
+sBGExtPlttLCDCOffset kind:bss(size=0x4) addr:0x021b4fec local
+sBGExtPlttLCDCBlk kind:bss(size=0x4) addr:0x021b4ff0 local
+sBGExtPltt kind:bss(size=0x4) addr:0x021b4ff4 local
+sSubOBJExtPltt kind:bss(size=0x4) addr:0x021b4ff8 local
+sClrImg kind:bss(size=0x4) addr:0x021b4ffc local
+sTexLCDCBlk1 kind:bss(size=0x4) addr:0x021b5000 local
+sTexPlttLCDCBlk kind:bss(size=0x4) addr:0x021b5004 local
+sTexPltt kind:bss(size=0x4) addr:0x021b5008 local
+sClrImgLCDCBlk kind:bss(size=0x4) addr:0x021b500c local
+sTex kind:bss(size=0x4) addr:0x021b5010 local
+sTexLCDCBlk2 kind:bss(size=0x4) addr:0x021b5014 local
+sSzTexBlk1 kind:bss(size=0x4) addr:0x021b5018 local
 data_021b501c kind:bss addr:0x021b501c
 data_021b5020 kind:bss addr:0x021b5020
 data_021b5024 kind:bss addr:0x021b5024
 data_021b504c kind:bss addr:0x021b504c
 data_021b5050 kind:bss addr:0x021b5050
 data_021b5054 kind:bss addr:0x021b5054
-data_021b507c kind:bss addr:0x021b507c
+isInitialized$8477 kind:bss(size=0x4) addr:0x021b507c local
 data_021b5080 kind:bss addr:0x021b5080
-data_021b50a4 kind:bss addr:0x021b50a4
+OSi_ThreadInfo kind:bss addr:0x021b50a4
 data_021b50a8 kind:bss addr:0x021b50a8
 data_021b50b4 kind:bss addr:0x021b50b4
 data_021b5100 kind:bss addr:0x021b5100
@@ -10336,73 +10339,95 @@ data_021b5174 kind:bss addr:0x021b5174
 data_021b5180 kind:bss addr:0x021b5180
 data_021b5200 kind:bss addr:0x021b5200
 data_021b52fc kind:bss addr:0x021b52fc
-data_021b5304 kind:bss addr:0x021b5304
+OSiHeapInfo kind:bss(size=0x24) addr:0x021b5304
 data_021b5328 kind:bss addr:0x021b5328
 data_021b532c kind:bss addr:0x021b532c
 data_021b5330 kind:bss addr:0x021b5330
 data_021b5354 kind:bss addr:0x021b5354
-data_021b53d4 kind:bss addr:0x021b53d4
-data_021b53d8 kind:bss addr:0x021b53d8
+OSi_TimerReserved kind:bss(size=0x2) addr:0x021b53d4 local
+OSi_UseTick kind:bss(size=0x2) addr:0x021b53d8 local
+OSi_NeedResetTimer kind:bss(size=0x4) addr:0x021b53dc
+OSi_TickCounter kind:bss(size=0x8) addr:0x021b53e0
 data_021b53e8 kind:bss addr:0x021b53e8
-data_021b53f4 kind:bss addr:0x021b53f4
+OSi_UseVAlarm kind:bss(size=0x2) addr:0x021b53f4 local
+OSi_PreviousVCount kind:bss(size=0x4) addr:0x021b53f8 local
+OSi_VFrameCount kind:bss(size=0x4) addr:0x021b53fc local
+OSi_VAlarmQueue kind:bss(size=0x8) addr:0x021b5400 local
 data_021b5408 kind:bss addr:0x021b5408
-data_021b540c kind:bss addr:0x021b540c
-data_021b5410 kind:bss addr:0x021b5410
+OSi_vramExclusive kind:bss(size=0x4) addr:0x021b540c local
+OSi_vramLockId kind:bss(size=0x12) addr:0x021b5410 local
 data_021b5424 kind:bss addr:0x021b5424
-data_021b5444 kind:bss addr:0x021b5444
-data_021b5448 kind:bss addr:0x021b5448
-data_021b5460 kind:bss addr:0x021b5460
-data_021b5484 kind:bss addr:0x021b5484
-data_021b54c0 kind:bss addr:0x021b54c0
-data_021b5740 kind:bss addr:0x021b5740
-data_021b6ee0 kind:bss addr:0x021b6ee0
-data_021b6f28 kind:bss addr:0x021b6f28
-data_021b6f40 kind:bss addr:0x021b6f40
-data_021b6fa0 kind:bss addr:0x021b6fa0
-data_021b6fa4 kind:bss addr:0x021b6fa4
-data_021b6fa8 kind:bss addr:0x021b6fa8
-data_021b7028 kind:bss addr:0x021b7028
-data_021b702c kind:bss addr:0x021b702c
-data_021b7038 kind:bss addr:0x021b7038
-data_021b703c kind:bss addr:0x021b703c
-data_021b7054 kind:bss addr:0x021b7054
-data_021b70b0 kind:bss addr:0x021b70b0
-data_021b70cc kind:bss addr:0x021b70cc
-data_021b70ec kind:bss addr:0x021b70ec
-data_021b70f8 kind:bss addr:0x021b70f8
-data_021b7104 kind:bss addr:0x021b7104
-data_021b7108 kind:bss addr:0x021b7108
-data_021b7118 kind:bss addr:0x021b7118
-data_021b7130 kind:bss addr:0x021b7130
-data_021b7134 kind:bss addr:0x021b7134
-data_021b7158 kind:bss addr:0x021b7158
-data_021b7164 kind:bss addr:0x021b7164
-data_021b71a0 kind:bss addr:0x021b71a0
-data_021b71c0 kind:bss addr:0x021b71c0
-data_021b7220 kind:bss addr:0x021b7220
-data_021b7320 kind:bss addr:0x021b7320
-data_021b7840 kind:bss addr:0x021b7840
-data_021b7860 kind:bss addr:0x021b7860
-data_021b7a80 kind:bss addr:0x021b7a80
-data_021b7aa0 kind:bss addr:0x021b7aa0
-data_021b7aa8 kind:bss addr:0x021b7aa8
-data_021b7ac8 kind:bss addr:0x021b7ac8
-data_021b7ae0 kind:bss addr:0x021b7ae0
-data_021b7af0 kind:bss addr:0x021b7af0
-data_021b7b04 kind:bss addr:0x021b7b04
-data_021b7b14 kind:bss addr:0x021b7b14
-data_021b7b20 kind:bss addr:0x021b7b20
-data_021b7b40 kind:bss addr:0x021b7b40
-data_021b8540 kind:bss addr:0x021b8540
-data_021b85c0 kind:bss addr:0x021b85c0
-data_021b85c4 kind:bss addr:0x021b85c4
-data_021b85e0 kind:bss addr:0x021b85e0
-data_021b8600 kind:bss addr:0x021b8600
-data_021b8604 kind:bss addr:0x021b8604
-data_021b86c0 kind:bss addr:0x021b86c0
-data_021b87a8 kind:bss addr:0x021b87a8
-data_021b87ac kind:bss addr:0x021b87ac
-data_021b87c8 kind:bss addr:0x021b87c8
+initialized$8453 kind:bss(size=0x4) addr:0x021b5444 local
+sSndMutex kind:bss(size=0x18) addr:0x021b5448 local
+sFreeList kind:bss(size=0x4) addr:0x021b5460 local
+sFinishedTag kind:bss(size=0x4) addr:0x021b5464 local
+sReserveList kind:bss(size=0x4) addr:0x021b5468 local
+sReserveListEnd kind:bss(size=0x4) addr:0x021b546c local
+sFreeListEnd kind:bss(size=0x4) addr:0x021b5470 local
+sWaitingCommandListQueueRead kind:bss(size=0x4) addr:0x021b5474 local
+sWaitingCommandListQueueWrite kind:bss(size=0x4) addr:0x021b5478 local
+sWaitingCommandListCount kind:bss(size=0x4) addr:0x021b547c local
+sCurrentTag kind:bss(size=0x4) addr:0x021b5480 local
+sWaitingCommandListQueue kind:bss(size=0x24) addr:0x021b5484 local
+sSharedWork kind:bss(size=0x280) addr:0x021b54c0 local
+sCommandArray kind:bss(size=0x1800) addr:0x021b5740 local
+sCallbackTable kind:bss(size=0x60) addr:0x021b6f40 local
+SNDi_SharedWork kind:bss(size=0x4) addr:0x021b6fa0
+FifoCtrlInit kind:bss(size=0x2) addr:0x021b6fa4 local
+FifoRecvCallbackTable kind:bss(size=0x80) addr:0x021b6fa8 local
+arc_list kind:bss(size=0x4) addr:0x021b7028 local
+current_dir_pos kind:bss(size=0xc) addr:0x021b702c
+is_init kind:bss(size=0x4) addr:0x021b7038 local
+fsi_card_lock_id kind:bss(size=0x4) addr:0x021b703c
+fsi_default_dma_no kind:bss(size=0x4) addr:0x021b7040 local
+fsi_ovt9 kind:bss(size=0x8) addr:0x021b7044
+fsi_ovt7 kind:bss(size=0x8) addr:0x021b704c
+fsi_arc_rom kind:bss(size=0x5c) addr:0x021b7054
+initial$8526 kind:bss(size=0x2) addr:0x021b70b0 local
+tpState kind:bss(size=0x38) addr:0x021b70b4 local
+PMi_IsInit kind:bss(size=0x2) addr:0x021b70ec local
+PMi_SyncFlag kind:bss(size=0x4) addr:0x021b70f0 local
+PMi_SleepEndFlag kind:bss(size=0x4) addr:0x021b70f4 local
+PMi_PreSleepCallbackList kind:bss(size=0x4) addr:0x021b70f8 local
+PMi_LCDCount kind:bss(size=0x4) addr:0x021b70fc local
+sAmpSwitch kind:bss(size=0x4) addr:0x021b7100 local
+PMi_PostSleepCallbackList kind:bss(size=0x4) addr:0x021b7104 local
+PMi_Work kind:bss(size=0x10) addr:0x021b7108 local
+PMi_Mutex kind:bss(size=0x18) addr:0x021b7118 local
+PMi_RegisterBuffer kind:bss(size=0x28) addr:0x021b7130 local
+rtcInitialized kind:bss(size=0x2) addr:0x021b7158 local
+rtcTickInitialized kind:bss(size=0x2) addr:0x021b715a local
+rtcInitialTotalTicks kind:bss(size=0x8) addr:0x021b715c local
+rtcWork kind:bss(size=0x24) addr:0x021b7164 local
+CARDi_EnableFlag kind:bss(size=0x4) addr:0x021b71a0 local
+cardi_arg kind:bss(size=0x60) addr:0x021b71c0 local
+cardi_common kind:bss(size=0x220) addr:0x021b7220
+cardi_thread_stack kind:bss(size=0x400) addr:0x021b7440 local
+cardi_rom_base kind:bss(size=0x4) addr:0x021b7840
+rom_stat kind:bss(size=0x220) addr:0x021b7860
+CARDi_IsPulledOutFlag kind:bss(size=0x4) addr:0x021b7a80 local
+CARD_UserCallback kind:bss(size=0x4) addr:0x021b7a84 local
+wmInitialized kind:bss(size=0x2) addr:0x021b7aa0 local
+wm9buf kind:bss(size=0x4) addr:0x021b7aa4 local
+bufMsgQ kind:bss(size=0x20) addr:0x021b7aa8 local
+bufMsg kind:bss(size=0x28) addr:0x021b7ac8 local
+cb_Port$8687 kind:bss(size=0x44) addr:0x021b7af0 local
+fifoBuf kind:bss(size=0xa00) addr:0x021b7b40 local
+tmpUserGameInfoBuf kind:bss(size=0x80) addr:0x021b8540 local
+CTRDGi_EnableFlag kind:bss(size=0x4) addr:0x021b85c0 local
+CTRDGi_Work kind:bss(size=0x4) addr:0x021b85c4
+isInitialized$8475 kind:bss(size=0x4) addr:0x021b85e0 local
+CTRDGi_Lock kind:bss(size=0x4) addr:0x021b85e4 local
+isInitialized$8463 kind:bss(size=0x4) addr:0x021b85e8 local
+ctrdg_already_pullout kind:bss(size=0x4) addr:0x021b85ec local
+skipCheck kind:bss(size=0x4) addr:0x021b85f0 local
+isCartridgePullOut kind:bss(size=0x4) addr:0x021b85f4 local
+CTRDG_UserCallback kind:bss(size=0x4) addr:0x021b85f8
+headerBuf kind:bss(size=0xc0) addr:0x021b8600 local
+CTRDGTaskList$8471 kind:bss(size=0xe8) addr:0x021b86c0 local
+ctrdgi_task_work kind:bss(size=0x4) addr:0x021b87a8 local
+ctrdgi_task_list kind:bss(size=0x24) addr:0x021b87ac local
+ctrdg_task_stack kind:bss(size=0x400) addr:0x021b87d0
 data_021b8bd0 kind:bss addr:0x021b8bd0
 data_021b8be0 kind:bss addr:0x021b8be0
 data_021b8ce0 kind:bss addr:0x021b8ce0

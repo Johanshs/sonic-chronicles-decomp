@@ -70,6 +70,29 @@ done
 
 echo "== 3. lcf"
 dsd lcf -c "$CFG"
+# O jogo tem funções de biblioteca que ninguém chama (OS_DisableProtectionUnit): o
+# linker da Nintendo as manteve, o nosso (-dead) jogaria fora. FORCE_ACTIVE no .lcf
+# segura as funções globais dos arquivos ligados do fonte que existem no jogo. (A
+# opção -force_active da linha de comando não serve: ela aborta passando de ~256
+# caracteres.)
+python3 -c '
+import glob, re
+from elftools.elf.elffile import ELFFile
+jogo = set()
+for l in open("config/YWSE/arm9/symbols.txt"):
+    m = re.match(r"(\S+) kind:function", l)
+    if m and not l.rstrip().endswith(" local"):
+        jogo.add(m.group(1))
+nomes = []
+for f in sorted(glob.glob("work/build/NitroS*/**/*.o", recursive=True)):
+    for s in ELFFile(open(f, "rb")).get_section_by_name(".symtab").iter_symbols():
+        if (s["st_info"]["type"] == "STT_FUNC" and s["st_info"]["bind"] == "STB_GLOBAL"
+                and s["st_shndx"] != "SHN_UNDEF" and s.name in jogo):
+            nomes.append(s.name)
+if nomes:
+    lcf = open("work/build/arm9.lcf").read()
+    bloco = "FORCE_ACTIVE {\n    " + ",\n    ".join(nomes) + "\n}\n\n"
+    open("work/build/arm9.lcf", "w").write(lcf.replace("KEEP_SECTION {", bloco + "KEEP_SECTION {", 1))'
 
 echo "== 4. link (mwldarm)"
 # -dead: descarta o que ninguém usa; -m Entry: ponto de entrada; -map: gera

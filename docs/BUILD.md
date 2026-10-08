@@ -107,11 +107,31 @@ instruções diferentes e `R` nos bytes que o linker ainda vai preencher.
 
 ## As bibliotecas da Nintendo, ligadas do fonte
 
-A NitroSystem inteira (de `0x020c8278` a `0x020d4394`) não vem mais do assembly
-cortado: o build compila os 59 arquivos `.c` dela (o fonte público, veja
-[COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida)) e liga os `.o`, e a
-ROM continua idêntica. Na primeira vez, `montar_rom.sh` baixa e compila a biblioteca
-sozinho (`nitrosdk.sh` e `nitrosystem.sh`, para `work/bibliotecas/`).
+A NitroSystem inteira (de `0x020c8278` a `0x020d4394`, 59 arquivos) e 73 dos 87
+arquivos do NitroSDK que o jogo usa não vêm mais do assembly cortado: o build compila
+os `.c` do fonte público (veja [COMPILADOR.md](COMPILADOR.md#a-nitrosystem-100-da-região-reconhecida))
+e liga os `.o`, e a ROM continua idêntica. São 90 KB, **9,3% do código do ARM9**. Na
+primeira vez, `montar_rom.sh` baixa e compila as bibliotecas sozinho (`nitrosdk.sh` e
+`nitrosystem.sh`, para `work/bibliotecas/`).
+
+Os 14 arquivos do SDK que ainda vêm do assembly, e por quê:
+
+| Motivo | Arquivos |
+|---|---|
+| uma função no meio não bate com o fonte | `card_backup.c`, `gx_vramcnt.c` |
+| têm funções no ITCM ou dados no DTCM (seriam ligados em dois módulos) | `mi_dma.c`, `mi_dma_gxcommand.c`, `os_cache.c`, `os_irqHandler.c`, `os_irqTable.c`, `os_reset.c`, `os_china.c` (seção `.version`) |
+| usam valores que o linker da Nintendo calculava (`SDK_SYS_STACKSIZE`, o começo da DTCM) ou variáveis do DTCM | `os_alarm.c`, `os_arena.c`, `os_exception.c`, `os_interrupt.c`, `os_thread.c` |
+
+Duas coisas no link que só apareceram com o SDK:
+
+- **Funções que ninguém chama.** O jogo tem `OS_DisableProtectionUnit`, que nada chama.
+  O linker original a manteve; o nosso, com `-dead`, joga fora. `montar_rom.sh` põe um
+  bloco `FORCE_ACTIVE` no `.lcf` com as funções globais dos arquivos ligados. (A opção
+  `-force_active` da linha de comando aborta, sem mensagem, quando a lista passa de
+  ~256 caracteres.)
+- **Funções "weak".** `OS_Terminate` e `OS_Halt` são declaradas fracas no SDK (o jogo
+  poderia ter a sua própria versão). O `mwcc` grava isso com um código próprio (14), e
+  `symbols.txt` precisa dizer `weak`.
 
 Quem escreve essas entradas em `delinks.txt` é `decomp/tools/ligar_bibliotecas.py`:
 

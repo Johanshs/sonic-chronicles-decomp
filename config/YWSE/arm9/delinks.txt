@@ -15,6 +15,7 @@ src/Aurora/ResourceHash.cpp:
     complete
     .text       start:0x02009b78 end:0x02009bbc
 
+
 NitroSystem/libraries/fnd/src/list.c:
     complete
     .text       start:0x020c8278 end:0x020c838c
@@ -279,3 +280,333 @@ NitroSystem/libraries/snd/src/seqdata.c:
 NitroSystem/libraries/snd/src/fader.c:
     complete
     .text       start:0x020d4330 end:0x020d4394
+
+NitroSDK/libraries/fx/src/fx_mtx22.c:
+    complete
+    .text       start:0x020d4394 end:0x020d4520
+
+NitroSDK/libraries/fx/src/fx_mtx33.c:
+    complete
+    .text       start:0x020d4520 end:0x020d4a30
+
+NitroSDK/libraries/fx/src/fx_mtx43.c:
+    complete
+    .text       start:0x020d4a30 end:0x020d52e4
+
+NitroSDK/libraries/fx/src/fx_mtx44.c:
+    complete
+    .text       start:0x020d52e4 end:0x020d5cfc
+
+NitroSDK/libraries/fx/src/fx_cp.c:
+    complete
+    .text       start:0x020d5cfc end:0x020d5dfc
+
+NitroSDK/libraries/fx/src/fx_vec.c:
+    complete
+    .text       start:0x020d5dfc end:0x020d60d0
+
+NitroSDK/libraries/fx/src/fx.c:
+    complete
+    .text       start:0x020d60d0 end:0x020d610c
+
+NitroSDK/libraries/gx/src/gx.c:
+    complete
+    .text       start:0x020d610c end:0x020d6374
+    .data       start:0x02108234 end:0x0210823c
+    .bss        start:0x021b4fc0 end:0x021b4fc4
+
+NitroSDK/libraries/gx/src/gxstate.c:
+    complete
+    .text       start:0x020d6374 end:0x020d63a8
+    .bss        start:0x021b4fc4 end:0x021b4fe0
+
+NitroSDK/libraries/gx/src/gx_bgcnt.c:
+    complete
+    .text       start:0x020d6c20 end:0x020d6eb4
+
+NitroSDK/libraries/gx/src/g2.c:
+    complete
+    .text       start:0x020d6eb4 end:0x020d6f9c
+
+NitroSDK/libraries/gx/src/g3imm.c:
+    complete
+    .text       start:0x020d6f9c end:0x020d6fd8
+
+NitroSDK/libraries/gx/src/g3x.c:
+    complete
+    .text       start:0x020d6fd8 end:0x020d72dc
+
+NitroSDK/libraries/gx/src/gx_load2d.c:
+    complete
+    .text       start:0x020d72dc end:0x020d7774
+    .bss        start:0x021b4fe0 end:0x021b4ffc
+
+NitroSDK/libraries/gx/src/gx_load3d.c:
+    complete
+    .text       start:0x020d7774 end:0x020d79b8
+    .rodata     start:0x020f3ee8 end:0x020f3f58
+    .bss        start:0x021b4ffc end:0x021b501c
+
+NitroSDK/libraries/gx/src/gxasm.c:
+    complete
+    .text       start:0x020d79b8 end:0x020d79dc
+
+NitroSDK/libraries/os/src/os_spinLock.c:
+    complete
+    .text       start:0x020d7cec end:0x020d7f9c
+    .bss        start:0x021b507c end:0x021b5080
+
+NitroSDK/libraries/os/src/os_context.c:
+    complete
+    .text       start:0x020d8604 end:0x020d8718
+
+NitroSDK/libraries/os/src/os_emulator.c:
+    complete
+    .text       start:0x020d8718 end:0x020d872c
+    .data       start:0x0210824c end:0x02108250
+
+NitroSDK/libraries/os/src/os_message.c:
+    complete
+    .text       start:0x020d872c end:0x020d8864
+
+NitroSDK/libraries/os/src/os_mutex.c:
+    complete
+    .text       start:0x020d8864 end:0x020d89ac
+
+NitroSDK/libraries/os/src/os_init.c:
+    complete
+    .text       start:0x020d8aa8 end:0x020d8b0c
+
+NitroSDK/libraries/os/src/os_alloc.c:
+    complete
+    .text       start:0x020d8d80 end:0x020d8fdc
+    .bss        start:0x021b5304 end:0x021b5328
+
+NitroSDK/libraries/os/src/os_tcm.c:
+    complete
+    .text       start:0x020d8fdc end:0x020d8ff0
+
+NitroSDK/libraries/os/src/os_protectionUnit.c:
+    complete
+    .text       start:0x020d8ff0 end:0x020d9010
+
+NitroSDK/libraries/os/src/os_protectionRegion.c:
+    complete
+    .text       start:0x020d9010 end:0x020d9034
+
+NitroSDK/libraries/os/src/os_timer.c:
+    complete
+    .text       start:0x020d9224 end:0x020d9238
+    .bss        start:0x021b53d4 end:0x021b53d8
+
+NitroSDK/libraries/os/src/os_tick.c:
+    complete
+    .text       start:0x020d9238 end:0x020d9344
+    .bss        start:0x021b53d8 end:0x021b53e8
+
+NitroSDK/libraries/os/src/os_valarm.c:
+    complete
+    .text       start:0x020d9644 end:0x020d966c
+    .bss        start:0x021b53f4 end:0x021b5408
+
+NitroSDK/libraries/os/src/os_system.c:
+    complete
+    .text       start:0x020d966c end:0x020d9710
+
+NitroSDK/libraries/os/src/os_ownerInfo.c:
+    complete
+    .text       start:0x020d9880 end:0x020d98ec
+
+NitroSDK/libraries/os/src/os_vramExclusive.c:
+    complete
+    .text       start:0x020d98ec end:0x020d996c
+    .bss        start:0x021b540c end:0x021b5424
+
+NitroSDK/libraries/os/src/os_terminate_proc.c:
+    complete
+    .text       start:0x020d996c end:0x020d9984
+
+NitroSDK/libraries/mi/src/mi_wram.c:
+    complete
+    .text       start:0x020d9984 end:0x020d9990
+
+NitroSDK/libraries/mi/src/mi_memory.c:
+    complete
+    .text       start:0x020d9f28 end:0x020da35c
+
+NitroSDK/libraries/mi/src/mi_swap.c:
+    complete
+    .text       start:0x020da35c end:0x020da364
+
+NitroSDK/libraries/mi/src/mi_uncompress.c:
+    complete
+    .text       start:0x020da364 end:0x020da5c8
+
+NitroSDK/libraries/mi/src/mi_dma_card.c:
+    complete
+    .text       start:0x020da5c8 end:0x020da618
+
+NitroSDK/libraries/mi/src/mi_init.c:
+    complete
+    .text       start:0x020da618 end:0x020da628
+
+NitroSDK/libraries/snd/src/snd_interface.c:
+    complete
+    .text       start:0x020da628 end:0x020da8a0
+
+NitroSDK/libraries/snd/src/snd_main.c:
+    complete
+    .text       start:0x020da8a0 end:0x020da8e8
+    .bss        start:0x021b5444 end:0x021b5460
+
+NitroSDK/libraries/snd/src/snd_command.c:
+    complete
+    .text       start:0x020da8e8 end:0x020dad80
+    .bss        start:0x021b5460 end:0x021b6f40
+
+NitroSDK/libraries/snd/src/snd_alarm.c:
+    complete
+    .text       start:0x020dad80 end:0x020dadfc
+    .bss        start:0x021b6f40 end:0x021b6fa0
+
+NitroSDK/libraries/snd/src/snd_work.c:
+    complete
+    .text       start:0x020dadfc end:0x020dae78
+    .bss        start:0x021b6fa0 end:0x021b6fa4
+
+NitroSDK/libraries/snd/src/snd_util.c:
+    complete
+    .text       start:0x020dae78 end:0x020daecc
+    .rodata     start:0x020f3f58 end:0x020f4a2c
+
+NitroSDK/libraries/snd/src/snd_bank.c:
+    complete
+    .text       start:0x020daecc end:0x020db124
+
+NitroSDK/libraries/pxi/src/pxi_fifo.c:
+    complete
+    .text       start:0x020db12c end:0x020db378
+    .bss        start:0x021b6fa4 end:0x021b7028
+
+NitroSDK/libraries/fs/src/fs_command.c:
+    complete
+    .text       start:0x020db378 end:0x020db4cc
+
+NitroSDK/libraries/fs/src/fs_command_default.c:
+    complete
+    .text       start:0x020db4cc end:0x020dbaf4
+    .rodata     start:0x020f4a2c end:0x020f4a50
+    .data       start:0x02108250 end:0x02108254
+
+NitroSDK/libraries/fs/src/fs_archive.c:
+    complete
+    .text       start:0x020dbaf4 end:0x020dc24c
+    .bss        start:0x021b7028 end:0x021b7038
+
+NitroSDK/libraries/fs/src/fs_file.c:
+    complete
+    .text       start:0x020dc24c end:0x020dc5ec
+    .bss        start:0x021b7038 end:0x021b703c
+
+NitroSDK/libraries/fs/src/fs_rom.c:
+    complete
+    .text       start:0x020dc5ec end:0x020dc7a0
+    .data       start:0x02108254 end:0x02108258
+    .bss        start:0x021b703c end:0x021b70b0
+
+NitroSDK/libraries/cp/src/cp_context.c:
+    complete
+    .text       start:0x020dc7a0 end:0x020dc81c
+
+NitroSDK/libraries/spi/src/tp.c:
+    complete
+    .text       start:0x020dc81c end:0x020dcdc4
+    .bss        start:0x021b70b0 end:0x021b70ec
+
+NitroSDK/libraries/spi/src/pm.c:
+    complete
+    .text       start:0x020dcdc4 end:0x020dd550
+    .bss        start:0x021b70ec end:0x021b7158
+
+NitroSDK/libraries/rtc/src/external.c:
+    complete
+    .text       start:0x020dd550 end:0x020dd9f0
+    .bss        start:0x021b7158 end:0x021b7188
+
+NitroSDK/libraries/rtc/src/internal.c:
+    complete
+    .text       start:0x020dd9f0 end:0x020dda34
+
+NitroSDK/libraries/rtc/src/convert.c:
+    complete
+    .text       start:0x020dda34 end:0x020ddc90
+    .data       start:0x02108258 end:0x02108288
+
+NitroSDK/libraries/card/src/card_common.c:
+    complete
+    .text       start:0x020ddc90 end:0x020ddf18
+    .bss        start:0x021b71a0 end:0x021b7840
+
+NitroSDK/libraries/card/src/card_spi.c:
+    complete
+    .text       start:0x020ddf18 end:0x020de18c
+
+NitroSDK/libraries/card/src/card_rom.c:
+    complete
+    .text       start:0x020de4ec end:0x020dea14
+    .data       start:0x02108288 end:0x0210828c
+    .bss        start:0x021b7840 end:0x021b7a80
+
+NitroSDK/libraries/card/src/card_request.c:
+    complete
+    .text       start:0x020dea14 end:0x020deb54
+
+NitroSDK/libraries/card/src/card_pullOut.c:
+    complete
+    .text       start:0x020deb54 end:0x020dec90
+    .bss        start:0x021b7a80 end:0x021b7a88
+
+NitroSDK/libraries/wm/src/wm_system.c:
+    complete
+    .text       start:0x020dec90 end:0x020df2d0
+    .bss        start:0x021b7aa0 end:0x021b8540
+
+NitroSDK/libraries/wm/src/wm_sync.c:
+    complete
+    .text       start:0x020df2d0 end:0x020df524
+
+NitroSDK/libraries/wm/src/wm_standard.c:
+    complete
+    .text       start:0x020df524 end:0x020df894
+
+NitroSDK/libraries/wm/src/wm_mp.c:
+    complete
+    .text       start:0x020df894 end:0x020dfa9c
+
+NitroSDK/libraries/wm/src/wm_ds.c:
+    complete
+    .text       start:0x020dfa9c end:0x020e002c
+
+NitroSDK/libraries/wm/src/wm_etc.c:
+    complete
+    .text       start:0x020e002c end:0x020e00e4
+    .bss        start:0x021b8540 end:0x021b85c0
+
+NitroSDK/libraries/ctrdg/src/ctrdg.c:
+    complete
+    .text       start:0x020e00e4 end:0x020e02fc
+    .bss        start:0x021b85c0 end:0x021b85c8
+
+NitroSDK/libraries/ctrdg/src/ctrdg_proc.c:
+    complete
+    .text       start:0x020e02fc end:0x020e0534
+    .bss        start:0x021b85e0 end:0x021b87a8
+
+NitroSDK/libraries/ctrdg/src/ctrdg_task.c:
+    complete
+    .text       start:0x020e0534 end:0x020e063c
+    .bss        start:0x021b87a8 end:0x021b8bd0
+
+NitroSDK/libraries/math/src/math.c:
+    complete
+    .text       start:0x020e063c end:0x020e067c

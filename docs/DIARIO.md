@@ -245,6 +245,12 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   tabela de constantes, como ponteiro para a variável `static` `sDriverInfo` do som. Uma
   variável `static` não pode ser usada de outro arquivo, então era só um número que
   parecia endereço. Saiu da lista de relocações.
+- **O NitroSDK também.** 73 dos 87 arquivos do SDK passaram a vir do fonte, e a ROM
+  continua idêntica. Com a NitroSystem, são 90 KB do ARM9 (9,3%) saindo de código C.
+  O último obstáculo foi o linker jogar fora `OS_DisableProtectionUnit`, que ninguém
+  chama mas o jogo tem. A opção `-force_active` resolvia com um nome e falhava com a lista
+  inteira. Testando listas de tamanhos diferentes, o limite apareceu: uns 256 caracteres. A saída foi o
+  mesmo pedido dentro do arquivo do linker (`FORCE_ACTIVE` no `.lcf`).
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

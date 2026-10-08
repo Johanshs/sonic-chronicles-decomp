@@ -61,6 +61,12 @@ def no_meio_de_funcao(end):
     return i >= 0 and FUNCOES[i][0] < end < FUNCOES[i][1]
 
 
+def escopo(s):
+    """"local" (static), "weak" (SDK_WEAK_SYMBOL: pode ser trocada pelo jogo) ou "".
+    O mwcc grava as "weak" com o código 14, específico da Metrowerks."""
+    return {"STB_LOCAL": "local", "STB_WEAK": "weak", 14: "weak"}.get(s["st_info"]["bind"], "")
+
+
 class Objeto:
     """Um .o compilado: funções, seções de dados, símbolos e relocações."""
 
@@ -84,12 +90,12 @@ class Objeto:
                 self.rels.setdefault(s.header.sh_info, []).extend(
                     (r["r_offset"], r["r_info_type"], r["r_info_sym"], r.entry.get("r_addend", 0))
                     for r in s.iter_relocations())
-        # onde cada função está no .o: nome -> (índice da seção, início, tamanho, local?)
+        # onde cada função está no .o: nome -> (índice da seção, início, tamanho, escopo)
         self.onde = {}
         for s in self.simbolos:
             if s["st_info"]["type"] == "STT_FUNC" and isinstance(s["st_shndx"], int):
                 self.onde[s.name] = (s["st_shndx"], s["st_value"] & ~1, s["st_size"],
-                                     s["st_info"]["bind"] == "STB_LOCAL")
+                                     escopo(s))
 
 
 def dividir(objs, de, ate, conhecidos):
@@ -416,7 +422,7 @@ def main():
     for end, nomes in fora.items():
         for n in nomes:
             por_nome.setdefault(n, set()).add(end)
-    renomear, apelidos = {}, []                     # renomear: endereço -> (nome, local?, seção)
+    renomear, apelidos = {}, []                     # renomear: endereço -> (nome, escopo, seção)
     for end, nomes in sorted(fora.items()):
         # dois nomes para a mesma função (_ll_mul e _ull_mul): o segundo vira um rótulo
         n, *outros = sorted(nomes, key=lambda x: (x not in ENDERECOS, x))
@@ -426,7 +432,7 @@ def main():
         elif ENDERECOS.get(n, end) != end:
             problemas.append(f"{n}: o jogo chama {end:#x}, mas symbols.txt diz {ENDERECOS[n]:#x}")
         else:
-            renomear[end] = (n, False, "fora")
+            renomear[end] = (n, "", "fora")
     conhecidos = dict(ENDERECOS)
     conhecidos.update({n: end for end, (n, _, _) in renomear.items()})
 
@@ -453,11 +459,11 @@ def main():
             objetos = sorted((s["st_value"], s) for s in o.simbolos if s["st_shndx"] == sec
                              and s.name and s["st_info"]["type"] == "STT_OBJECT")
             for off, s in objetos:
-                renomear[base + off] = (s.name, s["st_info"]["bind"] == "STB_LOCAL", nome_sec)
+                renomear[base + off] = (s.name, escopo(s), nome_sec)
                 tamanhos[base + off] = s["st_size"]
             # o dsd corta os dados nos símbolos: o começo de cada seção precisa de um
             if base not in renomear:
-                renomear[base] = (f"{nome_sec[1:]}_{base:08x}", True, nome_sec)
+                renomear[base] = (f"{nome_sec[1:]}_{base:08x}", "local", nome_sec)
                 tamanhos[base] = objetos[0][0] if objetos else tam_sec
         internos.update(apontam_para_dentro(o, funcs, bases))
     sem_par = [f"{e:#x} {n}" for e, _, o, n in seq if o is None]
@@ -515,7 +521,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
                                            and dentro(int(re.search(r"addr:(0x[0-9a-f]+)", l).group(1), 16)))]
         removidos += antes - len(linhas)
         for i, linha in enumerate(linhas):
-            m = re.match(r"(\S+) (kind:\S+(?: \S+)*?) addr:(0x[0-9a-f]+)( local)?$", linha)
+            m = re.match(r"(\S+) (kind:\S+(?: \S+)*?) addr:(0x[0-9a-f]+)( local| weak)?$", linha)
             if not m:
                 continue
             end = int(m.group(3), 16)
@@ -526,7 +532,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
                     # já tem um nome dado à mão (IntDivMod): o do fonte entra como rótulo
                     apelidos.append((end, nome))
                     continue
-                novo = f"{nome} {tipo(end, sec, m.group(2))} addr:{m.group(3)}" + (" local" if local else "")
+                novo = f"{nome} {tipo(end, sec, m.group(2))} addr:{m.group(3)}" + (f" {local}" if local else "")
                 if novo != linha:
                     linhas[i] = novo
                     trocados += 1
@@ -543,7 +549,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
         elif end not in vistos and (end < 0x020f5260 and sec == "fora" or end < BASE):
             print(f"   AVISO: {nome} em {end:#x} não tem símbolo no jogo; não foi criado")
         elif end not in vistos:
-            novos.append((end, f"{nome} {tipo(end, sec, None)} addr:{end:#010x}" + (" local" if local else "")))
+            novos.append((end, f"{nome} {tipo(end, sec, None)} addr:{end:#010x}" + (f" {local}" if local else "")))
     existentes = set(linhas)
     for end, a in apelidos:
         linha = f"{a} kind:label({'thumb' if end in THUMB else 'arm'}) addr:{end:#010x}"
@@ -576,7 +582,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
             de, alvo = int(m.group(1), 16), int(m.group(2), 16)
             base = simbolos_ok[bisect.bisect_right(simbolos_ok, alvo) - 1]
             nome, local, _ = renomear[base]
-            if local and not any(a <= de < b for a, b in faixas):
+            if local == "local" and not any(a <= de < b for a, b in faixas):
                 # uma variável "static" só pode ser usada dentro do próprio arquivo: de
                 # fora, a "relocação" era um número que parecia endereço (o dsd init
                 # chuta). Sai da lista, e os bytes ficam como estão
