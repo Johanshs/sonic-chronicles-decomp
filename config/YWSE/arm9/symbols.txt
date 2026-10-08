@@ -5611,20 +5611,20 @@ OSi_FreeCardBus kind:function(thumb,size=0x10) addr:0x020d7ed8 local
 OS_ReadOwnerOfLockWord kind:function(thumb,size=0x4) addr:0x020d7ee8
 OS_GetLockID kind:function(arm,size=0x68) addr:0x020d7eec
 OS_ReleaseLockID kind:function(arm,size=0x48) addr:0x020d7f54
-OSi_GetUnusedThreadId kind:function(thumb,size=0x10) addr:0x020d7f9c
-OSi_InsertLinkToQueue kind:function(thumb,size=0x5a) addr:0x020d7fac
-OSi_RemoveLinkFromQueue kind:function(thumb,size=0x22) addr:0x020d8008
-OSi_RemoveSpecifiedLinkFromQueue kind:function(thumb,size=0x3e) addr:0x020d802c
+OSi_GetUnusedThreadId kind:function(thumb,size=0x10) addr:0x020d7f9c local
+OSi_InsertLinkToQueue kind:function(thumb,size=0x5a) addr:0x020d7fac local
+OSi_RemoveLinkFromQueue kind:function(thumb,size=0x22) addr:0x020d8008 local
+OSi_RemoveSpecifiedLinkFromQueue kind:function(thumb,size=0x3e) addr:0x020d802c local
 OSi_RemoveMutexLinkFromQueue kind:function(thumb,size=0x1c) addr:0x020d806c
-OSi_InsertThreadToList kind:function(thumb,size=0x38) addr:0x020d8088
-OSi_RemoveThreadFromList kind:function(thumb,size=0x2c) addr:0x020d80c0
-OSi_RescheduleThread kind:function(thumb,size=0x74) addr:0x020d80ec
+OSi_InsertThreadToList kind:function(thumb,size=0x38) addr:0x020d8088 local
+OSi_RemoveThreadFromList kind:function(thumb,size=0x2c) addr:0x020d80c0 local
+OSi_RescheduleThread kind:function(thumb,size=0x74) addr:0x020d80ec local
 OS_InitThread kind:function(thumb,size=0xe0) addr:0x020d8160
 OS_CreateThread kind:function(thumb,size=0xd8) addr:0x020d8240
 OS_ExitThread kind:function(thumb,size=0x18) addr:0x020d8318
-OSi_ExitThread_ArgSpecified kind:function(thumb,size=0x3c) addr:0x020d8330
-OSi_ExitThread kind:function(thumb,size=0x28) addr:0x020d836c
-OSi_ExitThread_Destroy kind:function(thumb,size=0x44) addr:0x020d8394
+OSi_ExitThread_ArgSpecified kind:function(thumb,size=0x3c) addr:0x020d8330 local
+OSi_ExitThread kind:function(thumb,size=0x28) addr:0x020d836c local
+OSi_ExitThread_Destroy kind:function(thumb,size=0x44) addr:0x020d8394 local
 OS_SleepThread kind:function(thumb,size=0x34) addr:0x020d83d8
 OS_WakeupThread kind:function(thumb,size=0x46) addr:0x020d840c
 OS_WakeupThreadDirect kind:function(thumb,size=0x1a) addr:0x020d8454
@@ -5632,12 +5632,12 @@ OS_SelectThread kind:function(thumb,size=0x18) addr:0x020d8470
 OS_RescheduleThread kind:function(thumb,size=0x14) addr:0x020d8488
 OS_SetThreadPriority kind:function(thumb,size=0x68) addr:0x020d849c
 OS_Sleep kind:function(thumb,size=0x70) addr:0x020d8504
-OSi_SleepAlarmCallback kind:function(thumb,size=0x18) addr:0x020d8574
+OSi_SleepAlarmCallback kind:function(thumb,size=0x18) addr:0x020d8574 local
 OS_SetSwitchThreadCallback kind:function(thumb,size=0x1c) addr:0x020d858c
-OSi_IdleThreadProc kind:function(thumb,size=0xc) addr:0x020d85a8
+OSi_IdleThreadProc kind:function(thumb,size=0xc) addr:0x020d85a8 local
 OS_DisableScheduler kind:function(thumb,size=0x24) addr:0x020d85b4
 OS_EnableScheduler kind:function(thumb,size=0x24) addr:0x020d85d8
-func_020d85fc kind:function(thumb,size=0x6) addr:0x020d85fc
+OS_SetThreadDestructor kind:function(thumb,size=0x6) addr:0x020d85fc
 OS_InitContext kind:function(arm,size=0x84) addr:0x020d8604
 OS_SaveContext kind:function(arm,size=0x4c) addr:0x020d8688
 OS_LoadContext kind:function(arm,size=0x44) addr:0x020d86d4
@@ -5689,24 +5689,24 @@ OS_SetDPermissionsForProtectionRegion kind:function(arm,size=0x14) addr:0x020d90
 OS_SetProtectionRegion1 kind:function(arm,size=0x8) addr:0x020d9024
 OS_SetProtectionRegion2 kind:function(arm,size=0x8) addr:0x020d902c
 OS_InitException kind:function(thumb,size=0x4c) addr:0x020d9034
-OSi_ExceptionHandler kind:function(arm,size=0x84) addr:0x020d9080
-OSi_GetAndDisplayContext kind:function(arm,size=0x14) addr:0x020d9104
-OSi_SetExContext kind:function(arm,size=0x90) addr:0x020d9118
-OSi_DisplayExContext kind:function(arm,size=0x7c) addr:0x020d91a8
+OSi_ExceptionHandler kind:function(arm,size=0x84) addr:0x020d9080 local
+OSi_GetAndDisplayContext kind:function(arm,size=0x14) addr:0x020d9104 local
+OSi_SetExContext kind:function(arm,size=0x90) addr:0x020d9118 local
+OSi_DisplayExContext kind:function(arm,size=0x7c) addr:0x020d91a8 local
 OSi_SetTimerReserved kind:function(thumb,size=0x14) addr:0x020d9224
 OS_InitTick kind:function(thumb,size=0x4c) addr:0x020d9238
 OS_IsTickAvailable kind:function(thumb,size=0xc) addr:0x020d9284
 OSi_CountUpTick kind:function(thumb,size=0x40) addr:0x020d9290 local
 OS_GetTick kind:function(thumb,size=0x74) addr:0x020d92d0
-OSi_SetTimer kind:function(thumb,size=0x68) addr:0x020d9344
+OSi_SetTimer kind:function(thumb,size=0x68) addr:0x020d9344 local
 OS_InitAlarm kind:function(thumb,size=0x28) addr:0x020d93ac
 OS_CreateAlarm kind:function(thumb,size=0x8) addr:0x020d93d4
-OSi_InsertAlarm kind:function(thumb,size=0xcc) addr:0x020d93dc
+OSi_InsertAlarm kind:function(thumb,size=0xcc) addr:0x020d93dc local
 OS_SetAlarm kind:function(thumb,size=0x46) addr:0x020d94a8
 OS_SetPeriodicAlarm kind:function(thumb,size=0x4c) addr:0x020d94f0
 OS_CancelAlarm kind:function(thumb,size=0x54) addr:0x020d953c
-OSi_AlarmHandler kind:function(arm,size=0x10) addr:0x020d9590
-OSi_ArrangeTimer kind:function(thumb,size=0xa4) addr:0x020d95a0
+OSi_AlarmHandler kind:function(arm,size=0x10) addr:0x020d9590 local
+OSi_ArrangeTimer kind:function(thumb,size=0xa4) addr:0x020d95a0 local
 OS_InitVAlarm kind:function(thumb,size=0x28) addr:0x020d9644
 OS_EnableInterrupts kind:function(arm,size=0x14) addr:0x020d966c
 OS_DisableInterrupts kind:function(arm,size=0x14) addr:0x020d9680
@@ -10323,32 +10323,40 @@ sClrImgLCDCBlk kind:bss(size=0x4) addr:0x021b500c local
 sTex kind:bss(size=0x4) addr:0x021b5010 local
 sTexLCDCBlk2 kind:bss(size=0x4) addr:0x021b5014 local
 sSzTexBlk1 kind:bss(size=0x4) addr:0x021b5018 local
-data_021b501c kind:bss addr:0x021b501c
+OSi_IrqCallbackInfo kind:bss addr:0x021b501c
 data_021b5020 kind:bss addr:0x021b5020
 data_021b5024 kind:bss addr:0x021b5024
 data_021b504c kind:bss addr:0x021b504c
 data_021b5050 kind:bss addr:0x021b5050
 data_021b5054 kind:bss addr:0x021b5054
 isInitialized$8477 kind:bss(size=0x4) addr:0x021b507c local
-data_021b5080 kind:bss addr:0x021b5080
-OSi_ThreadInfo kind:bss addr:0x021b50a4
-data_021b50a8 kind:bss addr:0x021b50a8
-data_021b50b4 kind:bss addr:0x021b50b4
-data_021b5100 kind:bss addr:0x021b5100
-data_021b5174 kind:bss addr:0x021b5174
-data_021b5180 kind:bss addr:0x021b5180
-data_021b5200 kind:bss addr:0x021b5200
-data_021b52fc kind:bss addr:0x021b52fc
+OSi_SystemCallbackInSwitchThread kind:bss(size=0x4) addr:0x021b5080
+OSi_RescheduleCount kind:bss(size=0x4) addr:0x021b5084
+OSi_CurrentThreadPtr kind:bss(size=0x4) addr:0x021b5088
+OSi_IsThreadInitialized kind:bss(size=0x4) addr:0x021b508c
+OSi_SystemStackBuffer kind:bss(size=0x4) addr:0x021b5090 local
+killThreadStatus kind:bss(size=0x4) addr:0x021b5094 local
+exitThreadStatus kind:bss(size=0x4) addr:0x021b5098 local
+OSi_StackForDestructor kind:bss(size=0x4) addr:0x021b509c
+OSi_ThreadIdCount kind:bss(size=0x4) addr:0x021b50a0 local
+OSi_ThreadInfo kind:bss(size=0x10) addr:0x021b50a4
+OSi_IdleThread kind:bss(size=0xc0) addr:0x021b50b4
+OSi_LauncherThread kind:bss(size=0xc0) addr:0x021b5174
+OSi_IdleThreadStack kind:bss(size=0xc8) addr:0x021b5234
+OSi_Initialized kind:bss(size=0x4) addr:0x021b52fc local
+OSi_MainExArenaEnabled kind:bss(size=0x4) addr:0x021b5300
 OSiHeapInfo kind:bss(size=0x24) addr:0x021b5304
-data_021b5328 kind:bss addr:0x021b5328
-data_021b532c kind:bss addr:0x021b532c
-data_021b5330 kind:bss addr:0x021b5330
-data_021b5354 kind:bss addr:0x021b5354
+OSi_DebuggerHandler kind:bss(size=0x4) addr:0x021b5328 local
+OSi_UserExceptionHandlerArg kind:bss(size=0x4) addr:0x021b532c local
+OSi_UserExceptionHandler kind:bss(size=0x4) addr:0x021b5330 local
+OSi_ExceptionHookStack kind:bss(size=0x20) addr:0x021b5334 local
+OSi_ExContext kind:bss(size=0x80) addr:0x021b5354 local
 OSi_TimerReserved kind:bss(size=0x2) addr:0x021b53d4 local
 OSi_UseTick kind:bss(size=0x2) addr:0x021b53d8 local
 OSi_NeedResetTimer kind:bss(size=0x4) addr:0x021b53dc
 OSi_TickCounter kind:bss(size=0x8) addr:0x021b53e0
-data_021b53e8 kind:bss addr:0x021b53e8
+OSi_UseAlarm kind:bss(size=0x2) addr:0x021b53e8 local
+OSi_AlarmQueue kind:bss(size=0x8) addr:0x021b53ec local
 OSi_UseVAlarm kind:bss(size=0x2) addr:0x021b53f4 local
 OSi_PreviousVCount kind:bss(size=0x4) addr:0x021b53f8 local
 OSi_VFrameCount kind:bss(size=0x4) addr:0x021b53fc local

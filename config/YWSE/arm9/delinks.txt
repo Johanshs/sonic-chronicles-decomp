@@ -15,7 +15,6 @@ src/Aurora/ResourceHash.cpp:
     complete
     .text       start:0x02009b78 end:0x02009bbc
 
-
 NitroSystem/libraries/fnd/src/list.c:
     complete
     .text       start:0x020c8278 end:0x020c838c
@@ -351,10 +350,19 @@ NitroSDK/libraries/gx/src/gxasm.c:
     complete
     .text       start:0x020d79b8 end:0x020d79dc
 
+NitroSDK/libraries/os/src/os_interrupt.c:
+    complete
+    .text       start:0x020d7b0c end:0x020d7cec
+
 NitroSDK/libraries/os/src/os_spinLock.c:
     complete
     .text       start:0x020d7cec end:0x020d7f9c
     .bss        start:0x021b507c end:0x021b5080
+
+NitroSDK/libraries/os/src/os_thread.c:
+    complete
+    .text       start:0x020d7f9c end:0x020d8604
+    .bss        start:0x021b5080 end:0x021b52fc
 
 NitroSDK/libraries/os/src/os_context.c:
     complete
@@ -377,6 +385,11 @@ NitroSDK/libraries/os/src/os_init.c:
     complete
     .text       start:0x020d8aa8 end:0x020d8b0c
 
+NitroSDK/libraries/os/src/os_arena.c:
+    complete
+    .text       start:0x020d8b0c end:0x020d8d80
+    .bss        start:0x021b52fc end:0x021b5304
+
 NitroSDK/libraries/os/src/os_alloc.c:
     complete
     .text       start:0x020d8d80 end:0x020d8fdc
@@ -394,6 +407,11 @@ NitroSDK/libraries/os/src/os_protectionRegion.c:
     complete
     .text       start:0x020d9010 end:0x020d9034
 
+NitroSDK/libraries/os/src/os_exception.c:
+    complete
+    .text       start:0x020d9034 end:0x020d9224
+    .bss        start:0x021b5328 end:0x021b53d4
+
 NitroSDK/libraries/os/src/os_timer.c:
     complete
     .text       start:0x020d9224 end:0x020d9238
@@ -403,6 +421,11 @@ NitroSDK/libraries/os/src/os_tick.c:
     complete
     .text       start:0x020d9238 end:0x020d9344
     .bss        start:0x021b53d8 end:0x021b53e8
+
+NitroSDK/libraries/os/src/os_alarm.c:
+    complete
+    .text       start:0x020d9344 end:0x020d9644
+    .bss        start:0x021b53e8 end:0x021b53f4
 
 NitroSDK/libraries/os/src/os_valarm.c:
     complete

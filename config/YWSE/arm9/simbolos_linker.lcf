@@ -1,0 +1,10 @@
+    /* Símbolos que o linker da Nintendo calculava e o NitroSDK usa (os_arena.c,
+       os_thread.c...). montar_rom.sh põe estas linhas no fim de SECTIONS do .lcf
+       que o dsd gera. Os valores conferem com os que o jogo tem gravados. */
+    SDK_AUTOLOAD_DTCM_START = DTCM_DATA_START;
+    SDK_SECTION_ARENA_DTCM_START = DTCM_BSS_END;
+    SDK_SECTION_ARENA_ITCM_START = ITCM_BSS_END;
+    SDK_MAIN_ARENA_LO = ARM9_BSS_END;
+    SDK_SECTION_ARENA_EX_START = 0x023e0000;
+    SDK_IRQ_STACKSIZE = 0x800;
+    SDK_SYS_STACKSIZE = 0;

@@ -74,7 +74,7 @@ dsd lcf -c "$CFG"
 # linker da Nintendo as manteve, o nosso (-dead) jogaria fora. FORCE_ACTIVE no .lcf
 # segura as funções globais dos arquivos ligados do fonte que existem no jogo. (A
 # opção -force_active da linha de comando não serve: ela aborta passando de ~256
-# caracteres.)
+# caracteres.) E os símbolos de config/YWSE/arm9/simbolos_linker.lcf.
 python3 -c '
 import glob, re
 from elftools.elf.elffile import ELFFile
@@ -89,10 +89,14 @@ for f in sorted(glob.glob("work/build/NitroS*/**/*.o", recursive=True)):
         if (s["st_info"]["type"] == "STT_FUNC" and s["st_info"]["bind"] == "STB_GLOBAL"
                 and s["st_shndx"] != "SHN_UNDEF" and s.name in jogo):
             nomes.append(s.name)
+lcf = open("work/build/arm9.lcf").read()
 if nomes:
-    lcf = open("work/build/arm9.lcf").read()
     bloco = "FORCE_ACTIVE {\n    " + ",\n    ".join(nomes) + "\n}\n\n"
-    open("work/build/arm9.lcf", "w").write(lcf.replace("KEEP_SECTION {", bloco + "KEEP_SECTION {", 1))'
+    lcf = lcf.replace("KEEP_SECTION {", bloco + "KEEP_SECTION {", 1)
+# os símbolos que o linker da Nintendo calculava (SDK_SYS_STACKSIZE...), no fim de SECTIONS
+fim = lcf.rstrip().rindex("}")
+lcf = lcf[:fim] + open("config/YWSE/arm9/simbolos_linker.lcf").read() + lcf[fim:]
+open("work/build/arm9.lcf", "w").write(lcf)'
 
 echo "== 4. link (mwldarm)"
 # -dead: descarta o que ninguém usa; -m Entry: ponto de entrada; -map: gera

@@ -32,6 +32,7 @@ import achar_funcoes as af
 REPO = af.REPO
 SIMBOLOS = os.path.join(REPO, "config/YWSE/arm9/symbols.txt")
 SIMBOLOS_ITCM = os.path.join(REPO, "config/YWSE/arm9/itcm/symbols.txt")
+SIMBOLOS_DTCM = os.path.join(REPO, "config/YWSE/arm9/dtcm/symbols.txt")
 DELINKS = os.path.join(REPO, "config/YWSE/arm9/delinks.txt")
 RELOCS = os.path.join(REPO, "config/YWSE/arm9/relocs.txt")
 BASE = 0x02000000
@@ -39,7 +40,9 @@ arm9 = open(os.path.join(REPO, "work/extract/arm9/arm9.bin"), "rb").read()
 DADOS = {".rodata": (0x020ef814, 0x020f4ff0), ".data": (0x020f5260, 0x021090e0)}
 ENDERECOS, THUMB, TODOS, FUNCOES = {}, set(), set(), []   # nome -> endereço; Thumb; com símbolo
 NOMES_TODOS = set()
-for _f in (SIMBOLOS, SIMBOLOS_ITCM, os.path.join(REPO, "config/YWSE/arm9/dtcm/symbols.txt")):
+# os símbolos que montar_rom.sh define no .lcf (SDK_SYS_STACKSIZE...)
+LINKER = set(re.findall(r"^\s*(\w+)\s*=", open(os.path.join(REPO, "config/YWSE/arm9/simbolos_linker.lcf")).read(), re.M))
+for _f in (SIMBOLOS, SIMBOLOS_ITCM, SIMBOLOS_DTCM):
     for _l in open(_f):
         _m = re.match(r"(\S+) kind:(\S+).* addr:(0x[0-9a-f]+)", _l)
         if _m:
@@ -413,9 +416,12 @@ def main():
     # do ITCM...) não existem no nosso arquivo de link: quem usa ainda não liga
     for fonte, o, funcs, _ in arquivos:
         for end, nomes in externos(o, funcs).items():
-            fora_do_arm9 = not BASE <= end < 0x027e0000 and not nomes <= NOMES_TODOS
+            if nomes <= LINKER:
+                continue                            # definidos em simbolos_linker.lcf
+            # fora do ARM9 principal (ITCM, DTCM) só vale um endereço que já tem símbolo
+            fora_do_arm9 = not BASE <= end < 0x027e0000 and end not in TODOS
             if fora_do_arm9 or end not in TODOS and not no_meio_de_funcao(end) and end < 0x020f5260:
-                quebrados.setdefault(id(o), f"usa símbolo do linker ({', '.join(sorted(nomes))})")
+                quebrados.setdefault(id(o), f"usa algo sem símbolo no jogo ({', '.join(sorted(nomes))})")
     arquivos, fora = segmentos(seq, fontes, quebrados)
 
     por_nome = {}
@@ -424,6 +430,9 @@ def main():
             por_nome.setdefault(n, set()).add(end)
     renomear, apelidos = {}, []                     # renomear: endereço -> (nome, escopo, seção)
     for end, nomes in sorted(fora.items()):
+        nomes = nomes - LINKER                      # esses o .lcf define
+        if not nomes:
+            continue
         # dois nomes para a mesma função (_ll_mul e _ull_mul): o segundo vira um rótulo
         n, *outros = sorted(nomes, key=lambda x: (x not in ENDERECOS, x))
         apelidos += [(end, a) for a in outros if a not in ENDERECOS]
@@ -489,7 +498,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
         texto += f"\n\n{fonte}:\n    complete\n"
         texto += "\n".join(f"    {n:<11} start:{a:#010x} end:{b:#010x}"
                            for n, (a, b) in sorted(faixas.items(), key=lambda x: ordem.index(x[0])))
-    open(DELINKS, "w").write(texto.rstrip("\n") + "\n")
+    open(DELINKS, "w").write(re.sub(r"\n{3,}", "\n\n", texto).rstrip("\n") + "\n")
     # symbols.txt: o nome do .o em cada endereço; os static ficam "local"
     automatico = re.compile(r"(func|data)_[0-9a-f]{8}$|.*__vfunc\d+_[0-9a-f]{8}$")
     vistos, trocados = set(), 0
@@ -497,10 +506,10 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
     def tipo(end, sec, atual):
         """O "kind" do símbolo. Os dados de um arquivo ligado levam o tamanho do .o:
         sem ele, o dsd estica o último até o próximo símbolo, dentro do vizinho."""
-        if sec == ".text" or (atual and atual.startswith(("kind:function", "kind:label"))):
+        if sec in (".text", "fora") and atual or (atual and atual.startswith(("kind:function", "kind:label"))):
             return atual
         t = tamanhos.get(end)
-        if sec == ".bss" or end >= 0x021090e0:
+        if sec == ".bss" or 0x021090e0 <= end < 0x027e0000:
             return f"kind:bss(size={t:#x})" if t else "kind:bss"
         return f"kind:data(byte[{t:#x}])" if t else (atual or "kind:data(any)")
     # os símbolos que caem DENTRO de um arquivo ligado e que o .o não tem (data_021ade58,
@@ -514,7 +523,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
             return end & ~1 not in renomear
         return any(a < end < b for a, b in faixas) and end not in renomear
     removidos = 0
-    for caminho in (SIMBOLOS_ITCM, SIMBOLOS):
+    for caminho in (SIMBOLOS_ITCM, SIMBOLOS_DTCM, SIMBOLOS):
         linhas = open(caminho).read().rstrip("\n").split("\n")
         antes = len(linhas)
         linhas = [l for l in linhas if not (re.search(r"addr:(0x[0-9a-f]+)", l)
@@ -536,7 +545,7 @@ def gravar(saida, renomear, apelidos, tamanhos, internos):
                 if novo != linha:
                     linhas[i] = novo
                     trocados += 1
-        if caminho == SIMBOLOS_ITCM:
+        if caminho != SIMBOLOS:
             open(caminho, "w").write("\n".join(linhas) + "\n")
     for end, a in apelidos:
         print(f"   apelido: {a} em {end:#x}")

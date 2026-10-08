@@ -251,6 +251,12 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   chama mas o jogo tem. A opção `-force_active` resolvia com um nome e falhava com a lista
   inteira. Testando listas de tamanhos diferentes, o limite apareceu: uns 256 caracteres. A saída foi o
   mesmo pedido dentro do arquivo do linker (`FORCE_ACTIVE` no `.lcf`).
+- **Símbolos que nenhum `.c` define.** Cinco arquivos (`os_arena.c`, `os_thread.c`...)
+  usam `SDK_SYS_STACKSIZE`, `SDK_MAIN_ARENA_LO`... que o `.lcf` da Nintendo calculava.
+  Os valores foram lidos das constantes que o jogo tem gravadas (ex.:
+  `SDK_SECTION_ARENA_EX_START` = `0x023e0000`) e entraram em `simbolos_linker.lcf`.
+  A prova de que estão certos é a ROM: um valor errado mudaria esses bytes. Agora são 78 arquivos do SDK, 92 KB (9,7% do ARM9) de C, e
+  a ROM idêntica. A configuração gerada do zero sai igual à versionada.
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
