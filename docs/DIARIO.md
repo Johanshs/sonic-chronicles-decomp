@@ -168,7 +168,25 @@ O primeiro teste fora do emulador. O resultado está em
   emulador, com captura de tela. A dificuldade dinâmica é o efeito mais difícil de ver
   sem medir, então é o que mais precisa da A1.
 
-## O que ainda não sabemos
+## 13. A bateria de cheats
+O resultado está em [CHEATS.md](CHEATS.md).
+
+- **Quais códigos o cartão entende.** Em vez de testar tipo por tipo no DS, fui ao
+  código do Pico Loader: o `CheatPreprocessor.cpp` diz que ele usa o motor do NitroHax
+  e adapta alguns códigos (D4, DB, E) para ele. O NitroHax implementa o Action Replay DS
+  completo. Fica como **dedução** até um cheat com tipo 5 ou B rodar no DS.
+- **Um interruptor sem "senão".** O Action Replay não tem "se apertou, liga; senão,
+  desliga" num código só. Mas as regras de combate só são carregadas no boot, então uma
+  escrita única permanece: dois blocos (um por atalho) bastam para ligar e desligar.
+- **Atalhos que não se cruzam.** O atalho da dificuldade é L+R. Os novos usam
+  L+direcional e exigem o **R solto** (o bit do R entra na máscara com valor 1); sem isso,
+  L+R+Cima dispararia dois cheats ao mesmo tempo. O `ar_codes.py simular` confere.
+- **Erro nº 6** (pego pelo teste antes de ir para o Git): no interpretador, o `D2`
+  zerava o offset **antes** de voltar ao começo do laço `C0`, então só a primeira
+  repetição escrevia no lugar certo. Na especificação, o `D2` repete o bloco e só zera
+  tudo quando o laço acaba. Lição: o teste do laço tinha a resposta esperada escrita à
+  mão, e foi isso que pegou o erro.
+
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
 itens, de personagens), a versão exata do compilador e as partes do combate listadas em

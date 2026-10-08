@@ -1,28 +1,97 @@
 # Cheats do projeto para Sonic Chronicles: The Dark Brotherhood (USA), código YWSE.
-# Formato: [Nome], ";" descrição opcional, e linhas "ENDEREÇO VALOR" do Action Replay DS.
-# Endereços e regras explicados em docs/COMBATE.md e docs/PLANO-MOD-MENU.md.
-# STATUS: testados no DS real (08/10/2026, R4i-SDHC Gold Pro + Pico Loader v1.6.0 DSTT):
-#   os 4 ligaram, o jogo rodou sem erro e o efeito visto foi o esperado. Foi uma
-#   observação a olho, não uma medição: os números ainda serão conferidos contra as
-#   fórmulas na fase A1 (emulador). Detalhes em docs/DIARIO.md, seção 12.
-# Para gravar num usrcheat.dat:
+# O que cada um faz, por que funciona, o nível de confiança e como testar:
+#   docs/CHEATS.md
+#
+# Formato:
+#   @pasta Nome      os cheats seguintes ficam nesta pasta
+#   @escolha Nome    pasta em que só um cheat pode ficar ligado (a marca "um só
+#                    ativo" do formato, que o Pico Launcher lê): usada quando os
+#                    cheats mexem no mesmo endereço e brigariam entre si
+#   [Nome]           um cheat; ";" na linha seguinte = descrição (aparece no cartão)
+#   ENDEREÇO VALOR   linhas do Action Replay DS
+# Nomes e descrições sem acento: a fonte do launcher pode não ter os caracteres.
+#
+# Confiança (repetida na descrição de cada cheat):
+#   [DS]    testado no DS real (08/10/2026, R4i-SDHC Gold Pro + Pico Loader v1.6.0
+#           DSTT), a olho: ligou, o jogo rodou e o efeito foi o esperado
+#   [alta]  endereço já testado no DS, só o valor é novo; ainda não testado
+#   [media] endereço conferido só no emulador; ainda não testado
+#
+# Antes de gravar no cartão:
+#   python3 analise/tools/ar_codes.py validar cheats/YWSE.txt
 #   python3 analise/tools/usrcheat.py inserir usrcheat.dat cheats/YWSE.txt saida.dat
 
+@escolha Projeto: dano do grupo (regra 44)
+; escolha 1: o k do grupo no dano basico e nos POW
+
 [Dano do grupo muito maior (regra 44: 110 para 1000)]
-; testado no DS: k do grupo no dano basico e nos POW
+; [DS] cerca de 4x o dano normal
 020F64C0 000003E8
 
+[Dano do grupo sem sorte (regra 44: 110 para 0)]
+; [alta] dano fixo 0,9 x Power - Grit: bom para medir
+020F64C0 00000000
+
+[Dano do grupo x4 por botao (L+Cima liga, L+Baixo desliga)]
+; [alta] L+Cima: regra 44 = 1000; L+Baixo: volta a 110
+94000130 FCBF0100
+020F64C0 000003E8
+D0000000 00000000
+94000130 FC7F0100
+020F64C0 0000006E
+D0000000 00000000
+
+@escolha Projeto: dano dos inimigos (regra 45)
+; escolha 1: o k dos inimigos no dano basico e nos POW
+
 [Inimigos sem dano aleatorio (regra 45: 60 para 0)]
-; testado no DS: dano inimigo = 0,9 x Power - Grit
+; [DS] dano inimigo = 0,9 x Power - Grit
 020F64BC 00000000
 
+[Inimigos batem 2x mais (regra 45: 60 para 300)]
+; [alta] modo dificil: 2,4 x Power - Grit em media
+020F64BC 0000012C
+
+[Inimigos 2x por botao (L+Direita liga, L+Esquerda desliga)]
+; [alta] L+Direita: regra 45 = 300; L+Esquerda: volta a 60
+94000130 FCEF0100
+020F64BC 0000012C
+D0000000 00000000
+94000130 FCDF0100
+020F64BC 0000003C
+D0000000 00000000
+
+@pasta Projeto: defender
+; as regras 7 e 8 so valem no comando Defender
+
 [Defender mais forte (regra 8: Grit x11)]
-; testado no DS: Grit += Grit x 100/10 ao defender
+; [DS] Grit += Grit x 100/10 ao defender
 020F64FC 00000064
 
+[Defender: esquiva x3 (regra 7: 7 para 20)]
+; [media] Defense += Defense x 20/10 ao defender
+020F6470 00000014
+
+@escolha Projeto: dificuldade dinamica
+; escolha 1: o nivel vale a partir da proxima batalha
+
 [Dificuldade dinamica minima (L+R)]
-; testado no DS: segure L+R; nivel -4 nas proximas batalhas
+; [DS] segure L+R; nivel -4 nas proximas batalhas
 94000130 FCFF0000
 22160E58 00000001
 22160E54 000000FC
 D0000000 00000000
+
+[Dificuldade travada no minimo (-4)]
+; [alta] inimigos: Power -10, Attack -4, Defense -4, Grit -10
+22160E58 00000001
+22160E54 000000FC
+
+[Dificuldade travada no neutro (0)]
+; [alta] inimigos com os atributos da tabela, sem ajuste
+22160E54 00000000
+
+[Dificuldade travada no maximo (+6)]
+; [alta] inimigos: Power +9, Attack +3, HP maximo +60
+22160E58 00000001
+22160E54 00000006

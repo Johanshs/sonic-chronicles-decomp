@@ -193,6 +193,22 @@ batalha, sem encontros, nível dos POW no máximo.
     dinâmica é o mais difícil de ver a olho, e a dúvida sobre a cópia do nível em cada
     inimigo (`+0x1d8`) também fica para a A1.
 
+### Andamento: bateria de cheats (08/10/2026)
+- **Bateria v1** em `cheats/YWSE.txt`, explicada em [CHEATS.md](CHEATS.md): 12 cheats em
+  4 pastas (dano do grupo, dano dos inimigos, defender, dificuldade), 8 deles novos. Os
+  novos usam os endereços já testados no DS com outros valores, mais a regra 7
+  (`0x020F6470`, conferida só no emulador). Há cheats "por botão" (L+direcional) que
+  funcionam como interruptor, porque o jogo não regrava as regras depois do boot.
+- **Pastas "escolha 1"**: o `usrcheat.py` agora grava várias pastas e a marca "um só
+  ativo" do formato, e troca as pastas "Projeto..." de uma versão anterior.
+- **Tipos de código**: o Pico Loader usa o motor de cheats do NitroHax (o
+  `CheatPreprocessor.cpp` dele diz isso e adapta os códigos D4/DB/E para esse motor), que
+  implementa o conjunto completo do Action Replay DS. Os tipos 5, 6, B e D2 dos cheats
+  públicos devem funcionar; no DS, só `0`, `2`, `9` e `D0` foram vistos rodando.
+- **A1, parte da ferramenta**: `analise/tools/ar_codes.py` interpreta os códigos AR
+  (com testes), e o `emu_run.py` liga cheats e lê a RAM no emulador. Falta rodar com a ROM
+  e medir o dano numa batalha.
+
 ## 4. Caminho B: o mod menu
 
 ### 4.1 Como o código entra no jogo
@@ -265,9 +281,9 @@ mesmo modificada.
 - ~~Qual é o modelo do R4?~~ R4i-SDHC Gold Pro (r4isdhc.com) → plataforma DSTT.
 - ~~O Pico Launcher abre pelo kernel do Gold Pro e lê o SD?~~ Sim: o jogo e os cheats
   rodaram por ele no DS (08/10/2026).
-- O formato exato do `usrcheat.dat` (cabeçalho, identificação do jogo por código + CRC) e
-  quais tipos de código AR o Pico Launcher aceita: conferir na fase A3, no código-fonte
-  do launcher. Já sabemos, pelo teste no DS, que aceita os tipos `0`, `2`, `9` e `D0`.
+- ~~O formato exato do `usrcheat.dat` e quais tipos de código AR o Pico Launcher
+  aceita~~ O formato está em `usrcheat.py` (ida e volta idêntica); o motor é o do
+  NitroHax, com todos os tipos do Action Replay DS (ver o andamento da bateria, acima).
 - Menu em inglês ou português? (A fonte 8×8 nossa permite acentos.)
 
 Referências: [Pico Loader](https://github.com/LNH-team/pico-loader),
