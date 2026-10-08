@@ -11,7 +11,7 @@ exploração do capítulo 1) e confere:
   2. L + R + SELECT abre o painel (a tela do motor B passa a ser a do painel);
   3. a página "Aneis" muda a carteira (esquadrão + 0x114), a página "Grupo" acha o
      Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar o Luck muda o atributo de verdade,
-     e a página "Itens" dá um POW Candy pela função do próprio jogo;
+     e a página "Itens" dá um POW Candy e depois o tira, pelas funções do próprio jogo;
   4. depois de 5 segundos com o painel aberto, o relógio do jogo NÃO dá o salto (o
      tempo medido na volta seguinte é o de uma volta normal);
   5. depois de fechar, a tela do motor B volta a ser a do jogo.
@@ -138,7 +138,8 @@ def main(rom, pasta):
         inv = m.read_long(esquadrao + 0x40)
         n, dados = m.read_long(inv + 0x2C), m.read_long(inv + 0x34)
         pilhas = [m.read_long(dados + 4 * k) for k in range(n)]
-        return {m.read_short(p + 0xB8): m.read_byte(p + 0xBB) for p in pilhas}
+        # posições vazias (0) ficam quando a última unidade de uma pilha sai
+        return {m.read_short(p + 0xB8): m.read_byte(p + 0xBB) for p in pilhas if p}
     antes = inventario()
     apertar('B')
     apertar('B')                           # tela inicial
@@ -158,6 +159,20 @@ def main(rom, pasta):
         return ''.join(chr((m.read_short(0x06207800 + 2 * (32 * n + c)) & 0xFFF) + 0x20) for c in range(32))
     confere('POW Candy' in linha(20), f'nome do item 3 pelo jogo: "{linha(20).strip()}"')
     captura('3b_itens')
+
+    print('3c. itens: tirar pela função do jogo (uma unidade por vez)')
+    apertar('A')                           # mais um: 2 POW Candy
+    apertar('BAIXO')                       # a pilha do POW Candy (a única num jogo novo)
+    apertar('A')                           # tira 1
+    confere(inventario().get(3, 0) == depois.get(3, 0),
+            f'tirar 1 de 2: {inventario().get(3, 0)} POW Candy (esperado {depois.get(3, 0)})')
+    apertar('A')                           # tira o último: a pilha some
+    confere(3 not in inventario() and 'tirado!' in linha(20),
+            f'tirar o último: pilhas {inventario()}; linha 20 "{linha(20).strip()}"')
+    captura('3c_itens_tirados')
+    apertar('CIMA')
+    apertar('A')                           # dar de novo, com a lista tendo um buraco
+    confere(inventario().get(3, 0) == 1, f'dar depois de tirar: {inventario()}')
 
     print('4. relógio')
     quadros(300)                           # 5 segundos com o painel aberto

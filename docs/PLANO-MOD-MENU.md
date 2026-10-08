@@ -227,8 +227,9 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.7, e **roda dentro do jogo
-no emulador**, inclusive numa batalha. Falta o teste no DS.
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.8, e **roda dentro do jogo
+no emulador**, inclusive numa batalha. **A v0.5 foi testada no DS** (R4i-SDHC, 08/10/2026):
+todas as páginas funcionaram.
 
 - **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
   compilado com o **clang e o ld.lld** do LLVM, que já geram código para o ARM946E-S. Sem
@@ -249,13 +250,16 @@ no emulador**, inclusive numa batalha. Falta o teste no DS.
   tela de perfil e da tela de save; mudar o HP do Sonic numa batalha mudou o HP na tela
   da batalha. A v0.2 tinha dois erros que a sessão dos cheats achou: os anéis eram o
   contador do HUD (0x02160EB0), não a carteira, e o grupo tinha só 4 posições.
-- **B5, itens: feito no emulador (v0.4 e v0.5).** O inventário é um `CGameObjectInventory`
+- **B5, itens: feito (v0.4, v0.5 e v0.8; a v0.5 também no DS).** O inventário é um `CGameObjectInventory`
   apontado pelo esquadrão (+0x40), com uma lista de `CGameItem`. O painel dá itens
   chamando a função do próprio jogo (0x0202dc6c, a das recompensas) e muda a
   quantidade de cada pilha. Conferido: o item dado aparece no Inventário do jogo
   ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
   jogo (as funções da mensagem "você ganhou um item"). Critério cumprido no emulador: o item
   dado continuou no inventário depois de salvar pelo menu do jogo, reiniciar e carregar.
+  Na v0.8 o painel também **tira** itens (pedido do usuário depois do teste no DS),
+  pela função que o combate usa ao gastar um item (0x0202dacc); conferido no Inventário
+  do jogo e depois de salvar e carregar.
 - **B6, combate: adiantada (v0.6 e v0.7).** Página dos inimigos da batalha (lista fixa
   em 0x02160AF8) e ações rápidas: curar o grupo, inimigos com HP 1 e **nocautear os
   inimigos**. Escrever HP 0 não nocauteia (o inimigo continua lutando); a v0.7 chama a

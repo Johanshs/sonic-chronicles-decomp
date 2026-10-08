@@ -201,6 +201,9 @@ def main(rom, pasta):
             'dar item sem a função do jogo: o painel recusa e continua de pé')
     e.captura(pasta, '4d_itens')
     e.apertar('BAIXO')                   # pilha 1: item 6, 87 unidades
+    e.apertar('A')                       # "tirar 1": aqui não há a função do jogo
+    confere(e.mem.unsigned.read_byte(0x02111ABB) == 87 and e.u32(0x04001000) == 0x10100,
+            'tirar item sem a função do jogo: o painel recusa, não mexe na pilha e continua de pé')
     e.apertar('DIR')
     e.apertar('DIR')                     # 89
     confere(e.mem.unsigned.read_byte(0x02111ABB) == 89, f'pilha 1: {e.mem.unsigned.read_byte(0x02111ABB)} (esperado 89)')

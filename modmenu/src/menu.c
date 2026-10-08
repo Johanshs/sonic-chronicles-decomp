@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.7"
+#define VERSAO "0.8"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
@@ -311,6 +311,24 @@ static u32 pilha(u32 inv, int k) {
     return ponteiro_ok(p) && *(volatile u32 *)p == VTABLE_ITEM ? p : 0;
 }
 
+/* A lista do inventário pode ter buracos: quando a última unidade de uma pilha sai, a
+ * função do jogo apaga o item e põe 0 na posição, sem encolher a lista (visto no
+ * emulador: depois de tirar o único POW Candy, a lista ficou com 1 posição vazia). O
+ * painel mostra só as posições com item: a linha i da página é a i-ésima pilha cheia. */
+static int n_cheias(u32 inv) {
+    int n = n_pilhas(inv), c = 0;
+    for (int k = 0; k < n; k++)
+        if (pilha(inv, k)) c++;
+    return c;
+}
+
+static int posicao_da(u32 inv, int i) {
+    int n = n_pilhas(inv);
+    for (int k = 0; k < n; k++)
+        if (pilha(inv, k) && i-- == 0) return k;
+    return -1;
+}
+
 /* Dar um item usando a PRÓPRIA função do jogo (0x0202dc6c), a mesma que as recompensas
  * e o roubo da Rouge chamam: ela procura uma pilha do mesmo item e soma 1, ou cria um
  * CGameItem novo e o põe no inventário. Assim o jogo fica coerente (o objeto é criado
@@ -332,6 +350,22 @@ static int dar_item(int id) {
     int ok = adicionar(inv, id, vetor, 0, 1);
     liberar(vetor);
     return ok;
+}
+
+/* Tirar 1 unidade de uma pilha usando a função do jogo (0x0202dacc), a mesma que o
+ * combate chama quando um item é usado. Argumentos, lidos no assembly dos chamadores:
+ * (inventário, posição da pilha na lista). Com mais de 1 unidade, ela só desconta 1;
+ * com 1, apaga o CGameItem, tira a pilha da lista e, se o item for de história, desliga
+ * a marca (plot) que diz que o grupo o tem, como o jogo faz ao entregar um item.
+ * Os 4 primeiros meios-palavras são conferidos (os 2 primeiros sozinhos são iguais aos
+ * da função de atributos 0x02007e60). */
+static int tirar_item(int k) {
+    u32 inv = inventario();
+    if (!inv || k < 0 || k >= n_pilhas(inv) || !pilha(inv, k)) return 0;
+    volatile u16 *f = (volatile u16 *)0x0202DACC;
+    if (f[0] != 0xB5F8 || f[1] != 0xB084 || f[2] != 0x1C05 || f[3] != 0x6AE8) return 0;
+    int (*tirar)(u32, int) = (int (*)(u32, int))0x0202DACDu;
+    return tirar(inv, k);
 }
 
 /* ---- Conversão entre o valor guardado e o valor humano ----
@@ -529,22 +563,24 @@ static const char *nome_item(int id) {
 /* Página de itens: a linha 0 dá um item pelo número; as outras são as pilhas. */
 static int id_dar = 0;
 static const char *aviso_item = "";
+static int id_aviso = 0;   /* o item da última ação ("dado!", "tirado!") */
 
 static void desenhar_itens(int sel, int topo) {
     cabecalho("Itens (inventario)");
     u32 inv = inventario();
-    int n = inv ? n_pilhas(inv) : 0;
+    int n = inv ? n_cheias(inv) : 0;
     con_texto(1, 3, COR_CINZA, "item            num  qtd");
     for (int i = topo; i <= n && i < topo + VISIVEIS; i++) {
         int lin = LINHA_1 + i - topo;
         int cor = i == sel ? COR_AMARELO : COR_BRANCO;
         con_texto(0, lin, cor, i == sel ? ">" : " ");
         if (i == 0) {
-            con_texto(1, lin, cor, "Dar 1 (A), item");
+            con_texto(1, lin, cor, "Dar 1 (A), item");  /* nas pilhas, A tira 1 */
             con_numero(17, lin, cor, id_dar, 3);
             continue;
         }
-        u32 p = pilha(inv, i - 1);
+        int k = posicao_da(inv, i - 1);
+        u32 p = k >= 0 ? pilha(inv, k) : 0;
         if (!p) { con_texto(1, lin, COR_CINZA, "?"); continue; }
         s16 id = *(volatile s16 *)(p + 0xB8);
         con_texto(1, lin, cor, nome_item(id));
@@ -556,11 +592,21 @@ static void desenhar_itens(int sel, int topo) {
     if (!inv) con_texto(1, 20, COR_CINZA, "(inventario nao achado)");
     else {
         con_texto(1, 20, COR_CINZA, "item");
-        con_numero(5, 20, COR_CINZA, id_dar, 3);
-        con_texto(9, 20, COR_BRANCO, nome_item(id_dar));
+        /* a linha 20 diz de que item se trata: o da última ação, enquanto o aviso dela
+         * estiver na tela (a pilha tirada pode ter sumido); senão, o da linha escolhida */
+        int id = id_dar;
+        if (aviso_item[0]) id = id_aviso;
+        else if (sel > 0) {
+            int k = posicao_da(inv, sel - 1);
+            u32 p = k >= 0 ? pilha(inv, k) : 0;
+            if (p) id = *(volatile s16 *)(p + 0xB8);
+        }
+        con_numero(5, 20, COR_CINZA, id, 3);
+        con_texto(9, 20, COR_BRANCO, nome_item(id));
         con_texto(24, 20, COR_VERDE, aviso_item);
     }
-    rodape("<> -1/+1  L R -10/+10  A da", "B volta   START fecha");
+    rodape(sel == 0 ? "<> -1/+1  L R -10/+10  A da 1" : "<> -1/+1  L R -10/+10  A tira 1",
+           "B volta   START fecha");
 }
 
 static void teclas_itens(u16 t, int sel) {
@@ -574,15 +620,26 @@ static void teclas_itens(u16 t, int sel) {
         id_dar += d;
         if (id_dar < 0) id_dar = 0;
         if (id_dar > ID_MAXIMO) id_dar = ID_MAXIMO;
-        if (t & TECLA_A) aviso_item = dar_item(id_dar) ? "dado!" : "recusou";
+        if (t & TECLA_A) {
+            id_aviso = id_dar;
+            aviso_item = dar_item(id_dar) ? "dado!" : "recusou";
+        }
         else if (d) aviso_item = "";
         return;
     }
-    if (!d || !inv || sel - 1 >= n_pilhas(inv)) return;
-    u32 p = pilha(inv, sel - 1);
+    int k = inv ? posicao_da(inv, sel - 1) : -1;
+    if (k < 0) return;
+    if (t & TECLA_A) {
+        id_aviso = *(volatile s16 *)(pilha(inv, k) + 0xB8);
+        aviso_item = tirar_item(k) ? "tirado!" : "recusou";
+        return;
+    }
+    if (d) aviso_item = "";
+    if (!d) return;
+    u32 p = pilha(inv, k);
     if (!p) return;
     s32 q = *(volatile u8 *)(p + 0xBB) + d;
-    if (q < 1) q = 1;   /* 0 deixaria uma pilha vazia: para tirar, use o jogo */
+    if (q < 1) q = 1;   /* 0 deixaria uma pilha vazia: para tirar, A chama o jogo */
     if (q > 99) q = 99;
     *(volatile u8 *)(p + 0xBB) = (u8)q;
 }
@@ -702,8 +759,14 @@ static void painel(void) {
         } else if (tela >= 0 && paginas[tela].tipo == P_ITENS) {
             if (t & TECLA_B) tela = TELA_INICIO;
             u32 inv = inventario();
-            mover(t, &sel, &topo, 1 + (inv ? n_pilhas(inv) : 0));
+            int antes = sel;
+            mover(t, &sel, &topo, 1 + (inv ? n_cheias(inv) : 0));
+            if (sel != antes) aviso_item = "";
             teclas_itens(t, sel);
+            /* tirar a última unidade some com a pilha: a seleção não pode passar do fim */
+            int n_linhas = 1 + (inv ? n_cheias(inv) : 0);
+            if (sel >= n_linhas) sel = n_linhas - 1;
+            if (topo > sel) topo = sel;
         } else if (tela >= 0 && paginas[tela].tipo == P_ACOES) {
             if (t & TECLA_B) tela = TELA_INICIO;
             mover(t, &sel, &topo, N_ACOES);

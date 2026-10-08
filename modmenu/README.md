@@ -5,11 +5,13 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.7:**
+**Situação (08/10/2026), versão 0.8:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
-- **Ainda não testado num DS de verdade.**
+- **Testado num DS de verdade (v0.5)**: no R4i-SDHC, todas as páginas funcionaram (o
+  usuário só evitou mudar as regras de combate). As versões 0.6 a 0.8 ainda não foram
+  ao DS.
 - Páginas: as **74 regras de combate**, a dificuldade dinâmica, os **anéis da carteira**
   e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
   jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
@@ -19,8 +21,9 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   **nocautear os inimigos**. Nocautear usa a função do próprio jogo, então a batalha
   acaba como uma vitória normal: tela VICTORY, XP, item e subida de nível.
 - **Itens**: o inventário com o nome de cada item (o jogo dá o nome), dar qualquer item
-  pelo número (a linha de `Items.gda`) usando a função do próprio jogo, e mudar a
-  quantidade de cada pilha.
+  pelo número (a linha de `Items.gda`) usando a função do próprio jogo, **tirar** 1
+  unidade de uma pilha (também pela função do jogo; a última unidade some com a pilha)
+  e mudar a quantidade de cada pilha.
 - **Compatível com os cheats**: o painel mora no fim do heap do jogo, então os objetos
   do jogo ficam nos mesmos endereços da ROM original (a v0.2 os deslocava).
 
@@ -36,8 +39,8 @@ jogo/gancho.s                   a ponte entre o laço principal do jogo e o pain
 jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D8000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM (o `sonic-mod menu` faz o mesmo)
-ferramentas/testar.py           testa o painel na ROM de teste (25 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (12 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (26 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (15 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -86,8 +89,8 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (25 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (26 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (15 checagens)
 ```
 
 ## Como funciona
@@ -157,6 +160,10 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
    número, ela confere os limites da tabela de atributos e avisa a criatura que o HP
    chegou ao mínimo; é esse aviso que faz o nocaute (atributo 36 = 2, efeitos limpos).
    Com todos os inimigos no chão, a própria batalha percebe e termina em vitória.
+11. **Tirar um item também é com o jogo.** A numa pilha chama a função que o combate
+   usa quando um item é gasto (0x0202dacc: inventário, posição da pilha). Com mais de 1
+   unidade ela desconta 1; com 1, apaga o item e, se ele for de história, desliga a
+   marca que diz que o grupo o tem.
 
 ## Como foi testado
 
@@ -186,6 +193,16 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
   porque o nocaute do jogo não é só o HP. Num inimigo nocauteado de verdade, o atributo
   36 vale 2, os atributos 20 a 25 ficam zerados e o objeto solta dois ponteiros. A ação
   saiu do painel (e voltou na v0.7, do jeito certo: veja abaixo).
+- **Tirar itens** (v0.8): num jogo novo (teste automático), dar 2 POW Candy e tirar 2
+  deixa o inventário sem POW Candy; dar de novo funciona. No Capítulo 10, tirar 1 Med
+  Emitter (87 → 86) e o único Spooky Charm: o Inventário do jogo mostrou "Med Emitter
+  (86)", e depois de salvar, reiniciar e carregar, o inventário era o mesmo.
+- **A lista do inventário fica com buracos.** Quando a última unidade sai, a função do
+  jogo apaga o item e põe 0 na posição, sem encolher a lista (a lista do Capítulo 10
+  ficou com 61 posições e 60 pilhas, e continuou assim depois de salvar e carregar). O
+  próprio jogo faz isso ao usar um item na batalha, e a tela de Inventário lida bem. O
+  painel passou a pular as posições vazias; na primeira versão do teste, o script lia
+  a posição vazia como se fosse um item e via lixo.
 - **Nocautear pela função do jogo** (v0.7, a mesma batalha, ROM ligada do zero):
   "Nocautear inimigos" levou os 4 Nocturne Decurion a HP 0 com o atributo 36 = 2 (o
   nocaute de verdade). A batalha acabou sozinha: tela **VICTORY** (nota A, 1 rodada),
@@ -245,13 +262,15 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (12 checagen
 
 ## Limites conhecidos
 
-- **DS real ainda não testado.**
+- **No DS real, só a v0.5 foi testada** (funcionou).
 - "Nocautear inimigos" foi conferido em 6 encontros, mas todos contra o mesmo inimigo
   (4 Nocturne Decurion, Capítulo 10). Chefes podem ter regras próprias de fim de luta (cenas, fases) que o painel não
   conhece; se uma luta de chefe travar, use "inimigos com HP 1" e dê um golpe.
 - **Itens:** prefira consumíveis, equipamentos e Chao. Dar itens de história
   (esmeraldas, objetos de missão) ou os "envelopes" de itens aleatórios (258–276, 287)
-  pode confundir o jogo. Os nomes aparecem cortados em 14 letras.
+  pode confundir o jogo. Os nomes aparecem cortados em 14 letras. **Não tire itens de
+  história**: tirar o último desliga a marca da história que diz que o grupo o tem, e
+  uma missão pode ficar sem saída. A página não pede confirmação: cada A tira 1.
 - A quantidade de uma pilha vai de 1 a 99 no painel. Que 99 é o limite do jogo é uma
   suposição (o maior número visto no save foi 98).
 - O painel mostra todos os personagens, sem marcar quais 4 estão no time da batalha.
