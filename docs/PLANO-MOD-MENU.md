@@ -208,6 +208,11 @@ batalha, sem encontros, nível dos POW no máximo.
 - **A1, parte da ferramenta**: `analise/tools/ar_codes.py` interpreta os códigos AR
   (com testes), e o `emu_run.py` liga cheats e lê a RAM no emulador. Falta rodar com a ROM
   e medir o dano numa batalha.
+- **A2, primeira rodada (com a ROM e o save)**: as 74 regras têm endereço e formato
+  conhecidos (`mapa_regras.py`); anéis do HUD em `0x02160EB0`; lista do grupo em
+  `0x02160B28`, com HP, PP e atributos de cada membro. Os cheats de anéis e do grupo
+  foram conferidos no emulador (valores na memória e na tela de perfil). Faltam: o
+  critério "sobrevive a trocar de área e recarregar o save", a batalha, XP, itens e Chao.
 
 ## 4. Caminho B: o mod menu
 

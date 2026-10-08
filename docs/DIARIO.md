@@ -187,6 +187,38 @@ O resultado está em [CHEATS.md](CHEATS.md).
   tudo quando o laço acaba. Lição: o teste do laço tinha a resposta esperada escrita à
   mão, e foi isso que pegou o erro.
 
+## 14. A RAM do jogo, com o save de verdade
+Com a ROM e o save do cartão no emulador. O resultado está em [CHEATS.md](CHEATS.md).
+
+- **O save "sumido".** O jogo ignorava o `.sav` e começava do zero. O arquivo do Pico
+  Loader tem 512 KB, mas só os primeiros 64 KB têm dados: o jogo usa uma memória de
+  512 Kbit. Com o arquivo inteiro, o DeSmuME deduz 4 Mbit e o jogo não reconhece nada.
+  Cortado em 64 KB, apareceu "Green Hill Zone, Chapter 1, 8 anéis". O `emu_run.py` ganhou
+  `sav ARQ 65536`.
+- **As 74 regras de uma vez.** Em vez de ler 74 chamadas no assembly, executei a função
+  que carrega a tabela no Unicorn, trocando a leitura do arquivo por uma função que
+  devolve um valor de teste. Cada escrita na memória disse onde a regra mora. Rodando com
+  dois valores de teste diferentes, apareceu também a conversão (inteiro, ×4096, 0/1,
+  ÷100). Os 4 endereços que já conhecíamos bateram, e os valores lidos no boot também.
+- **Anéis: dois contadores.** A busca "era 8, virou 9" deu dois endereços. Escrever em
+  cada um, separadamente, mostrou qual é o do HUD (`0x02160EB0`, fixo).
+- **O grupo.** Pendurei uma função Python na `Stats_GetInt` (0x02007ab0) do emulador
+  para anotar quem lê atributos. Dois objetos de 115 atributos apareciam o tempo todo:
+  Sonic e Amy. Escrever no atributo 0 mudou a barra vermelha (HP), e escrever na tela de
+  perfil confirmou Speed, Attack, Defense e Luck.
+- **Erro nº 7** (pego antes de virar cheat): a primeira cadeia de ponteiros que a busca
+  achou para o HP do Sonic partia de `0x021A4C70` e funcionava. Mas o primeiro campo do
+  objeto apontado era `0x10000001`, sem vtable: era um bloco do heap, não um objeto do
+  jogo, e a cadeia da Amy pelo mesmo caminho tinha deslocamentos diferentes, ou seja,
+  coincidência. Procurei quem aponta para as duas criaturas e achei a lista do grupo em
+  `0x02160B28`, com Sonic e Amy lado a lado. Lição: uma cadeia de ponteiros só vale se
+  cada passo for um objeto que faz sentido (a vtable diz qual classe é); "funcionou
+  agora" não basta, porque o heap muda de uma sessão para outra.
+- **Erro nº 8** (meu, no commit anterior): ao acrescentar a seção 13, troquei sem querer
+  o título "O que ainda não sabemos" pelo texto novo, e a seção perdeu o título. Ele
+  voltou abaixo.
+
+## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
 itens, de personagens), a versão exata do compilador e as partes do combate listadas em

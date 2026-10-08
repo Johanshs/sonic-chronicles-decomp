@@ -82,6 +82,19 @@ class TestMotor(unittest.TestCase):
                          [(0x02000000, 1), (0x02000004, 1), (0x02000008, 1)])
 
 
+class TestRegras(unittest.TestCase):
+    def test_conversoes(self):
+        self.assertEqual(ar_codes.codigo_regra(44, 1000), "020F64C0 000003E8")   # int
+        self.assertEqual(ar_codes.codigo_regra(45, -5), "020F64BC FFFFFFFB")     # negativo
+        self.assertEqual(ar_codes.codigo_regra(3, 2), "021A57B4 00002000")       # fx
+        self.assertEqual(ar_codes.codigo_regra(71, 90), "021A57C0 00000E66")     # fx/100
+        self.assertEqual(ar_codes.codigo_regra(4, 0), "020F6478 00000000")       # bool
+
+    def test_74_regras_sem_endereco_repetido(self):
+        self.assertEqual(sorted(ar_codes.REGRAS), list(range(74)))
+        self.assertEqual(len({e for e, _ in ar_codes.REGRAS.values()}), 74)
+
+
 class TestValidar(unittest.TestCase):
     def test_condicao_aberta(self):
         erros = validar({"codigos": [0x94000130, 0xFCFF0000, 0x22160E54, 0xFC]})

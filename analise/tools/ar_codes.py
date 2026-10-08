@@ -12,6 +12,10 @@ quadro, escrevendo na RAM. Serve para três coisas:
         roda cada cheat uma vez numa memória vazia e mostra o que ele escreveria.
         TECLAS = teclas apertadas, separadas por vírgula (ex.: L,R,UP).
 
+    python3 analise/tools/ar_codes.py regra N VALOR
+        escreve o código que muda a regra de combate N para VALOR, já no formato em que
+        o jogo a guarda (inteiro, ponto fixo ×4096, booleano...). Ex.: regra 44 1000.
+
     no emulador (py-desmume): Motor(cheats).quadro(MemoriaDesmume(emu)) a cada quadro;
         o emu_run.py faz isso com a ação "cheat ARQ".
 
@@ -43,6 +47,35 @@ except ImportError:  # pragma: no cover
 M32 = 0xFFFFFFFF
 RAM = (0x02000000, 0x02400000)   # RAM principal: 4 MB
 TECLAS_IO = 0x04000130           # KEYINPUT: bit em 0 = apertado
+REGRAS = {  # regra: (endereço, formato) — gerado por mapa_regras.py, conferido no emulador
+    0: (0x020F6480, "int"), 1: (0x020F6474, "int"), 2: (0x020F6484, "int"),
+    3: (0x021A57B4, "fx"), 4: (0x020F6478, "bool"), 5: (0x020F64E0, "int"),
+    6: (0x020F64DC, "int"), 7: (0x020F6470, "int"), 8: (0x020F64FC, "int"),
+    9: (0x020F64D8, "int"), 10: (0x020F64F4, "int"), 11: (0x020F64F0, "int"),
+    12: (0x020F64EC, "int"), 13: (0x020F64E8, "int"), 14: (0x020F64E4, "int"),
+    15: (0x021AC29C, "fx"), 16: (0x021AC2A0, "fx"), 17: (0x021AC2A4, "fx"),
+    18: (0x021AC2D8, "fx"), 19: (0x021AC2DC, "fx"), 20: (0x021AC2E0, "fx"),
+    21: (0x021AC2A8, "fx"), 22: (0x021AC2AC, "fx"), 23: (0x021AC2B0, "fx"),
+    24: (0x021AC2B4, "fx"), 25: (0x021AC2B8, "fx"), 26: (0x021AC2BC, "fx"),
+    27: (0x021AC2C0, "fx"), 28: (0x021AC2C4, "fx"), 29: (0x021AC2C8, "fx"),
+    30: (0x021AC2FC, "fx"), 31: (0x021AC300, "fx"), 32: (0x021AC304, "fx"),
+    33: (0x020F64F8, "int"), 34: (0x021A57F0, "bool"), 35: (0x021A57E8, "fx/1000"),
+    36: (0x021AC288, "int"), 37: (0x021AC28C, "int"), 38: (0x020F944C, "int"),
+    39: (0x020F64D4, "int"), 40: (0x020F64D0, "int"), 41: (0x020F64CC, "int"),
+    42: (0x020F64C8, "int"), 43: (0x020F64C4, "int"), 44: (0x020F64C0, "int"),
+    45: (0x020F64BC, "int"), 46: (0x020F64B8, "int"), 47: (0x020F64B4, "int"),
+    48: (0x021AC2CC, "fx"), 49: (0x021AC2D0, "fx"), 50: (0x021AC2D4, "fx"),
+    51: (0x021A57E0, "fx/100"), 52: (0x021A57DC, "fx/100"), 53: (0x021A57EC, "fx/1000"),
+    54: (0x021A57D8, "fx/100"), 55: (0x020F64B0, "int"), 56: (0x020F64AC, "int"),
+    57: (0x021A57D4, "int"), 58: (0x020F64A8, "int"), 59: (0x020F64A4, "int"),
+    60: (0x021A57D0, "int"), 61: (0x020F64A0, "int"), 62: (0x020F649C, "int"),
+    63: (0x020F6498, "int"), 64: (0x021A57CC, "int"), 65: (0x020F6494, "int"),
+    66: (0x021A57C8, "int"), 67: (0x020F6490, "int"), 68: (0x020F648C, "int"),
+    69: (0x020F6488, "int"), 70: (0x021A57C4, "int"), 71: (0x021A57C0, "fx/100"),
+    72: (0x021A57BC, "fx/100"), 73: (0x021A57B8, "fx/100"),
+}
+
+
 TECLAS = {"A": 0, "B": 1, "SELECT": 2, "START": 3, "RIGHT": 4, "LEFT": 5, "UP": 6,
           "DOWN": 7, "R": 8, "L": 9}
 
@@ -228,11 +261,23 @@ def validar(cheat):
     return erros
 
 
+def codigo_regra(n, valor):
+    """Linha AR que grava `valor` (na unidade da tabela combatrules) na regra n."""
+    end, fmt = REGRAS[n]
+    bruto = {"int": lambda v: int(v), "bool": lambda v: 1 if v else 0,
+             "fx": lambda v: round(v * 4096), "fx/100": lambda v: round(v * 4096 / 100),
+             "fx/1000": lambda v: round(v * 4096 / 1000)}[fmt](valor)
+    return f"{end:08X} {bruto & M32:08X}"
+
+
 def _todos(caminho):
     return [(p["nome"], ch) for p in ler_txt_pastas(caminho) for ch in p["cheats"]]
 
 
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "regra":
+        print(codigo_regra(int(sys.argv[2]), float(sys.argv[3])))
+        return
     if len(sys.argv) < 3 or sys.argv[1] not in ("validar", "simular"):
         print(__doc__)
         sys.exit(1)
