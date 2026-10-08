@@ -110,7 +110,9 @@ Os botões ficam em `0x04000130` (bit em 0 = apertado): A = bit 0, B = 1, Select
 Start = 3, R = 8, L = 9. Assim, "L + R apertados" é `94000130 FCFF0000`.
 
 ### Primeiros cheats (rascunho, a validar na fase A1)
-Valores tirados de [COMBATE.md](COMBATE.md). Nenhum deles foi testado numa batalha ainda.
+Valores tirados de [COMBATE.md](COMBATE.md). **Testados no DS real em 08/10/2026**: os 4
+ligaram e o efeito visto em batalha foi o esperado (ver "Andamento" abaixo). Falta a
+medição da fase A1: conferir os números contra as fórmulas.
 
 ```
 [Dano do grupo bem maior (k 110 → 1000: o termo aleatório pesa 9× mais)]
@@ -163,12 +165,14 @@ batalha, sem encontros, nível dos POW no máximo.
   | Endereço | O que o cheat diz | Observação |
   |---|---|---|
   | `0x022604A0` | HP (escreve 9999) | heap, mas em posição fixa |
-  | `0x022262F4` | anéis | heap |
-  | `0x02226605`/`06` + 9×n | nível e posse dos Chao | laço do AR com passo 9 |
-  | `0x021D10AC` (ponteiro) +0x114 | dinheiro | primeira cadeia de ponteiros conhecida |
-  | `0x021D10EE`, `0x021D10F8` | EXP | perto do início do heap (`arenaLo` ~0x021B9500) |
-  | `0x02160EB0` | anéis do tabuleiro | BSS: endereço estático |
-  | `0x02017A20`, `0x0209451C` | patches de código (coletar de longe, pontos de habilidade) | trechos do ARM9 a estudar |
+  | `0x022262F4` | anéis | heap: é a carteira, esquadrão `0x022261E0` + `0x114` (conferido) |
+  | `0x02226605`/`06` + 9×n | nível e posse dos Chao | o passo é 10: nível e cópias em esquadrão `+0x425`/`+0x426` (conferido) |
+  | `0x021D10AC` (ponteiro) +0x114 | dinheiro | aponta para o esquadrão, mas fica no heap; o caminho fixo é `0x02160C18` (conferido) |
+  | `0x021D10EE`, `0x021D10F8` | EXP | `0x021D10F8` é o XP do grupo (esquadrão `+0x48` → `+0x50`, conferido) |
+  | `0x02160EB0` | anéis do tabuleiro | BSS: soma 1 por anel, mas não é a carteira (conferido) |
+  | `0x0201763A` | patch de código (anéis ×2) | só dobra o contador da área; a carteira é `0x02017648` (conferido) |
+  | `0x02017A20` | patch de código (coletar de longe) | funciona; os testes que importam são `0x02017A56`/`88` (conferido) |
+  | `0x0209451C` | patch de código (pontos de habilidade) | compra de POW sai, mas os pontos ficam negativos (conferido) |
 
 - **No cartão** (com autorização do dono): o `usrcheat.dat` de 55 MB foi trocado por um
   banco enxuto de 7,9 MB, gerado com `usrcheat.py`: as 248 entradas dos 27 jogos que estão
@@ -177,6 +181,58 @@ batalha, sem encontros, nível dos POW no máximo.
   ([DeadSkullzJr](https://gbatemp.net/threads/deadskullzjrs-nds-i-cheat-databases.488711/))
   e pode ser baixado de novo. Motivo da troca: o gravador do cartão aceita no máximo
   30 MB por arquivo, e o nome tem que ser `usrcheat.dat`.
+- **Teste no DS (08/10/2026)**: com esse banco no cartão, os 4 cheats de
+  `cheats/YWSE.txt` foram ligados pelo Pico Launcher. O jogo rodou sem erro e o efeito
+  de cada um foi o esperado. Com isso:
+  - a **A0 está concluída**: o jogo roda pelo cartão e o motor de cheats funciona (com
+    cheats nossos, o que prova mais do que um cheat do banco público);
+  - o critério da **A3** ("o Pico Launcher lista os cheats e eles funcionam no DS") foi
+    atingido para estes 4 cheats; a A3 continua valendo para os cheats que a A2 trouxer;
+  - o Pico Launcher aceitou os tipos de código `0` (escrita de 32 bits), `2` (8 bits),
+    `9` (condição de 16 bits, os botões) e `D0` (fim do bloco);
+  - a **A1 continua aberta**: o teste foi a olho, sem medir o dano. A A1 vai dizer se os
+    números batem com as fórmulas do [COMBATE.md](COMBATE.md). O efeito da dificuldade
+    dinâmica é o mais difícil de ver a olho, e a dúvida sobre a cópia do nível em cada
+    inimigo (`+0x1d8`) também fica para a A1.
+
+### Andamento: bateria de cheats (08/10/2026)
+- **Bateria v1** em `cheats/YWSE.txt`, explicada em [CHEATS.md](CHEATS.md): 12 cheats em
+  4 pastas (dano do grupo, dano dos inimigos, defender, dificuldade), 8 deles novos. Os
+  novos usam os endereços já testados no DS com outros valores, mais a regra 7
+  (`0x020F6470`, conferida só no emulador). Há cheats "por botão" (L+direcional) que
+  funcionam como interruptor, porque o jogo não regrava as regras depois do boot.
+- **Pastas "escolha 1"**: o `usrcheat.py` agora grava várias pastas e a marca "um só
+  ativo" do formato, e troca as pastas "Projeto..." de uma versão anterior.
+- **Tipos de código**: o Pico Loader usa o motor de cheats do NitroHax (o
+  `CheatPreprocessor.cpp` dele diz isso e adapta os códigos D4/DB/E para esse motor), que
+  implementa o conjunto completo do Action Replay DS. Os tipos 5, 6, B e D2 dos cheats
+  públicos devem funcionar; no DS, só `0`, `2`, `9` e `D0` foram vistos rodando.
+- **A1, parte da ferramenta**: `analise/tools/ar_codes.py` interpreta os códigos AR
+  (com testes), e o `emu_run.py` liga cheats e lê a RAM no emulador. Falta rodar com a ROM
+  e medir o dano numa batalha.
+- **A2, primeira rodada (com a ROM e o save)**: as 74 regras têm endereço e formato
+  conhecidos (`mapa_regras.py`); anéis do HUD em `0x02160EB0`; lista do grupo em
+  `0x02160B28`, com HP, PP e atributos de cada membro. Os cheats de anéis e do grupo
+  foram conferidos no emulador (valores na memória e na tela de perfil). Faltam: o
+  critério "sobrevive a trocar de área e recarregar o save", a batalha, XP, itens e Chao.
+- **A1 e A2, segunda rodada**: medido numa batalha do Capítulo 10 no emulador. As regras
+  44 e 45 seguem a fórmula do COMBATE.md à risca; Power, Luck e Defense 99 têm o efeito
+  previsto. Duas correções: o cheat de anéis agora usa a carteira (`0x02160C18` →
+  esquadrão `+0x114`, conferida no Inventário), e os do grupo cobrem as posições 0 a 11
+  da lista de personagens. Novos: XP no máximo e "Itens não acabam" (patch de código).
+  Chao: nível Max e os 5 de troca sem fio. As cadeias valem nos dois saves testados
+  (Green Hill e Nocturne). Falta: testar no DS.
+- **A2, terceira rodada**: as três pistas públicas de código foram lidas no assembly e
+  rodadas no emulador (tabela acima). Novos, todos conferidos pelo interpretador AR no
+  emulador: multiplicador de anéis na carteira (×2, ×5, ×10), pegar todos os anéis da
+  área, e a pasta POW (compra sem gastar pontos, 99 pontos, todos os golpes no nível III).
+  Os pontos e níveis de POW são os atributos 75 e 69 a 74 do personagem. Depois:
+  "5 ações por rodada" e "imune aos 6 elementos" (conferidos numa batalha) e "Loja:
+  comprar sem gastar anéis" ([baixa]: falta uma loja no emulador).
+- **A2, quarta rodada**: a loja foi aberta no emulador (teletransporte e troca de destino,
+  DIARIO seção 17) e o cheat dela passou a [média], com a conferência do botão que faltava.
+  Novos: andar 2x e 4x mais rápido no mapa. Confirmado: "Itens não acabam" deixa vender sem
+  perder o item.
 
 ## 4. Caminho B: o mod menu
 
@@ -248,10 +304,11 @@ mesmo modificada.
 ## 7. Perguntas em aberto
 
 - ~~Qual é o modelo do R4?~~ R4i-SDHC Gold Pro (r4isdhc.com) → plataforma DSTT.
-- O Pico Launcher abre pelo kernel do Gold Pro e lê o SD? (teste da fase A0)
-- O formato exato do `usrcheat.dat` (cabeçalho, identificação do jogo por código + CRC) e
-  quais tipos de código AR o Pico Launcher aceita: conferir na fase A3, no código-fonte
-  do launcher.
+- ~~O Pico Launcher abre pelo kernel do Gold Pro e lê o SD?~~ Sim: o jogo e os cheats
+  rodaram por ele no DS (08/10/2026).
+- ~~O formato exato do `usrcheat.dat` e quais tipos de código AR o Pico Launcher
+  aceita~~ O formato está em `usrcheat.py` (ida e volta idêntica); o motor é o do
+  NitroHax, com todos os tipos do Action Replay DS (ver o andamento da bateria, acima).
 - Menu em inglês ou português? (A fonte 8×8 nossa permite acentos.)
 
 Referências: [Pico Loader](https://github.com/LNH-team/pico-loader),

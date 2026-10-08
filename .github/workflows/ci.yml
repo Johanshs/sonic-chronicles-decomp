@@ -32,3 +32,7 @@ jobs:
         run: |
           python3 -m py_compile analise/tools/*.py
           bash -n analise/run_all.sh
+      - name: testes dos scripts (cheats AR e usrcheat.dat)
+        run: python3 -m unittest discover -s analise/tools -p 'test_*.py'
+      - name: forma dos cheats do projeto
+        run: python3 analise/tools/ar_codes.py validar cheats/YWSE.txt

@@ -112,7 +112,11 @@ Outras ferramentas:
 |---|---|
 | `tools/xref.py arm9.bin symbols.txt relocs.txt saida.json` | quais funções usam quais strings (pelas relocações do literal pool) |
 | `tools/gff4.py arquivo [saida.json]` | qualquer GFF4 → JSON (referência em Python do leitor Rust) |
-| `tools/emu_run.py rom.nds pasta "roteiro"` | roda a ROM no DeSmuME sem janela e executa ações: `w N` espera, `p TECLA` aperta, `t X Y` toca a tela, `s nome` captura, `save`/`load` estado. Precisa de `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` |
+| `tools/emu_run.py rom.nds pasta "roteiro"` | roda a ROM no DeSmuME sem janela e executa ações: `w N` espera, `p TECLA` aperta, `t X Y` toca a tela, `s nome` captura, `save`/`load` estado, `sav ARQ 65536` carrega o save do cartão, `cheat ARQ TEXTO` liga um cheat a cada quadro, `ler END` lê a RAM. Precisa de `SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy` |
+| `tools/ar_codes.py validar\|simular cheats/YWSE.txt` | interpretador de códigos Action Replay DS: confere a forma dos cheats e mostra o que cada um escreveria; `regra N VALOR` escreve o código de qualquer regra de combate (ver [CHEATS.md](CHEATS.md)) |
+| `tools/mapa_regras.py arm9.bin` | executa no Unicorn a função que carrega as 74 regras de combate e diz onde cada uma mora e em que formato (precisa de `pip install unicorn`) |
+| `tools/usrcheat.py listar\|extrair\|inserir` | lê e grava o banco de cheats `usrcheat.dat` do cartão |
+| `python3 -m unittest discover -s analise/tools -p 'test_*.py'` | testes dos scripts que não precisam da ROM (rodam na CI) |
 | `tools/ghidra_symbols.py` | converte os símbolos do dsd para o Ghidra |
 | `tools/manifest_pairs.py` | lista hash/nome de um manifesto (para os testes em C) |
 | `tools/combate_tabelas.py projeto [saida]` | lê um projeto do `sonic-mod unpack` e gera em Markdown os golpes, efeitos (`.SPL`), itens (`.ITM`), criaturas e regras de combate, já decodificados (ver [COMBATE.md](COMBATE.md)) |

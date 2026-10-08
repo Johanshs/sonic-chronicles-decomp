@@ -9,8 +9,12 @@ pelo TWiLight Menu++. Uso:
     python3 analise/tools/usrcheat.py inserir usrcheat.dat cheats/YWSE.txt saida.dat
 
 `extrair` gera um banco menor só com os jogos pedidos (útil para o cartão carregar mais
-rápido). `inserir` acrescenta, no fim da entrada do jogo, uma pasta com os códigos de um
-arquivo de texto (formato na função `ler_txt`). O arquivo original nunca é alterado.
+rápido). `inserir` acrescenta, no fim da entrada do jogo, as pastas e os códigos de um
+arquivo de texto (formato na função `ler_txt_pastas`). O arquivo original nunca é
+alterado. Se o banco já tiver pastas nossas (nome começando por "Projeto"), elas são
+trocadas pelas novas, então dá para rodar de novo sobre o banco que está no cartão. Antes
+de gravar no cartão, confira a forma dos códigos com
+`python3 analise/tools/ar_codes.py validar cheats/YWSE.txt`.
 
 Formato (descoberto lendo o banco do DeadSkullzJr e conferido pela ida e volta):
 
@@ -127,28 +131,50 @@ def item_pasta(nome, desc, filhos, um_so=False):
     return struct.pack("<I", PASTA | (UM_SO if um_so else 0) | filhos) + _str_alinhadas(nome, desc)
 
 
-def ler_txt(caminho):
+PASTA_PADRAO = "Projeto sonic-chronicles-decomp"
+
+
+def ler_txt_pastas(caminho):
     """Formato de texto dos nossos cheats:
 
         # comentário
+        @pasta Nome da pasta        (os cheats seguintes ficam nela)
+        @escolha Nome da pasta      (pasta em que só um cheat pode ficar ligado)
+        ; descrição da pasta (opcional, logo depois do @)
         [Nome do cheat]
         ; descrição (opcional, uma linha)
         020F64C0 000003E8
+
+    Devolve [{"nome", "desc", "um_so", "cheats"}]. Cheats antes de qualquer @ ficam
+    numa pasta de nome vazio (o `inserir` a chama de PASTA_PADRAO).
     """
-    cheats, atual = [], None
-    for linha in open(caminho, encoding="utf-8"):
+    pastas = [{"nome": "", "desc": "", "um_so": False, "cheats": []}]
+    atual = None
+    with open(caminho, encoding="utf-8") as f:
+        texto = f.read().splitlines()
+    for linha in texto:
         linha = linha.strip()
         if not linha or linha.startswith("#"):
             continue
-        if linha.startswith("[") and linha.endswith("]"):
+        if linha.startswith(("@pasta ", "@escolha ")):
+            tipo, nome = linha[1:].split(None, 1)
+            pastas.append({"nome": nome.strip(), "desc": "", "um_so": tipo == "escolha",
+                           "cheats": []})
+            atual = pastas[-1]
+        elif linha.startswith("[") and linha.endswith("]"):
             atual = {"nome": linha[1:-1], "desc": "", "codigos": []}
-            cheats.append(atual)
+            pastas[-1]["cheats"].append(atual)
         elif linha.startswith(";"):
             atual["desc"] = linha[1:].strip()
         else:
             a, v = linha.split()[:2]
             atual["codigos"] += [int(a, 16), int(v, 16)]
-    return cheats
+    return [p for p in pastas if p["cheats"]]
+
+
+def ler_txt(caminho):
+    """Todos os cheats do arquivo, sem as pastas."""
+    return [c for p in ler_txt_pastas(caminho) for c in p["cheats"]]
 
 
 def montar(banco, blocos):
@@ -164,25 +190,48 @@ def montar(banco, blocos):
     return bytes(cab + saida_idx + b"\0" * (pos - indice) + corpo)
 
 
-def inserir_pasta(blk, nome_pasta, desc, cheats):
-    """Acrescenta uma pasta com `cheats` no fim do bloco de um jogo."""
+def inserir_pastas(blk, pastas, trocar="Projeto"):
+    """Acrescenta as `pastas` [(nome, desc, cheats, um_so)] no fim do bloco de um jogo.
+
+    O formato só tem um nível de pasta: cada pasta nossa vira uma pasta do jogo. As
+    pastas que já existirem com nome começando por `trocar` (uma versão anterior dos
+    nossos cheats) são removidas antes, com os cheats delas; o resto fica intacto.
+    """
     nome, cab, itens = ler_bloco(blk)
-    # Fim real dos itens (o bloco pode ter preenchimento depois).
-    p = _alinha(len(nome.encode("latin-1")) + 1) + 36
+    ini = _alinha(len(nome.encode("latin-1")) + 1)
+    # Onde cada item começa e termina (o bloco pode ter preenchimento depois).
+    p, trechos = ini + 36, []
     for it in itens:
         h = struct.unpack_from("<I", blk, p)[0]
         if it["tipo"] == "pasta":
             q = p + 4
             for _ in range(2):
                 q = blk.index(b"\0", q) + 1
-            p = _alinha(q)
+            fim = _alinha(q)
         else:
-            p += 4 + (h & 0xFFFFFF) * 4
-    novos = item_pasta(nome_pasta, desc, len(cheats)) + b"".join(
-        item_cheat(c["nome"], c["desc"], c["codigos"]) for c in cheats)
-    cab[0] = (cab[0] & ~0xFFFF) | ((cab[0] & 0xFFFF) + 1 + len(cheats))
-    inicio = blk[:_alinha(len(nome.encode("latin-1")) + 1)]
-    return inicio + struct.pack("<9I", *cab) + blk[_alinha(len(nome.encode("latin-1")) + 1) + 36:p] + novos
+            fim = p + 4 + (h & 0xFFFFFF) * 4
+        trechos.append(blk[p:fim])
+        p = fim
+    mantidos, pular = [], 0
+    for it, raw in zip(itens, trechos):
+        if pular:
+            pular -= 1
+        elif trocar and it["tipo"] == "pasta" and it["nome"].startswith(trocar):
+            pular = it["filhos"]
+        else:
+            mantidos.append(raw)
+    novos = []
+    for nome_pasta, desc, cheats, um_so in pastas:
+        novos.append(item_pasta(nome_pasta, desc, len(cheats), um_so))
+        novos += [item_cheat(c["nome"], c["desc"], c["codigos"]) for c in cheats]
+    n = len(mantidos) + len(novos)
+    cab[0] = (cab[0] & ~0xFFFF) | n
+    return blk[:ini] + struct.pack("<9I", *cab) + b"".join(mantidos) + b"".join(novos)
+
+
+def inserir_pasta(blk, nome_pasta, desc, cheats):
+    """Acrescenta uma pasta com `cheats` no fim do bloco de um jogo (sem trocar nada)."""
+    return inserir_pastas(blk, [(nome_pasta, desc, cheats, False)], trocar=None)
 
 
 def main():
@@ -210,17 +259,19 @@ def main():
         open(saida, "wb").write(montar(banco, blocos))
         print(f"{len(blocos)} jogos → {saida}")
     elif acao == "inserir":
-        cheats = ler_txt(sys.argv[3])
+        pastas = [(p["nome"] or PASTA_PADRAO, p["desc"], p["cheats"], p["um_so"])
+                  for p in ler_txt_pastas(sys.argv[3])]
         saida = sys.argv[4]
         cod = sys.argv[5] if len(sys.argv) > 5 else "YWSE"
         blocos = []
         for i, j in enumerate(banco.jogos):
             blk = banco.bloco(i)
             if j[0] == cod:
-                blk = inserir_pasta(blk, "Projeto sonic-chronicles-decomp", "experimental", cheats)
+                blk = inserir_pastas(blk, pastas)
             blocos.append((j[0], j[1], blk))
         open(saida, "wb").write(montar(banco, blocos))
-        print(f"{len(cheats)} cheats inseridos em {cod} → {saida}")
+        n = sum(len(p[2]) for p in pastas)
+        print(f"{n} cheats em {len(pastas)} pastas inseridos em {cod} → {saida}")
     else:
         print(__doc__)
         sys.exit(1)
