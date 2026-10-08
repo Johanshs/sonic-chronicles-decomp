@@ -218,6 +218,33 @@ Com a ROM e o save do cartão no emulador. O resultado está em [CHEATS.md](CHEA
   o título "O que ainda não sabemos" pelo texto novo, e a seção perdeu o título. Ele
   voltou abaixo.
 
+## 15. A primeira batalha medida
+Com o save do Capítulo 10 (o slot Nocturne do seu cartão), um passeio aleatório no mapa
+achou uma batalha contra 4 Nocturne Decurion. O truque da medição: um *savestate* logo
+antes do golpe. O emulador é determinístico, então carregar o mesmo estado e repetir os
+mesmos toques sorteia os mesmos dados; só o valor do cheat muda. Resultados em
+[CHEATS.md](CHEATS.md#medições-no-emulador-fase-a1).
+
+- **A fórmula do dano bateu.** Nove valores da regra 44 deram uma reta exata
+  (dano = 17 + k/10), mais o piso da fórmula aparecendo em k = 0. A regra 45 deu a mesma
+  reta para os inimigos, e o Luck 99 deu o crítico previsto, 60, até o último ponto. O P
+  da fórmula é o atributo 41, que estava como "deduzido".
+- **Erro nº 9: o cheat de anéis mexia no contador errado.** Ele escrevia em
+  `0x02160EB0` porque, no Green Hill, esse número aparecia no HUD. Abrindo o Inventário,
+  o número era outro: a carteira está no esquadrão (`0x021D10AC` → `+0x114`). No save do
+  Capítulo 10 a diferença salta: carteira 986967, `0x02160EB0` = 54, HUD "93/124".
+  Lição: conferir um valor numa tela só prova o que aquela tela mostra. Para dinheiro, a
+  tela que importa é onde ele é gasto.
+- **Erro nº 10: os cheats do grupo só cobriam 4 personagens.** A lista em `0x02160B28`
+  não é o time da batalha, é todo mundo que já entrou no grupo: 11 no Capítulo 10, e o
+  Eggman, que estava lutando, é o 10º. Com o "HP sempre cheio" ligado ele tomou 164 de
+  dano. Agora os cheats percorrem as 11 posições, e o mesmo teste deixou todos cheios.
+  Lição: o save do começo do jogo (2 personagens) escondia o problema; testar no save
+  mais avançado achou.
+- **As travas provaram que eram necessárias.** No começo do jogo, a posição 3 da lista
+  tem lixo (`0x6C616D69`, pedaço de um nome de arquivo) e a 8 aponta para algo que não é
+  uma criatura. Com todos os cheats ligados, nada fora das criaturas foi escrito.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de

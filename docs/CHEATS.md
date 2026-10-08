@@ -156,22 +156,46 @@ bate mais forte; com "−4", cai mais rápido e erra mais. O "neutro" serve de r
 
 | Cheat | Código | Efeito | Confiança |
 |---|---|---|---|
-| Anéis sempre 9999 | `02160EB0 0000270F` | o contador de anéis do HUD fica em 9999 | [média] |
+| Anéis sempre 999999 | ponteiro `0x021D10AC` + `0x114` (abaixo) | a carteira (a do inventário e da tela de save) fica em 999999 | [média] |
 
-**Como foi achado:** no emulador, com o seu save, peguei um anel (8 → 9) e procurei na RAM
-os valores que eram 8 e passaram a 9. Sobraram dois: `0x02160EB0` (BSS, endereço fixo) e
-`0x022262F4` (heap, o do cheat público). Escrevi 500 em cada um, um por vez: só o
-`0x02160EB0` mudou o número do HUD, e ao pegar outro anel ele foi para 501. O outro
-contador também soma 1 por anel, mas não aparece na tela; ainda não sabemos para que
-serve (talvez o total da área). Ainda não conferimos se a loja usa o mesmo contador.
+Os anéis que você gasta moram no objeto `CGamePlayerSquad` (o "esquadrão"), no heap. Uma
+global fixa, `0x021D10AC`, guarda onde ele está, e a carteira fica em `+0x114`:
 
-**Cuidado:** se você salvar com o cheat ligado, os 9999 anéis provavelmente ficam no save.
+```
+321D10AC 02400000   se o ponteiro é menor que o fim da RAM...
+421D10AC 01FFFFFF   ...e maior que o começo (trava)
+B21D10AC 00000000   offset = o esquadrão
+50000000 020F9C08   se o primeiro campo é a vtable de CGamePlayerSquad (trava)
+00000114 000F423F   carteira = 999999
+D2000000 00000000   fim
+```
+
+**Como foi achado (e o erro da primeira versão):** pegando um anel (8 → 9), dois
+contadores somaram 1: `0x02160EB0` (endereço fixo) e o `0x022262F4` do cheat público. A
+primeira versão deste cheat escrevia em `0x02160EB0`, porque no Green Hill ele mudava o
+número do HUD. Estava errado: abrindo o **Inventário**, quem aparece é o outro. Escrevi
+500 em `0x02160EB0` e o inventário continuou em 9; escrevi 777 na carteira e o inventário
+mostrou 777. No save do Capítulo 10 a diferença fica clara: carteira 986967 (o número da
+tela de save), `0x02160EB0` = 54 e o HUD mostrando "93/124". O `0x022262F4` é a carteira
+naquele momento (esquadrão em `0x022261E0` + `0x114`); o cheat usa o ponteiro para não
+depender disso.
+
+O `0x02160EB0` soma 1 por anel pego, mas não é o que você gasta. No Green Hill ele bate com
+o HUD ("x/185", anéis da área); no Nocturne não bate (55 contra 94). Ainda não sabemos
+exatamente o que é, então não há cheat para ele.
+
+**Por que 999999:** é o maior número que cabe na tela. Com 1000000 o inventário mostra
+"1000000" passando da moldura.
+
+**Cuidado:** se você salvar com o cheat ligado, os 999999 anéis ficam no save.
 
 ### Pasta "Projeto: grupo"
 
-Cada membro do grupo é um objeto `CGamePlayerCreature` no heap. O endereço muda, mas o
-jogo guarda uma **lista do grupo** num lugar fixo: `0x02160B28` aponta para um vetor em que
-a posição 1 é o primeiro membro, a 2 o segundo, e assim por diante. Dentro da criatura,
+Cada personagem é um objeto `CGamePlayerCreature` no heap. O endereço muda, mas o jogo
+guarda uma **lista dos personagens** num lugar fixo: `0x02160B28` aponta para um vetor em
+que a posição 1 é o primeiro personagem, a 2 o segundo, e assim por diante. A lista tem
+**todos** os personagens que já entraram no grupo, não só os 4 da batalha: no save do
+Capítulo 10 são 11, e o Eggman, que está no time de batalha, é o 10º. Dentro da criatura,
 `+0x1C` aponta para o vetor de atributos (4 bytes cada):
 
 | Posição no vetor | Atributo | Conferido |
@@ -181,18 +205,18 @@ a posição 1 é o primeiro membro, a 2 o segundo, e assim por diante. Dentro da
 | 38 (`+0x98`) | Attack (acerto) | tela de perfil (Atk) |
 | 39 (`+0x9C`) | Defense (esquiva) | tela de perfil (Def) |
 | 40 (`+0xA0`) | HP máximo | barra vermelha e perfil |
-| 41 (`+0xA4`) | Power (dano) | deduzido pela ordem; não aparece no perfil |
+| 41 (`+0xA4`) | Power (dano) | medido numa batalha: é o P da fórmula (veja as medições) |
 | 42 (`+0xA8`) | Grit (armadura) | deduzido pela ordem |
 | 43 (`+0xAC`) | Luck | tela de perfil (Lck) |
 | 44 (`+0xB0`) | PP atual, ×4096 (ponto fixo) | barra azul |
 | 46 (`+0xB8`) | PP máximo | perfil (PP 9/9 da Amy) |
 
-Cada cheat repete este bloco para os membros 1 a 4 (aqui, o membro 1):
+Cada cheat repete este bloco para as posições 1 a 11 (aqui, a posição 1):
 
 ```
 62160B28 00000000   se a lista existe...
 B2160B28 00000000   offset = endereço da lista
-DC000000 00000004   offset += 4 (posição 1; o membro 2 usa 8, e assim por diante)
+DC000000 00000004   offset += 4 (posição 1; a posição 2 usa 8, ..., a 11 usa 2C)
 30000000 02400000   se o ponteiro é menor que o fim da RAM...
 40000000 01FFFFFF   ...e maior que o começo (trava: posição vazia ou lixo)
 B0000000 00000000   offset = a criatura
@@ -204,7 +228,10 @@ D2000000 00000000   fim
 ```
 
 As duas travas são o que deixa o cheat seguro: se o heap estiver diferente no DS, ou a
-posição do grupo estiver vazia, as condições falham e nada é escrito. A vtable é o
+posição estiver vazia, as condições falham e nada é escrito. Elas são necessárias: no
+começo do jogo, com só Sonic e Amy, a posição 3 da lista tem lixo (pedaço de um nome de
+arquivo, `0x6C616D69`) e a 8 tem um endereço válido que não é uma criatura. As travas
+pulam as duas. A vtable é o
 "RG" da classe: todo objeto `CGamePlayerCreature` começa com `0x020F9200`.
 
 | Cheat | Escreve | Efeito | Confiança |
@@ -213,13 +240,74 @@ posição do grupo estiver vazia, as condições falham e nada é escrito. A vta
 | Grupo: Defense 99 | posição 39 = 99 | inimigo só acerta se `99 ≤ Attack + 1d20`: quase nunca | [média] |
 | Grupo: Luck 99 | posição 43 = 99 | crítico se `1d100 < 99`: quase sempre | [média] |
 | Grupo: Speed 60 | posição 37 = 60 | 1ª ação em `max(0, 60 − 60) + 1d2`: o grupo age primeiro | [média] |
-| Grupo: Power 99 | posição 41 = 99 | dano bem maior | [baixa] |
+| Grupo: Power 99 | posição 41 = 99 | dano bem maior | [média] |
 
-[média] aqui quer dizer: no emulador, com o seu save, os valores mudaram e a tela de perfil
-mostrou os números novos. Ainda não vimos o efeito numa batalha.
+[média] aqui quer dizer: no emulador, com o seu save, os valores mudaram, a tela de perfil
+mostrou os números novos e, menos o Speed, o efeito foi medido numa batalha (veja as
+medições abaixo). Ainda não foram testados no DS.
+
+**Correção (v3):** a primeira versão só cobria as posições 1 a 4, achando que eram os 4
+da batalha. Na batalha do Capítulo 10 o Eggman (posição 10) tomou 164 de dano com o "HP
+sempre cheio" ligado. Agora são as 11 posições, e o mesmo teste deixou todos cheios.
+
+**Tamanho:** repetir o bloco 11 vezes deixa cada cheat com cerca de 1 KB. O Pico Loader
+copia os cheats ligados para a RAM principal, no espaço livre logo depois do código do
+ARM7, sem um limite fixo (`arm9/source/Arm7Patcher.cpp` do Pico Loader). Um laço do AR
+(`C0`) seria menor, mas laço com condições dentro é o caso mais sujeito a diferenças entre
+motores de cheat; o bloco repetido usa só códigos que já têm teste no nosso interpretador.
 
 **Cuidado:** estes atributos podem ser gravados no save. Não salve com eles ligados se
 quiser voltar ao normal depois (e faça backup do `.sav` antes de testar).
+
+## Medições no emulador (fase A1)
+
+Feitas em 08/10/2026 no py-desmume com o seu save, slot do Capítulo 10 (Nocturne), numa
+batalha contra 4 Nocturne Decurion (340 HP). A técnica: um *savestate* logo antes do
+golpe. Como o emulador é determinístico, carregar o mesmo estado e repetir os mesmos
+toques dá **os mesmos dados sorteados**; a única coisa que muda entre uma rodada e outra é
+o valor que o cheat escreve. Assim, a diferença no dano é efeito só do cheat.
+
+**Regra 44 (k do grupo).** O golpe do Sonic na emboscada que abre a batalha (Sonic:
+Power 39):
+
+| k | 0 | 50 | 100 | 110 (normal) | 200 | 300 | 500 | 1000 | 2000 |
+|---|---|---|---|---|---|---|---|---|---|
+| dano | 26 | 22 | 27 | 28 | 37 | 47 | 67 | 117 | 217 |
+
+De k = 50 em diante, dano = 17 + k/10, uma reta. Pela fórmula,
+`0,9 × 39 + k/100 × (3dP/3) − A`: o dado deu 10 e o Grit do Decurion é 18
+(35 − 18 = 17). O ponto fora da reta, k = 0, é o **piso** da fórmula: 17 é menor que
+P/2 = 19,5, então o jogo soma P/4 = 9 e dá 26. Com k = 50 o dano (22) já passa de
+19,5 e o piso não entra. Tudo bate com o [COMBATE.md](COMBATE.md#52-dano), inclusive
+que o P é o atributo da posição 41: com o Attack (44) as contas não fecham.
+
+**Regra 45 (k dos inimigos).** Primeiro golpe de um Decurion na Rouge:
+
+| k | 0 | 60 (normal) | 300 |
+|---|---|---|---|
+| dano | 24 | 47 | 138 |
+
+A mesma reta: 24 + k/100 × 38 (o dado deu 38). Com k = 300 a Rouge ficou com HP
+negativo (−25): o jogo guarda o HP com sinal e a deixa nocauteada.
+
+**Atributos do grupo,** no mesmo golpe da emboscada:
+
+| Cheat | Dano do Sonic | Por quê |
+|---|---|---|
+| nenhum | 28 | |
+| Power 99 | 101 | P = 99 (com 99 faces, o dado sorteia outro número) |
+| Luck 99 | 60 | crítico: `39 × (90 + 110)/100 − 18 = 60`, exato |
+
+**Defense 99:** em 24 rodadas de batalha, os inimigos acertaram 5 golpes sem o cheat e 1
+com ele. Esse 1 pode ter sido um ataque que não se esquiva (Inescapable); ainda não
+conferimos.
+
+**HP sempre cheio:** com k dos inimigos em 300, sem o cheat a Rouge e o Eggman caíram;
+com ele, os 11 personagens terminaram com HP cheio.
+
+Para repetir: com `emu_run.py`, carregue o save (`sav`), ande até uma batalha, grave um
+*savestate* (`save`) e, a partir dele, compare rodadas com e sem `cheat`, lendo o HP do
+inimigo com `ler`. Os *savestates* têm a RAM do jogo, por isso ficam fora do Git.
 
 ## Mapa das 74 regras de combate
 
@@ -372,21 +460,25 @@ O dinheiro mora num objeto no heap, que muda de lugar. Mas uma global fixa
 (0x021D10AC) guarda **onde** o objeto está. O cheat segue esse ponteiro a cada quadro.
 É exatamente o que a fase A2 vai fazer para HP, PP e itens.
 
-**Anéis (`022262F4 000F432F`):** escreve direto num endereço do heap, sem ponteiro. A
-SuperCheats avisa que, com ele ligado, o Sonic erra todos os ataques. A explicação mais
-provável: naquele momento o objeto dos anéis estava em outro lugar e o cheat escreveu em
-cima de outra coisa. É por isso que, para dados do heap, a A2 exige um ponteiro que
-sobreviva a trocar de área e recarregar o save.
+**Anéis (`022262F4 000F432F`):** escreve direto num endereço do heap, sem ponteiro. Hoje
+sabemos que `0x022262F4` é a carteira (esquadrão em `0x022261E0` + `0x114`). Nos estados que
+vimos (tela de título, Green Hill, Nocturne) o esquadrão estava sempre em `0x022261E0`,
+porque ele é criado cedo e não muda de lugar. Então o código público provavelmente
+funciona nesta versão. A SuperCheats avisa que, com ele ligado, o Sonic erra todos os
+ataques; isso não apareceu no emulador. Dois detalhes: `000F432F` é 1000239, mais do que
+cabe na tela (o máximo que aparece inteiro é 999999), e um endereço fixo no heap é uma
+aposta. O nosso usa o ponteiro, que continua certo mesmo se o objeto mudar de lugar.
 
 ## O que vem depois
 
 | Categoria | Falta | Como |
 |---|---|---|
-| Medir o dano (A1) | entrar numa batalha no emulador e comparar com as fórmulas | achar um inimigo no mapa com o seu save |
+| Medir no DS | os cheats [média] e [alta] | protocolo acima, um por vez |
 | Grupo | PP cheio (o PP atual é ponto fixo e o máximo é inteiro: o AR não converte), XP, nível | XP: ainda não está no vetor de atributos |
-| Inventário | itens, Chao, conferir se a loja usa o contador de anéis | busca na RAM ao comprar algo |
+| Inventário | itens, Chao (bytes em esquadrão + `0x425`, de 9 em 9), conferir a loja | busca na RAM ao comprar algo |
 | Combate | vencer a batalha, nocautear inimigos, sem encontros | ler o `GameModeCombat` |
 | Mundo | flags de história, teletransporte | ler as funções de plot |
 
 A ferramenta já existe: `analise/tools/emu_run.py` carrega o seu save (`sav`), liga
-cheats (`cheat`) e lê a RAM (`ler`).
+cheats (`cheat`), lê a RAM (`ler`) e grava/carrega *savestates* (`save`/`load`), que é o
+que as medições acima usaram.

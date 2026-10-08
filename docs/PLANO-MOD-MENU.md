@@ -165,11 +165,11 @@ batalha, sem encontros, nível dos POW no máximo.
   | Endereço | O que o cheat diz | Observação |
   |---|---|---|
   | `0x022604A0` | HP (escreve 9999) | heap, mas em posição fixa |
-  | `0x022262F4` | anéis | heap |
+  | `0x022262F4` | anéis | heap: é a carteira, esquadrão `0x022261E0` + `0x114` (conferido) |
   | `0x02226605`/`06` + 9×n | nível e posse dos Chao | laço do AR com passo 9 |
   | `0x021D10AC` (ponteiro) +0x114 | dinheiro | primeira cadeia de ponteiros conhecida |
   | `0x021D10EE`, `0x021D10F8` | EXP | perto do início do heap (`arenaLo` ~0x021B9500) |
-  | `0x02160EB0` | anéis do tabuleiro | BSS: endereço estático |
+  | `0x02160EB0` | anéis do tabuleiro | BSS: soma 1 por anel, mas não é a carteira (conferido) |
   | `0x02017A20`, `0x0209451C` | patches de código (coletar de longe, pontos de habilidade) | trechos do ARM9 a estudar |
 
 - **No cartão** (com autorização do dono): o `usrcheat.dat` de 55 MB foi trocado por um
@@ -213,6 +213,12 @@ batalha, sem encontros, nível dos POW no máximo.
   `0x02160B28`, com HP, PP e atributos de cada membro. Os cheats de anéis e do grupo
   foram conferidos no emulador (valores na memória e na tela de perfil). Faltam: o
   critério "sobrevive a trocar de área e recarregar o save", a batalha, XP, itens e Chao.
+- **A1 e A2, segunda rodada**: medido numa batalha do Capítulo 10 no emulador. As regras
+  44 e 45 seguem a fórmula do COMBATE.md à risca; Power, Luck e Defense 99 têm o efeito
+  previsto. Duas correções: o cheat de anéis agora usa a carteira (ponteiro `0x021D10AC`
+  + `0x114`, conferida no Inventário), e os do grupo cobrem as 11 posições da lista de
+  personagens. As cadeias valem nos dois saves testados (Green Hill e Nocturne). Faltam:
+  testar no DS, XP, itens e Chao.
 
 ## 4. Caminho B: o mod menu
 
