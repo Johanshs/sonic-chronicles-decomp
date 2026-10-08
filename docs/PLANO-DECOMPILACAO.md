@@ -22,11 +22,12 @@ diante, as partes podem ser feitas em paralelo, e de forma incremental para semp
 | Funções já reescritas | `HashResourceName`, `CExoString::CStr`, escolha do TLK por idioma (`src/`), validadas contra o jogo |
 | Formatos de dados | todos os principais lidos **e escritos** byte a byte (`engine/`) |
 | Bibliotecas embutidas | NitroSDK 4.2 (`0x04027531`), NitroSystem (`NNS_Tga`, `G3D`), MSL C++ da Metrowerks (iostreams) |
-| Compilador | CodeWarrior para DS (mwccarm), C++ com exceções e RTTI. **Versão exata: desconhecida** (Fase 1) |
+| Compilador | CodeWarrior para DS, **mwccarm 2.0 sp2, `-O4,p`, Thumb, RTTI ligado, exceções desligadas** ([COMPILADOR.md](COMPILADOR.md)) |
+| Build matching | ✅ ROM reconstruída idêntica (SHA-1) a partir do assembly e do C++ de `src/` ([BUILD.md](BUILD.md)) |
 
 ---
 
-## Fase 0: build "matching" a partir do assembly (semana 1)
+## Fase 0: build "matching" a partir do assembly (semana 1) ✅ 0.1 a 0.3
 
 Antes de escrever qualquer C, a ROM precisa ser **reconstruída a partir das partes
 desmontadas** e sair idêntica. É a rede de segurança de todo o resto.
@@ -35,17 +36,23 @@ desmontadas** e sair idêntica. É a rede de segurança de todo o resto.
   executor para os binários Windows da Metrowerks no Linux (`wibo` ou Wine). Os
   compiladores mwccarm não são distribuídos livremente; use os pacotes que a
   comunidade de decompilação de DS usa (o decomp.me tem os mesmos).
-  **Pronto quando:** `mwccarm -version` roda.
+  **Pronto quando:** `mwccarm -version` roda. ✅ `decomp/tools/ferramentas.sh` (dsd 0.12.1,
+  wibo 0.6.16, mwccarm do decomp.me); o `objdiff` foi trocado por `decomp/tools/comparar.py` por enquanto.
 - **0.2 Delink.** `dsd delink` corta o ARM9 em arquivos-objeto (`.o`) por seção.
   No começo, um arquivo por região grande. **Pronto quando:** os `.o` são gerados
-  sem erro.
+  sem erro. ✅
 - **0.3 Linker script.** `dsd lcf` gera o `.lcf` para o `mwldarm`; ligar tudo e
   montar com `dsd rom build`. **Pronto quando:** `sha1(rom_reconstruida) == sha1(rom_original)`.
+  ✅ `decomp/tools/montar_rom.sh` (o ícone do banner e o CRC da área segura precisaram de
+  correção; veja [BUILD.md](BUILD.md#dois-detalhes-fora-do-código)).
 - **0.4 CI.** Uma GitHub Action que roda o build, compara o SHA-1 e publica o
   progresso. A ROM não pode ir para o repositório: o CI só roda com a ROM num
   segredo, ou em uma máquina própria. **Pronto quando:** o build quebrado deixa o PR vermelho.
+  🟡 parcial: sem a ROM, o CI confere o SHA-1 de cada função decompilada
+  (`conferir_sem_rom.py`). O build completo no CI segue em aberto: um segredo do GitHub
+  tem no máximo 48 KB e a ROM tem 128 MB.
 
-## Fase 1: identificar o compilador e as flags (semana 2)
+## Fase 1: identificar o compilador e as flags (semana 2) ✅ 1.1 e 1.2
 
 Sem o compilador certo, nenhum C sai igual ao original.
 
@@ -57,6 +64,8 @@ Sem o compilador certo, nenhum C sai igual ao original.
   `-proc arm946e`, `-thumb`, `-interworking`, `-enum int`, `-char signed`...).
   Comparar com o `objdiff`. A função é Thumb, então `-thumb` deve estar ativo.
   **Pronto quando:** pelo menos 3 funções diferentes dão 100% de match com a mesma configuração.
+  ✅ `CExoString::CStr`, `HashResourceName` e a remoção de item de lista (`0x0202d428`):
+  todas as 2.0, `-O4,p`. Matriz completa: `decomp/tools/testar_compilador.sh`.
 - **1.3 Configurações por biblioteca.** O SDK e a NitroSystem costumam ter sido
   compilados com versão e flags diferentes das do jogo. Repetir 1.2 com uma função
   de cada biblioteca. Documentar em `docs/COMPILADOR.md`.
@@ -71,13 +80,27 @@ precisa ser reescrito do zero.
   `GX_`, `G3_`, `SND_`, `MI_`, `FX_`... Gerar assinaturas e aplicar com
   `dsd sig apply`. **Pronto quando:** as funções do SDK estão nomeadas e os
   arquivos `.c` delas ligam com match.
+  🟡 562 funções nomeadas (`decomp/tools/nitrosdk.sh`, com o fonte de ntrtwl/NitroSDK
+  4.2.30001, compilado em Thumb com a 2.0/sp1p2); 86 dos 87 arquivos já ligam a partir
+  do fonte com a ROM idêntica, inclusive as partes no ITCM e no DTCM. Falta o
+  `gx_vramcnt.c`, com uma função que não bate: lista em [BUILD.md](BUILD.md#as-bibliotecas-da-nintendo-ligadas-do-fonte).
 - **2.2 NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`). Mesma abordagem.
+  ✅ a região `0x020c8278`-`0x020d4394` é 100% NitroSystem 071126 (Thumb, 2.0/sp2), e os
+  59 arquivos dela são ligados a partir do fonte compilado com a ROM idêntica
+  (`decomp/tools/nitrosystem.sh` + `decomp/tools/ligar_bibliotecas.py`).
 - **2.3 Runtime C/C++ (MSL).** `memcpy`, `__register_global_object`, exceções,
   iostreams. Em geral, ligar o `.a` original do CodeWarrior já resolve.
+  🟡 as bibliotecas são as do CodeWarrior 2.0 sp2; 62 dos 68 arquivos do MSL que o jogo
+  usa já ligam a partir dos `.o` tirados do `.a` (`decomp/tools/msl.sh`), com a ROM
+  idêntica. Faltam seis: lista em [BUILD.md](BUILD.md#as-bibliotecas-da-nintendo-ligadas-do-fonte).
 - **2.4 Mapa de arquivos.** Definir em `delinks.txt` os limites de cada "arquivo
   fonte" (*translation unit*). O jogo foi compilado arquivo por arquivo, e as
   classes ajudam a adivinhar a divisão (ex.: tudo de `CTlkTable` num `TlkTable.cpp`).
   **Pronto quando:** o build continua idêntico com o ARM9 dividido em TUs.
+  🟡 175 pedaços que com certeza são de um arquivo só (38% dos bytes do código do jogo)
+  já estão em `delinks.txt`, com a ROM idêntica (`decomp/tools/mapa_arquivos.py`, a
+  regra em [BUILD.md](BUILD.md#o-mapa-de-arquivos-do-jogo)). Falta achar onde cada um
+  começa e acaba de verdade e dividir o resto.
 
 **Métrica a partir daqui:** % de bytes de código em C com match (relatório do `objdiff`).
 

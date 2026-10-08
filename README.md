@@ -25,7 +25,7 @@ descobertas em [`docs/DIARIO.md`](docs/DIARIO.md).
 | **Assets** | ✅ `sonic-dump`: 62 cenários, 3.444 sprites, 342 retratos, textos em 5 idiomas, 660 tabelas, em ~7 s |
 | **Formatos** | ✅ ROM, HERF, LZ10, GFF4, TLK, GDA, 2DA, NCGR/NCLR e cenários: lidos **e escritos** byte a byte |
 | **Código** | 🟡 6.820 funções mapeadas, 290 classes C++ recuperadas, ~2.230 funções nomeadas, pseudo-C de tudo |
-| **Decompilação matching** | ⏳ planejada: [`docs/PLANO-DECOMPILACAO.md`](docs/PLANO-DECOMPILACAO.md) (7 fases, backlog nas *issues*) |
+| **Decompilação matching** | 🟡 Fases 0 e 1: a ROM é reconstruída idêntica ([`docs/BUILD.md`](docs/BUILD.md)), compilador achado (mwccarm 2.0 sp2, [`docs/COMPILADOR.md`](docs/COMPILADOR.md)), 2 funções em C++ já no build, NitroSystem, 86 arquivos do NitroSDK e 62 do MSL ligados a partir das bibliotecas (13,6% do código do ARM9), 175 pedaços do código do jogo já separados por arquivo, ~1.100 funções de biblioteca com o nome verdadeiro. Plano: [`docs/PLANO-DECOMPILACAO.md`](docs/PLANO-DECOMPILACAO.md) |
 | **Port para PC** | ⏳ Fase 7 do plano; hoje o jogo (modificado) roda no PC via emulador |
 
 ## Começando

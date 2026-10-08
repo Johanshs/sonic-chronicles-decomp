@@ -30,5 +30,23 @@ jobs:
         run: make -C decomp build/test_hash build/test_language && ./decomp/build/test_language
       - name: sintaxe dos scripts
         run: |
-          python3 -m py_compile analise/tools/*.py
+          python3 -m py_compile analise/tools/*.py decomp/tools/*.py
           bash -n analise/run_all.sh
+          for f in decomp/tools/*.sh; do bash -n "$f"; done
+  decomp-matching:
+    # Confere, sem a ROM, que o C++ de src/ continua compilando para os mesmos
+    # bytes do jogo (decomp/compilador/esperado.txt guarda só o SHA-1 deles).
+    # O build completo, com a ROM, é o decomp/tools/montar_rom.sh.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: work/ferramentas
+          key: ferramentas-${{ hashFiles('decomp/tools/ferramentas.sh') }}
+      - name: ferramentas (dsd, wibo, mwccarm)
+        run: decomp/tools/ferramentas.sh
+      - name: dependências Python
+        run: python3 -m pip install --user --break-system-packages pyelftools capstone
+      - name: funções decompiladas batem com o jogo
+        run: python3 decomp/tools/conferir_sem_rom.py

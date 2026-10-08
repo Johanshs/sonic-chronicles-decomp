@@ -146,9 +146,208 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 14. A ROM reconstruída (Fase 0)
+O guia está em [`BUILD.md`](BUILD.md). O caminho:
+
+- **Ferramentas sem Windows.** Os compiladores da Metrowerks são `.exe` de 32 bits. O
+  `wibo`, um carregador mínimo feito pela comunidade de decompilação, roda eles no
+  Linux sem Wine. O pacote de compiladores é o mesmo que o decomp.me usa.
+- **Desmontar e montar de novo.** `dsd delink` corta o ARM9 em `.o` com as
+  relocações no lugar dos endereços; o `mwldarm` (o linker original) junta tudo. O
+  ARM9, o ITCM e o DTCM saíram idênticos na primeira tentativa: as 60 mil relocações
+  achadas pelo `dsd init` estão certas.
+- **Os 20 bytes teimosos.** A ROM inteira ainda tinha 20 bytes diferentes, nenhum de
+  código. 16 eram do ícone: a paleta tem duas cores iguais e o PNG intermediário do
+  `dsd` não guarda qual índice era qual. Os outros eram o CRC da área segura, que
+  depende da chave da BIOS do ARM7. Os dois foram resolvidos sem a BIOS, e o SHA-1
+  bateu: `f4ff8291...`.
+- **Erro nº 7:** primeiro li as diferenças do ícone como "índice 8 virou 6" (olhando
+  os bytes em octal do `cmp`). Comparando nibble a nibble, todas eram 4 → 2: as duas
+  entradas com a mesma cor. A causa certa só apareceu quando li o código do `ds-rom`
+  que converte o PNG.
+- **Uma falha da ferramenta.** Compilado do código mais novo, o `dsd` recusava
+  qualquer divisão do ARM9 em arquivos ("nome duplicado" nos buracos sem fonte). O
+  binário da release 0.12.1 não tem o problema; ficamos com ele.
+
+## 15. O compilador (Fase 1)
+O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, Thumb**.
+
+- **Comparar sem o linker.** `decomp/tools/comparar.py` põe lado a lado a função do
+  jogo e a do `.o`, ignorando os bytes que só o linker preenche (o destino de um
+  `bl`, os ponteiros do pool de constantes).
+- **CExoString::CStr** bateu de primeira em todas as versões 2.0: é pequena demais para
+  dizer qual. **HashResourceName** precisou de 3 rodadas: o `tolower` inline com `||`
+  explicou o registrador-bandeira, e uma variável temporária acertou a ordem dos
+  operandos da última soma.
+- **Procurando uma função que separe as versões.** Compilei ~30 construções de C++
+  com todas as versões: só três famílias geram código diferente (1.2, 2.0 e DSi).
+  Uma diferença da DSi é alocar `r4-r7` onde a 2.0 usa `r3-r6`; procurando funções do
+  jogo com esse padrão, a remoção de item de uma lista (`0x0202d428`) bateu com toda a
+  2.0 e com nenhuma DSi.
+- **Exceções desligadas.** Com exceções ligadas o hash ganhava uma entrada no
+  `.exceptix`; as do jogo são todas da biblioteca MSL. O jogo foi compilado sem.
+- **Erro nº 8:** o `comparar.py` media as relocações pela primeira seção `.text` do
+  `.o`. Com uma função de template (que o compilador põe numa seção própria), as
+  relocações erradas eram mascaradas e uma função idêntica aparecia como diferente. A
+  seção certa é a que o campo `sh_info` da seção de relocações aponta.
+- **O service pack pelas bibliotecas.** O código do jogo não separava as versões 2.0,
+  mas o MSL que vem pronto com cada CodeWarrior sim. Procurando no jogo as funções das
+  bibliotecas de 7 versões, só a 2.0 sp2 achou todas as 283 (as outras, de 274 a 280).
+  De quebra, 171 funções do MSL ganharam o nome verdadeiro (`memcpy`, `fwrite`...).
+- **Do teste para o jogo.** CStr e o hash viraram `src/Aurora/*.cpp`, marcados
+  `complete` no `delinks.txt`. O build passou a usar o nosso `.o` no lugar do código
+  original, e o SHA-1 continuou o mesmo. Para provar que a verificação funciona,
+  desfiz a variável temporária do hash: o build falhou apontando o byte
+  `0x02009ba6`, a soma com os operandos trocados.
+
+## 16. O NitroSDK pelo fonte (começo da Fase 2)
+- **A mesma versão, decompilada.** O SDK do jogo é o 4.2.30001, o mesmo que a
+  comunidade decompilou para o Pokémon Platinum. Compilando aquele fonte, cada função
+  do SDK deveria aparecer no jogo com os mesmos bytes.
+- **Erro nº 9:** compilei em ARM, como o Platinum faz, e nada bateu. O assembly do
+  `OS_GetOwnerInfo` no jogo é Thumb: a BioWare usou a versão Thumb das bibliotecas.
+  Recompilado com `-thumb -DSDK_CODE_THUMB`, 562 funções ganharam nome.
+- **Como saber que não é coincidência.** Duas funções pequenas podem ter os mesmos
+  bytes. Por isso os nomes foram conferidos pelas chamadas: se `X` chama `Y` no fonte,
+  o `bl` da função `X` no jogo tem que cair na função `Y`. As 1.140 referências
+  bateram. A única que parecia errada era um ponteiro para *dentro* da própria função
+  (o endereço de retorno de `OSi_DisplayExContext`), e o erro era do conferidor, que
+  ignorava o deslocamento da relocação.
+- **O SDK não foi compilado com o compilador do jogo.** As bibliotecas da Nintendo
+  batem melhor com a 2.0 sp1 (652 funções) do que com a sp2 (649) que compilou o jogo:
+  a Nintendo entrega o SDK já compilado.
+
+## 17. A NitroSystem
+- **Mesmo caminho do SDK.** Compilei a NitroSystem decompilada (versão 071126) em Thumb,
+  já sabendo do Erro nº 9, e 360 funções ganharam nome: o motor de 3D (`NNS_G3d*`), o
+  de som (`NNS_Snd*`), o 2D e os gerenciadores de memória e VRAM.
+- **Uma região inteira explicada.** As 464 funções entre `0x020c8278` e `0x020d4394`
+  batem, todas, com funções da NitroSystem. Não sobra nenhuma: é exatamente a versão
+  que o jogo usa. Isso também corrigiu o começo do SDK, que eu tinha posto em
+  `0x020d4000` só olhando por cima.
+- **Quem compilou o quê:** a NitroSystem bate melhor com a 2.0 sp2 (519 funções) do
+  que com a sp1p2 (517). O SDK é sp1, a NitroSystem e o MSL são sp2, como no Pokémon
+  Platinum.
+- **O conferidor de chamadas errou de novo, e para o lado seguro.** Acusou 3 erros em
+  `AlarmCallback`. Não era o nome: existem duas funções `static` com esse nome
+  (`stream.c` e `capture.c`), e o conferidor comparava as chamadas de uma com o endereço
+  da outra. Agora ele só usa a função do `.o` com o mesmo tamanho da do jogo: 708 de 708.
+- **Ligada do fonte.** O passo seguinte foi o build usar os `.o` compilados no lugar do
+  assembly. A primeira tentativa linkou, mas mudou 19 mil bytes. As causas, uma a uma:
+  - a `.rodata` de um arquivo terminava num endereço ímpar, e o linker alinha o próximo
+    a 4: tudo depois andou 2 bytes. O enchimento é do arquivo;
+  - o jogo aponta para campos no meio de estruturas (`NNS_G3dGlb + 0x80`), e o `.o` só
+    tem o começo; as relocações viraram "símbolo + deslocamento";
+  - funções de código idêntico (os `NNS_G3dFree*`) estavam com o nome trocado. Os bytes
+    batiam, mas o linker põe as funções na ordem do `.o`, e a ordem saiu errada.
+  Com isso, os 59 arquivos da NitroSystem entram compilados e a ROM sai idêntica.
+- **Uma "relocação" que não era.** O `dsd init` marcou o número `0x021b0fdc`, numa
+  tabela de constantes, como ponteiro para a variável `static` `sDriverInfo` do som. Uma
+  variável `static` não pode ser usada de outro arquivo, então era só um número que
+  parecia endereço. Saiu da lista de relocações.
+- **O NitroSDK também.** 73 dos 87 arquivos do SDK passaram a vir do fonte, e a ROM
+  continua idêntica. Com a NitroSystem, são 90 KB do ARM9 (9,3%) saindo de código C.
+  O último obstáculo foi o linker jogar fora `OS_DisableProtectionUnit`, que ninguém
+  chama mas o jogo tem. A opção `-force_active` resolvia com um nome e falhava com a lista
+  inteira. Testando listas de tamanhos diferentes, o limite apareceu: uns 256 caracteres. A saída foi o
+  mesmo pedido dentro do arquivo do linker (`FORCE_ACTIVE` no `.lcf`).
+- **Símbolos que nenhum `.c` define.** Cinco arquivos (`os_arena.c`, `os_thread.c`...)
+  usam `SDK_SYS_STACKSIZE`, `SDK_MAIN_ARENA_LO`... que o `.lcf` da Nintendo calculava.
+  Os valores foram lidos das constantes que o jogo tem gravadas (ex.:
+  `SDK_SECTION_ARENA_EX_START` = `0x023e0000`) e entraram em `simbolos_linker.lcf`.
+  A prova de que estão certos é a ROM: um valor errado mudaria esses bytes. Agora são 78 arquivos do SDK, 92 KB (9,7% do ARM9) de C, e
+  a ROM idêntica. A configuração gerada do zero sai igual à versionada.
+- **ITCM e DTCM.** Seis arquivos do SDK têm partes fora do ARM9 principal. Primeiro um
+  teste à mão com `os_irqHandler.c` (o `dsd` recusou o mesmo nome em dois módulos; com
+  o apelido `os_irqHandler.itcm.c` aceitou, e o mapa do linker mostrou `OS_IrqHandler`
+  vindo do `.o` compilado). Depois `ligar_bibliotecas.py` aprendeu a dividir o ITCM e a
+  achar os dados do DTCM como faz com o resto. Dois arquivos (`os_cache.c`,
+  `mi_dma_gxcommand.c`) nem precisavam disso: as funções deles no ITCM não estão no
+  jogo, o linker as descartou. Foram para 84.
+- **Erro de conta, e um empate mal resolvido.** O `os_china.c` aparecia como "não
+  liga", mas nenhuma função dele está no jogo: a checagem olhava todos os `.o`
+  compilados. E o `card_backup.c` "não batia" por engano: `PXI_Init` (8 bytes, um "pula
+  para X") é idêntica a `CARD_WaitBackupAsync`, o empate foi para o arquivo errado, e
+  quando o `card_backup` apareceu no lugar dele parecia "repetido". O desempate agora
+  olha para onde a função pula, e o `pxi_init.c` apareceu. O total certo é 87 (sem o
+  `os_china.c`, com o `pxi_init.c`), não os 87 de antes por coincidência.
+- **`.version`.** A string `[SDK+NINTENDO:BACKUP]` do `card_backup.c` está em
+  `0x02000bd4`, logo depois do crt0, como o `.lcf` da Nintendo manda. Entrou pelo mesmo
+  apelido do ITCM (`card_backup.version.c`). 86 de 87.
+- **O que falta: `gx_vramcnt.c`.** `GX_SetBankForSubBG` faz o mesmo que o fonte, mas o
+  `switch` saiu com outra árvore de comparações. Testados: as dez versões 2.0 do
+  compilador, as 24 ordens dos `case`, `case` a mais ou a menos, outras otimizações.
+  Nenhum bateu; o arquivo que a Nintendo compilou deve ser diferente do público.
+
+## 18. O MSL ligado
+- **De onde vêm os `.o`.** O MSL não tem fonte público: vem pronto nos `.a` do
+  CodeWarrior. `msl.sh` tira de dentro deles os 204 `.o` (o C, o C++, o Runtime e a
+  matemática de ponto flutuante, que é assembly). 68 arquivos estão no jogo e 62 ligam.
+- **O primeiro link nem fechava.** O `mwldarm` quer que todo nome citado exista, mesmo
+  em código que ele vai descartar: `powf` chama `pow`, e nenhum dos dois está no jogo.
+  Ligar os `.a` inteiros dava "Internal linker error", e definir os nomes como 0 no
+  `.lcf` também. A saída foi um `.o` de funções vazias para esses nomes, gerado no build.
+- **Depois fechou, e a ROM saiu diferente.** Nove causas, achadas comparando o mapa do
+  linker com os endereços do jogo, da primeira diferença para a frente:
+  - um rótulo automático (`.L_020ead44`) que o `.o` não define: o `mwldarm` o resolveu
+    como 0, **sem erro**, e pôs um desvio de 8 bytes no meio do código. Agora o build
+    para se o código do jogo citar um nome que ninguém define;
+  - funções gêmeas com o nome trocado: `strtold` no lugar de `strtod`, os stubs de
+    8 bytes `exp`/`pow` com nomes do `math.o`, os destrutores do RTTI. Cada troca
+    mantinha viva uma função a mais;
+  - a tabela de exceções guardava a entrada de toda função, e com ela a função que o
+    jogo descartou;
+  - a `.exception` de cada função começa num múltiplo de 4 (Erro nº 10, abaixo);
+  - `__sinit__` gravado como rótulo de código: o linker criou um desvio para cada
+    ponteiro da tabela `.ctor`;
+  - o typeinfo de `std::exception` é "multidef": o jogo ficou com a cópia de um arquivo
+    dele, e a do `.o` precisava ceder o lugar;
+  - os buffers de `stdin`/`stdout` e a vtable de `__si_class_type_info` só aparecem por
+    ponteiros dentro de dados, que a ferramenta não seguia: o linker os deixou de fora e
+    pôs 0 nos ponteiros;
+  - um `b .` de 2 bytes no fim de outra função parecia o `__rt_div0` inteiro.
+  Com isso a ROM saiu idêntica: 132 KB (13,6% do código do ARM9) vêm de bibliotecas
+  ligadas. A configuração gerada do zero sai igual à versionada, e o NitroSDK e a
+  NitroSystem saem iguais aos de antes (menos o `.L_020ead44`).
+- **Erro nº 10:** a ferramenta não arredondava o fim da `.exception` de um arquivo para
+  múltiplo de 4, porque o `.o` diz alinhamento 1 e eu acreditei. O linker alinha a 4
+  mesmo assim, e o pedaço do jogo seguinte começava 3 bytes antes do que devia.
+
+## 19. Os arquivos do jogo (Fase 2.4)
+- **O que a ROM não diz.** O linker põe o código de cada `.cpp` junto, mas não marca
+  onde um acaba. Nomes de arquivo não há (nem em strings de `assert`), e todas as 4.942
+  funções do jogo começam em múltiplo de 4, então o alinhamento também não ajuda.
+- **O que o compilador mostrou.** Compilei arquivos de teste com a 2.0 e olhei o `.o`:
+  cada string literal vai numa seção `.data` própria, logo depois da função que a usa
+  primeiro, e uma string repetida no mesmo arquivo vira uma cópia só. No jogo há 105
+  strings com várias cópias (`"BackButton"` tem 9): uma por arquivo. Daí a regra:
+  quem lê a mesma cópia está no mesmo arquivo. E as funções inline vão para o fim do
+  `.text` do arquivo.
+- **A ordem do linker é uma só.** As 149 funções da tabela `.ctor` (os construtores de
+  variáveis globais, um por arquivo que tem) estão em ordem crescente de endereço, e os
+  dados que cada uma escreve também: a ordem dos arquivos é a mesma no código e nos
+  dados.
+- **O resultado:** 175 pedaços com certeza de um arquivo só, 38% dos bytes do código do
+  jogo, em `delinks.txt` com a ROM idêntica. 338 pares de cópias da mesma string
+  conferem a regra, sem nenhuma falha. O `dsd` ainda pegou um caso que eu não tinha
+  previsto: dois pedaços do `GameModeInventory` com o código numa ordem e as strings na
+  outra ("ciclo na ordem de link"). Era uma função inline no fim do arquivo, que lê
+  uma string do começo dele: os dois pedaços são o mesmo arquivo, e a ferramenta agora
+  junta pedaços assim.
+- **Erro nº 11:** no meu teste, cada arquivo tinha um bloco só de variáveis, antes das
+  strings, e eu ia cortar o `.data` em cada variável que viesse depois de uma string.
+  No jogo, os typeinfo e as vtables ficam intercalados com os nomes das classes, e 18
+  funções liam strings dos dois lados de um desses "cortes". Larguei esse corte; a
+  regra das cópias de strings não depende dele.
+- **Onde parou (pausa em 08/10/2026).** Os 175 pedaços estão em `delinks.txt` e a ROM
+  sai idêntica. O próximo passo seria achar onde cada arquivo começa e acaba de
+  verdade, juntando às pontas de cada pedaço as funções sem strings. As pistas para
+  isso são as variáveis `.bss`/`.data` que cada função usa, quem chama quem e as
+  sequências de métodos da mesma classe.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
-itens, de personagens), a versão exata do compilador e as partes do combate listadas em
+itens, de personagens), o service pack exato do compilador (2.0 base ou sp1+) e as partes do combate listadas em
 [COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
 [plano](PLANO-DECOMPILACAO.md).
