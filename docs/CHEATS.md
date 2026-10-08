@@ -229,7 +229,10 @@ continuou lá. Numa batalha, usar o Med Emitter e vencer: 86 sem o cheat, 87 com
 **Efeito colateral provável:** a mesma função deve ser usada para vender e para passar um
 equipamento da mochila para um personagem. Com o cheat ligado, vender pode dar anéis sem
 perder o item, e equipar pode duplicar o equipamento. Ainda não conferimos; desligue o
-cheat antes de ir à loja se não quiser isso.
+cheat antes de ir à loja se não quiser isso. A função tem só dois chamadores diretos no
+ARM9: um que tira um item depois de conferir seu número (`0x0202E09C`) e um do jardim dos
+Chao (`0x0203939E`), que tira um item e soma uma cópia a um Chao. No emulador, abrir o
+jardim com o cheat ligado chocou os ovos normalmente e o jogo não travou.
 
 ### Pasta "Projeto: XP"
 
