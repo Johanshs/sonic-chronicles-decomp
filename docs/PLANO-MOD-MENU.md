@@ -170,10 +170,13 @@ batalha, sem encontros, nível dos POW no máximo.
   | `0x02160EB0` | anéis do tabuleiro | BSS: endereço estático |
   | `0x02017A20`, `0x0209451C` | patches de código (coletar de longe, pontos de habilidade) | trechos do ARM9 a estudar |
 
-- **No cartão**: gravei `/_pico/usrcheat_projeto.dat` (2 KB), um banco só com o Sonic
-  Chronicles: os 17 cheats públicos e mais a pasta "Projeto sonic-chronicles-decomp", com
-  os 4 cheats de `cheats/YWSE.txt`. O `usrcheat.dat` original não foi tocado. Para usar o
-  banco do projeto, renomeie os dois arquivos no Windows (o original continua no cartão).
+- **No cartão** (com autorização do dono): o `usrcheat.dat` de 55 MB foi trocado por um
+  banco enxuto de 7,9 MB, gerado com `usrcheat.py`: as 248 entradas dos 27 jogos que estão
+  no cartão (todas as regiões) e, na entrada do Sonic Chronicles, a pasta "Projeto
+  sonic-chronicles-decomp" com os cheats de `cheats/YWSE.txt`. O banco completo é público
+  ([DeadSkullzJr](https://gbatemp.net/threads/deadskullzjrs-nds-i-cheat-databases.488711/))
+  e pode ser baixado de novo. Motivo da troca: o gravador do cartão aceita no máximo
+  30 MB por arquivo, e o nome tem que ser `usrcheat.dat`.
 
 ## 4. Caminho B: o mod menu
 
