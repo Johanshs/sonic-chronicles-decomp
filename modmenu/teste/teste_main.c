@@ -124,6 +124,20 @@ void teste_main(void) {
     inventario[0x34 / 4] = (u32)pilhas;
     esquadrao[0x40 / 4] = (u32)inventario;
 
+    /* O XP do grupo: esquadrão + 0x48 aponta para um objeto com o XP em +0x50. */
+    volatile u32 *xp = (volatile u32 *)0x02111C00;
+    xp[0x50 / 4] = 1000;
+    esquadrao[0x48 / 4] = (u32)xp;
+
+    /* Os 45 Chao: registros de 10 bytes em esquadrão + 0x424 {número, nível, cópias}.
+     * Este "jogador" tem só os 3 primeiros (nível 1, 2 cópias). */
+    volatile u8 *chao = (volatile u8 *)0x02111424;
+    for (int i = 0; i < 45; i++) {
+        chao[10 * i] = (u8)i;
+        chao[10 * i + 1] = (u8)(i < 3 ? 1 : 0);
+        chao[10 * i + 2] = (u8)(i < 3 ? 2 : 0);
+    }
+
     CONTADOR = 0;
     for (;;) {
         esperar_vblank();

@@ -22,6 +22,8 @@ R44, R45, R7, R71, NIVEL = 0x020F64C0, 0x020F64BC, 0x020F6470, 0x021A57C0, 0x021
 CARTEIRA = 0x02111000 + 0x114             # o esquadrão de mentira da ROM de teste
 ATRIB_SONIC, ATRIB_AMY = 0x02110200, 0x02110600  # os atributos dos dois personagens
 HP_INIMIGO = 0x02112200                      # o inimigo de mentira
+XP = 0x02111C00 + 0x50                       # o XP do grupo de mentira
+CHAO = 0x02111000 + 0x424                    # os 45 Chao de mentira
 
 TECLAS = {
     'A': Keys.KEY_A, 'B': Keys.KEY_B, 'L': Keys.KEY_L, 'R': Keys.KEY_R,
@@ -138,12 +140,15 @@ def main(rom, pasta):
     e.captura(pasta, '4_dificuldade')
     e.apertar('B')
     e.apertar('BAIXO')
-    e.apertar('A')                       # "Aneis" (a carteira, no esquadrão)
-    e.apertar('R')                       # 8 -> 18
-    confere(e.s32(CARTEIRA) == 18, f'carteira = {e.s32(CARTEIRA)} (esperado 18)')
+    e.apertar('A')                       # "Aneis e XP" (a carteira, no esquadrão)
+    e.apertar('R')                       # números grandes: R = +100000
+    confere(e.s32(CARTEIRA) == 100008, f'carteira = {e.s32(CARTEIRA)} (esperado 100008)')
     for _ in range(3):
-        e.apertar('ESQ')                 # 18 -> 15
-    confere(e.s32(CARTEIRA) == 15, f'carteira = {e.s32(CARTEIRA)} (esperado 15)')
+        e.apertar('ESQ')                 # e <> = 1000: 100008 -> 97008
+    confere(e.s32(CARTEIRA) == 97008, f'carteira = {e.s32(CARTEIRA)} (esperado 97008)')
+    e.apertar('BAIXO')                   # XP do grupo: esquadrão +0x48 -> objeto, +0x50
+    e.apertar('R')
+    confere(e.s32(XP) == 101000, f'XP = {e.s32(XP)} (esperado 101000, pelo ponteiro do esquadrão)')
     e.apertar('B')
     e.apertar('BAIXO')
     antes_grupo = bytes(e.mem.unsigned[0x02110000:0x02111000])
@@ -169,6 +174,16 @@ def main(rom, pasta):
     esperado[0x6B0:0x6B4] = (10 << 12).to_bytes(4, 'little')
     confere(depois_grupo == esperado,
             'só o HP do Sonic e o PP da Amy mudaram (nada escrito no "não criatura" nem no lixo)')
+    for _ in range(4):
+        e.apertar('BAIXO')               # Pontos de POW (posição 75, +0x12C)
+    e.apertar('R')
+    e.apertar('DIR')                     # 0 -> 11
+    confere(e.s32(ATRIB_SONIC + 0x12C) == 11, f'pontos de POW do Sonic = {e.s32(ATRIB_SONIC + 0x12C)} (esperado 11)')
+    e.apertar('BAIXO')                   # Golpe POW 1: de 0 a 3, não passa de 3
+    for _ in range(5):
+        e.apertar('DIR')
+    confere(e.s32(ATRIB_SONIC + 0x114) == 3, f'golpe POW 1 = {e.s32(ATRIB_SONIC + 0x114)} (esperado 3, o máximo)')
+    e.captura(pasta, '4c_membro_pow')
     e.apertar('B')                       # volta à lista do grupo
     e.apertar('B')                       # volta à tela inicial
     e.apertar('BAIXO')
@@ -191,6 +206,18 @@ def main(rom, pasta):
     e.apertar('A')                       # nocautear: aqui não há a função do jogo
     confere(e.s32(HP_INIMIGO) == 1 and e.u32(0x04001000) == 0x10100,
             'nocautear sem a função do jogo: o painel recusa, não mexe no HP e continua de pé')
+    def chao():
+        return [tuple(e.mem.unsigned.read_byte(CHAO + 10 * i + b) for b in range(3)) for i in range(45)]
+    e.apertar('BAIXO')
+    e.apertar('A')                       # Chao: os seus no Max
+    c = chao()
+    confere(c[:3] == [(0, 3, 2), (1, 3, 2), (2, 3, 2)] and all(x[1:] == (0, 0) for x in c[3:]),
+            'Chao: só os 3 que o jogador tem foram para o nível Max')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # Chao: ganhar os 45
+    c = chao()
+    confere(all(x == (i, 3, 2 if i < 3 else 1) for i, x in enumerate(c)),
+            'Chao: os 45 no nível Max, com pelo menos 1 cópia (as cópias que havia ficam)')
     e.captura(pasta, '4e_acoes')
     e.apertar('B')
     e.apertar('BAIXO')
@@ -213,6 +240,14 @@ def main(rom, pasta):
     for _ in range(3):
         e.apertar('ESQ')                 # não desce de 1
     confere(e.mem.unsigned.read_byte(0x02111BBB) == 1, 'pilha 2 para em 1 (pilha vazia não)')
+
+    e.apertar('B')
+    e.apertar('BAIXO')
+    e.apertar('A')                       # "Truques": aqui não há o código do jogo
+    e.apertar('A')
+    confere(e.u32(0x0202DB4C) == 0 and e.u32(0x04001000) == 0x10100,
+            'truque com instruções que não batem com o jogo: o painel não escreve nada')
+    e.captura(pasta, '4f_truques')
 
     print('4. fechar com START')
     e.apertar('START')

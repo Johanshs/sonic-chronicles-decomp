@@ -19,13 +19,16 @@ PY      := python3
 
 # -mthumb: instruções de 16 bits, o código fica ~30% menor (importa: no jogo o espaço
 # livre é pouco). -ffreestanding/-nostdlib: sem biblioteca C, só o nosso código.
+# -Wno-missing-field-initializers: nas tabelas de campos, o último (via) fica de fora
+# quando é 0, e o C já o zera.
 ALVO    := --target=armv5te-none-eabi -mcpu=arm946e-s
 CFLAGS  := $(ALVO) -mthumb -Os -ffreestanding -fno-builtin -nostdlib \
-           -ffunction-sections -fdata-sections -fno-unwind-tables -Wall -Wextra -Werror -Iinclude
+           -ffunction-sections -fdata-sections -fno-unwind-tables -Wall -Wextra -Werror -Iinclude \
+           -Wno-missing-field-initializers
 ASFLAGS := $(ALVO)
 
 B := build
-PAINEL := $(B)/menu.o $(B)/console.o $(B)/fonte.o
+PAINEL := $(B)/menu.o $(B)/console.o $(B)/fonte.o $(B)/cache.o
 
 all: $(B)/painel_teste.nds $(B)/painel_jogo.elf tamanho
 
@@ -34,6 +37,9 @@ $(B):
 
 $(B)/%.o: src/%.c include/ds.h src/console.h | $(B)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(B)/cache.o: src/cache.s | $(B)
+	$(CC) $(ASFLAGS) -c $< -o $@
 
 $(B)/teste_main.o: teste/teste_main.c include/ds.h | $(B)
 	$(CC) $(CFLAGS) -c $< -o $@

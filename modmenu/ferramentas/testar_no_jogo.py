@@ -9,9 +9,11 @@ exploração do capítulo 1) e confere:
      e o esquadrão está no mesmo endereço que no jogo original (0x022261E0: os cheats que
      usam endereços do heap continuam valendo), e o gancho roda uma vez por volta do laço;
   2. L + R + SELECT abre o painel (a tela do motor B passa a ser a do painel);
-  3. a página "Aneis" muda a carteira (esquadrão + 0x114), a página "Grupo" acha o
-     Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar o Luck muda o atributo de verdade,
-     e a página "Itens" dá um POW Candy e depois o tira, pelas funções do próprio jogo;
+  3. a página "Aneis e XP" muda a carteira (esquadrão + 0x114) e o XP do grupo, a
+     página "Grupo" acha o Sonic (HP 33/33, Luck 3 no começo do jogo) e mudar os pontos
+     de POW e o Luck muda os atributos de verdade, a página "Itens" dá um POW Candy e
+     depois o tira, pelas funções do próprio jogo, e a página "Truques" troca as
+     instruções do jogo e as desfaz;
   4. depois de 5 segundos com o painel aberto, o relógio do jogo NÃO dá o salto (o
      tempo medido na volta seguinte é o de uma volta normal);
   5. depois de fechar, a tela do motor B volta a ser a do jogo.
@@ -33,7 +35,8 @@ LISTA_DO_GRUPO = 0x02160B28
 
 TECLAS = {'A': Keys.KEY_A, 'B': Keys.KEY_B, 'L': Keys.KEY_L, 'R': Keys.KEY_R,
           'START': Keys.KEY_START, 'SELECT': Keys.KEY_SELECT,
-          'CIMA': Keys.KEY_UP, 'BAIXO': Keys.KEY_DOWN, 'DIR': Keys.KEY_RIGHT}
+          'CIMA': Keys.KEY_UP, 'BAIXO': Keys.KEY_DOWN, 'DIR': Keys.KEY_RIGHT,
+          'ESQ': Keys.KEY_LEFT}
 falhas = []
 
 
@@ -111,11 +114,20 @@ def main(rom, pasta):
     print('3. carteira e grupo')
     for _ in range(2):
         apertar('BAIXO')
-    apertar('A')                           # "Aneis"
+    apertar('A')                           # "Aneis e XP"
     carteira = m.read_long(esquadrao + 0x114)
-    apertar('R')
-    confere(m.read_long(esquadrao + 0x114) == carteira + 10,
-            f'carteira {carteira} -> {m.read_long(esquadrao + 0x114)} (esperado +10)')
+    apertar('R')                           # campo grande: R soma 100000
+    confere(m.read_long(esquadrao + 0x114) == min(carteira + 100000, 999999),
+            f'carteira {carteira} -> {m.read_long(esquadrao + 0x114)} (esperado +100000)')
+    # O XP do grupo fica num objeto à parte: esquadrão + 0x48 aponta para ele, XP em +0x50.
+    objeto_xp = m.read_long(esquadrao + 0x48)
+    xp = m.read_long(objeto_xp + 0x50)
+    apertar('BAIXO')
+    apertar('DIR')                         # +1000
+    confere(m.read_long(objeto_xp + 0x50) == xp + 1000,
+            f'XP do grupo {xp} -> {m.read_long(objeto_xp + 0x50)} (esperado +1000)')
+    apertar('ESQ')                         # volta ao que era
+    confere(m.read_long(objeto_xp + 0x50) == xp, f'XP de volta a {m.read_long(objeto_xp + 0x50)}')
     apertar('B')
     apertar('BAIXO')
     apertar('A')                           # "Grupo": a lista de personagens
@@ -127,8 +139,15 @@ def main(rom, pasta):
     atributos = m.read_long(sonic + 0x1C)
     confere((m.read_long(atributos), m.read_long(atributos + 0xA0), m.read_long(atributos + 0xAC)) == (33, 33, 3),
             'Sonic no começo do jogo: HP 33/33, Luck 3')
-    for _ in range(9):
-        apertar('BAIXO')                   # Luck
+    pontos = m.read_long(atributos + 0x12C)
+    for _ in range(4):
+        apertar('BAIXO')                   # "Pontos de POW" (posição 75 do vetor)
+    apertar('R')                           # +10
+    confere(m.read_long(atributos + 0x12C) == pontos + 10,
+            f'pontos de POW {pontos} -> {m.read_long(atributos + 0x12C)} (esperado +10)')
+    captura('3_pontos_pow')
+    for _ in range(12):
+        apertar('BAIXO')                   # Luck (6 golpes, Speed, Attack, Defense, Power, Grit)
     apertar('R')                           # +10
     confere(m.read_long(atributos + 0xAC) == 13, f'Luck = {m.read_long(atributos + 0xAC)} (esperado 13)')
     captura('3_grupo')
@@ -173,6 +192,38 @@ def main(rom, pasta):
     apertar('CIMA')
     apertar('A')                           # dar de novo, com a lista tendo um buraco
     confere(inventario().get(3, 0) == 1, f'dar depois de tirar: {inventario()}')
+
+    print('3d. truques: trocar instruções do jogo e desfazer')
+    def meias(*enderecos):
+        return tuple(m.read_short(a) for a in enderecos)
+    ITENS = (0x0202DB4C, 0x0202DB4E)       # o "Itens nao acabam" dos cheats
+    confere(meias(*ITENS) == (0xDD07, 0x1E49), f'antes: {[hex(v) for v in meias(*ITENS)]} (original DD07 1E49)')
+    apertar('B')                           # tela inicial (a seleção fica em "Itens")
+    apertar('BAIXO')                       # "Truques"
+    apertar('A')
+    apertar('A')                           # liga "Itens nao acabam"
+    confere(meias(*ITENS) == (0x46C0, 0x46C0), f'ligado: {[hex(v) for v in meias(*ITENS)]} (esperado 46C0 46C0)')
+    captura('3d_truques')
+    # Com o truque ligado, tirar um item ainda funciona: o painel desfaz a troca por um
+    # instante, chama a função do jogo e a refaz.
+    apertar('B')
+    apertar('CIMA')                        # "Itens"
+    apertar('A')
+    apertar('BAIXO')                       # a pilha do POW Candy
+    apertar('A')
+    confere(3 not in inventario() and meias(*ITENS) == (0x46C0, 0x46C0),
+            f'tirar com o truque ligado: pilhas {inventario()}; truque {[hex(v) for v in meias(*ITENS)]}')
+    apertar('B')
+    apertar('BAIXO')                       # "Truques" de novo
+    apertar('A')
+    apertar('A')                           # desliga
+    confere(meias(*ITENS) == (0xDD07, 0x1E49), f'desligado: {[hex(v) for v in meias(*ITENS)]}')
+    for _ in range(4):
+        apertar('BAIXO')                   # "Aneis por anel"
+    apertar('DIR')
+    confere(meias(0x02017648) == (0x3102,), f'aneis x2: {m.read_short(0x02017648):#x} (esperado 0x3102)')
+    apertar('ESQ')
+    confere(meias(0x02017648) == (0x1C49,), f'aneis x1: {m.read_short(0x02017648):#x} (original 0x1C49)')
 
     print('4. relógio')
     quadros(300)                           # 5 segundos com o painel aberto

@@ -5,17 +5,20 @@ L + R + SELECT, o jogo pausa e uma das telas vira um painel para ler e mudar val
 jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO-MOD-MENU.md)
 (caminho B).
 
-**Situação (08/10/2026), versão 0.8:**
+**Guia de uso, campo por campo:** [`docs/PAINEL-GUIA.md`](../docs/PAINEL-GUIA.md).
+
+**Situação (08/10/2026), versão 0.9:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
 - **Testado num DS de verdade (v0.5)**: no R4i-SDHC, todas as páginas funcionaram (o
-  usuário só evitou mudar as regras de combate). As versões 0.6 a 0.8 ainda não foram
+  usuário só evitou mudar as regras de combate). As versões 0.6 a 0.9 ainda não foram
   ao DS.
-- Páginas: as **74 regras de combate**, a dificuldade dinâmica, os **anéis da carteira**
-  e o **grupo inteiro**: a lista de todos os personagens que já entraram (11 no fim do
-  jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP, Speed, Attack, Defense,
-  Power, Grit, Luck).
+- Páginas: as **74 regras de combate**, a dificuldade dinâmica, os **anéis da carteira
+  e o XP do grupo**, e o **grupo inteiro**: a lista de todos os personagens que já
+  entraram (11 no fim do jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP,
+  **pontos de POW** e o nível dos 6 golpes, Speed, Attack, Defense, Power, Grit, Luck,
+  ações por rodada e resistência aos 6 elementos).
 - **Batalha**: os inimigos da luta atual (nome, HP e atributos, editáveis) e três
   ações rápidas: curar o grupo (HP e PP cheios), deixar os inimigos com HP 1 e
   **nocautear os inimigos**. Nocautear usa a função do próprio jogo, então a batalha
@@ -24,6 +27,10 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
   pelo número (a linha de `Items.gda`) usando a função do próprio jogo, **tirar** 1
   unidade de uma pilha (também pela função do jogo; a última unidade some com a pilha)
   e mudar a quantidade de cada pilha.
+- **O que a bateria de cheats tem** (v0.9, `docs/CHEATS.md`): os campos acima, as ações
+  "Chao: os seus no nível Max" e "Chao: ganhar os 45", e uma página **Truques** que
+  liga e desliga os cheats de código (itens não acabam, pegar os anéis da área, loja de
+  graça, POW sem gastar pontos, anéis por anel x2/x5/x10, andar x2/x4).
 - **Compatível com os cheats**: o painel mora no fim do heap do jogo, então os objetos
   do jogo ficam nos mesmos endereços da ROM original (a v0.2 os deslocava).
 
@@ -35,12 +42,13 @@ include/ds.h                    registradores do DS que usamos (sem libnds, sem 
 src/menu.c                      o painel: páginas, campos, teclado, pausa
 src/console.c                   texto na tela, salvando e restaurando tudo o que toca
 src/fonte.c                     fonte 8x8 de domínio público (font8x8, de Daniel Hepper)
+src/cache.s                     limpa os caches do ARM9 depois de trocar instruções (truques)
 jogo/gancho.s                   a ponte entre o laço principal do jogo e o painel
 jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D8000)
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM (o `sonic-mod menu` faz o mesmo)
-ferramentas/testar.py           testa o painel na ROM de teste (26 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (15 checagens)
+ferramentas/testar.py           testa o painel na ROM de teste (32 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (24 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -89,8 +97,8 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 ## Testar
 
 ```bash
-make testar                        # ROM de teste, sem precisar do jogo (26 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (15 checagens)
+make testar                        # ROM de teste, sem precisar do jogo (32 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (24 checagens)
 ```
 
 ## Como funciona
@@ -221,6 +229,20 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (15 checagen
   seu arquivo), reiniciei o emulador e carreguei o slot: o POW Candy continuava lá, e o
   inventário tinha as mesmas 62 pilhas.
 
+- **Pontos de POW** (v0.9, save do Capítulo 10): o Sonic tinha 5; o painel subiu para
+  55 e a tela "POW Moves" do jogo mostrou **Points: 55**. Comprar o Axe Kick III (custo
+  15) e sair deixou 40 pontos e o golpe no nível 3. Com 999 a tela mostrou "999". Num
+  jogo novo (teste automático), R soma 10 aos pontos do Sonic.
+- **Truques** (v0.9, teste automático): ligar "Itens nao acabam" grava `46C0 46C0` em
+  `0x0202DB4C`; tirar um item com ele ligado ainda funciona (o painel desfaz a troca por
+  um instante) e ele continua ligado; desligar volta `DD07 1E49`. "Aneis por anel" x2
+  grava `3102` e x1 volta `1C49`. O emulador não simula os caches do ARM9, então a
+  limpeza de cache (`src/cache.s`) só se prova no DS.
+- **Chao** (v0.9, Capítulo 10): a tabela tinha os 40 Chao no nível 3 (um deles com 0
+  cópias) e os 40 a 44 vazios. "Chao: ganhar os 45" deixou os 45 com nível 3 e pelo
+  menos 1 cópia, sem mexer nas cópias de quem já tinha.
+- **XP** (v0.9, teste automático): DIREITA soma 1000 ao XP do grupo, ESQUERDA desfaz.
+
 ## Descobertas e erros pelo caminho
 
 - **O jogo roda a 30 voltas por segundo na exploração e a 60 no diálogo.** A contagem
@@ -260,9 +282,16 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (15 checagen
   0; a minha chamada deixava lixo ali. Passando 0, os 4 inimigos caíram. Lição: o
   descompilador pode perder argumentos que vêm pela pilha; conferir no assembly.
 
+- **Erro meu no teste da v0.9:** com os 7 campos novos (pontos e golpes POW) antes do
+  Luck, contei mal quantas vezes descer e o teste mudou o Grit em vez do Luck. A captura
+  da tela mostrou a seta no Grit; o Luck é a linha 16, não a 15. O painel estava certo,
+  o roteiro de teste não.
+
 ## Limites conhecidos
 
-- **No DS real, só a v0.5 foi testada** (funcionou).
+- **No DS real, só a v0.5 foi testada** (funcionou). A v0.9 é a primeira que troca
+  instruções do jogo (Truques) e limpa os caches; o emulador não tem cache, então essa
+  parte precisa do teste no DS.
 - "Nocautear inimigos" foi conferido em 6 encontros, mas todos contra o mesmo inimigo
   (4 Nocturne Decurion, Capítulo 10). Chefes podem ter regras próprias de fim de luta (cenas, fases) que o painel não
   conhece; se uma luta de chefe travar, use "inimigos com HP 1" e dê um golpe.

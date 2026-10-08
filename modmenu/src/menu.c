@@ -12,8 +12,11 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.8"
+#define VERSAO "0.9"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
+
+/* src/cache.s: faz o processador ver instruções do jogo que o painel trocou na RAM */
+void sincronizar_codigo(u32 inicio, u32 fim);
 
 /* Como o jogo guarda cada número. O painel mostra e edita sempre o valor "humano". */
 enum {
@@ -32,6 +35,8 @@ typedef struct {
     u8 formato;
     u8 conferido;     /* 1 = conferido no emulador */
     s32 minimo, maximo;
+    u16 via;          /* P_ESQUADRAO: se não for 0, o esquadrão + via guarda um ponteiro, e
+                         o campo fica em (esse ponteiro) + endereco. 0 = no próprio esquadrão */
 } Campo;
 
 /* De onde vêm os endereços dos campos de uma página. */
@@ -42,6 +47,7 @@ enum {
     P_GRUPO,     /* não tem campos: é a lista de personagens (n = qual lista: FONTE_*) */
     P_ACOES,     /* ações rápidas de batalha */
     P_ITENS,     /* não tem campos fixos: "dar item" e as pilhas do inventário */
+    P_TRUQUES,   /* trocas de instruções do jogo na RAM, liga/desliga (os cheats de código) */
 };
 
 typedef struct {
@@ -143,7 +149,12 @@ static const Campo campos_carteira[] = {
     /* CHEATS.md: os anéis que você gasta (os do Inventário e da tela de save) moram no
      * esquadrão, em +0x114. 999999 é o maior número que cabe na tela do jogo.
      * (A v0.2 mexia em 0x02160EB0, que é outro contador: o do HUD, não a carteira.) */
-    {"Aneis (carteira)", 0x114, F_INT, 1, 0, 999999},
+    {"Aneis (carteira)", 0x114, F_INT, 1, 0, 999999, 0},
+    /* CHEATS.md, pasta XP: o XP é um só para o grupo todo, num objeto apontado pelo
+     * esquadrão em +0x48, campo +0x50. Cada personagem converte esse número em nível pela
+     * sua curva (Adv_<nome>.gda); o nível 30 pede até 2643707 (Eggman). Subir de nível
+     * só acontece no fim da próxima batalha vencida, e não tem volta. */
+    {"XP do grupo", 0x50, F_INT, 1, 0, 2700000, 0x48},
 };
 
 /* Atributos de um membro do grupo: deslocamentos no vetor de atributos (CHEATS.md). */
@@ -152,23 +163,45 @@ static const Campo campos_membro[] = {
     {"HP maximo", 0xA0, F_INT, 1, 1, 9999},
     {"PP", 0xB0, F_FX, 1, 0, 999},
     {"PP maximo", 0xB8, F_INT, 1, 0, 999},
+    /* CHEATS.md, pasta POW: posição 75 do vetor = os pontos que a tela "POW Moves" do
+     * perfil gasta para subir um golpe de nível; 69 a 74 = o nível (0 a 3) de cada um
+     * dos 6 golpes do personagem, na ordem da tela. */
+    {"Pontos de POW", 0x12C, F_INT, 1, 0, 999},
+    {"Golpe POW 1 (0-3)", 0x114, F_INT, 1, 0, 3},
+    {"Golpe POW 2 (0-3)", 0x118, F_INT, 1, 0, 3},
+    {"Golpe POW 3 (0-3)", 0x11C, F_INT, 1, 0, 3},
+    {"Golpe POW 4 (0-3)", 0x120, F_INT, 1, 0, 3},
+    {"Golpe POW 5 (0-3)", 0x124, F_INT, 1, 0, 3},
+    {"Golpe POW 6 (0-3)", 0x128, F_INT, 1, 0, 3},
     {"Speed", 0x94, F_INT, 1, 0, 999},
     {"Attack (acerto)", 0x98, F_INT, 1, 0, 999},
     {"Defense (esquiva)", 0x9C, F_INT, 1, 0, 999},
     {"Power (dano)", 0xA4, F_INT, 0, 0, 999},
     {"Grit (armadura)", 0xA8, F_INT, 0, 0, 999},
     {"Luck", 0xAC, F_INT, 1, 0, 999},
+    /* posição 114: quantas vezes age por rodada (Combat_BuildTurnQueue lê no começo de
+     * cada rodada; Sonic 3, Tails e Rouge 2, Omega 1 no Capítulo 10) */
+    {"Acoes por rodada", 0x1C8, F_INT, 1, 1, 9},
+    /* posições 20 a 25: resistência a cada elemento em %, ponto fixo (100 = imune,
+     * negativo = fraqueza). O dano com o elemento é multiplicado por 1 - R/100. */
+    {"Resist. Fogo %", 0x50, F_FX, 1, -100, 100},
+    {"Resist. Agua %", 0x54, F_FX, 1, -100, 100},
+    {"Resist. Terra %", 0x58, F_FX, 1, -100, 100},
+    {"Resist. Vento %", 0x5C, F_FX, 1, -100, 100},
+    {"Resist. Raio %", 0x60, F_FX, 1, -100, 100},
+    {"Resist. Gelo %", 0x64, F_FX, 1, -100, 100},
 };
 
 #define N(v) ((u8)(sizeof v / sizeof v[0]))
 static const Pagina paginas[] = {
     {"Regras de combate (74)", campos_regras, N(campos_regras), P_FIXO},
     {"Dificuldade dinamica", campos_dificuldade, N(campos_dificuldade), P_FIXO},
-    {"Aneis", campos_carteira, N(campos_carteira), P_ESQUADRAO},
+    {"Aneis e XP", campos_carteira, N(campos_carteira), P_ESQUADRAO},
     {"Grupo (personagens)", 0, 0 /* FONTE_GRUPO */, P_GRUPO},
     {"Inimigos (batalha)", 0, 1 /* FONTE_INIMIGOS */, P_GRUPO},
     {"Acoes rapidas", 0, 0, P_ACOES},
     {"Itens (inventario)", 0, 0, P_ITENS},
+    {"Truques (liga/desliga)", 0, 0, P_TRUQUES},
 };
 #define N_PAGINAS ((int)N(paginas))
 /* A página de atributos de um personagem: o título é desenhado com o nome dele. */
@@ -272,6 +305,10 @@ static u32 endereco(const Pagina *p, const Campo *c) {
     case P_FIXO: return c->endereco;
     case P_ESQUADRAO: {
         u32 s = esquadrao();
+        if (s && c->via) {
+            s = *(volatile u32 *)(s + c->via);
+            if (!ponteiro_ok(s)) return 0;
+        }
         return s ? s + c->endereco : 0;
     }
     case P_MEMBRO: {
@@ -365,7 +402,14 @@ static int tirar_item(int k) {
     volatile u16 *f = (volatile u16 *)0x0202DACC;
     if (f[0] != 0xB5F8 || f[1] != 0xB084 || f[2] != 0x1C05 || f[3] != 0x6AE8) return 0;
     int (*tirar)(u32, int) = (int (*)(u32, int))0x0202DACDu;
-    return tirar(inv, k);
+    /* com o truque "Itens nao acabam" ligado, a função não desconta: desligamos só
+     * durante a chamada (as instruções ficam nesta mesma função, em 0x0202DB4C) */
+    volatile u16 *q = (volatile u16 *)0x0202DB4C;
+    int truque = q[0] == 0x46C0 && q[1] == 0x46C0;
+    if (truque) { q[0] = 0xDD07; q[1] = 0x1E49; sincronizar_codigo(0x0202DB4C, 0x0202DB50); }
+    int ok = tirar(inv, k);
+    if (truque) { q[0] = q[1] = 0x46C0; sincronizar_codigo(0x0202DB4C, 0x0202DB50); }
+    return ok;
 }
 
 /* ---- Conversão entre o valor guardado e o valor humano ----
@@ -476,7 +520,7 @@ static void desenhar_pagina(const Pagina *p, const char *titulo, int sel, int to
         u32 a = endereco(p, c);
         con_texto(0, lin, cor, i == sel ? ">" : " ");
         con_texto(1, lin, cor, c->nome);
-        if (a) { con_numero(20, lin, cor, ler(a, c->formato), 6); vazio = 0; }
+        if (a) { con_numero(20, lin, cor, ler(a, c->formato), 7); vazio = 0; }
         else con_texto(20, lin, COR_CINZA, "   ---");
         con_texto(27, lin, COR_CINZA, c->conferido ? "emu" : "est");
     }
@@ -484,7 +528,9 @@ static void desenhar_pagina(const Pagina *p, const char *titulo, int sel, int to
     if (topo > 0) con_texto(31, LINHA_1, COR_VERDE, "^");
     if (topo + VISIVEIS < p->n) con_texto(31, LINHA_1 + VISIVEIS - 1, COR_VERDE, "v");
     if (vazio) con_texto(1, 20, COR_CINZA, "(nao achado: fora do jogo?)");
-    rodape("<> -1/+1   L R -10/+10", "B volta   START fecha");
+    if (sel < p->n && p->campos[sel].maximo >= 100000)
+        rodape("<> -1000/+1000  L R -/+100000", "B volta   START fecha");
+    else rodape("<> -1/+1   L R -10/+10", "B volta   START fecha");
 }
 
 /* A lista de personagens: nome e HP de cada um, para escolher qual abrir. */
@@ -660,6 +706,8 @@ static const char *const acoes[] = {
     "Curar o grupo (HP e PP cheios)",
     "Inimigos com HP 1",
     "Nocautear inimigos (pelo jogo)",
+    "Chao: os seus no nivel Max",
+    "Chao: ganhar os 45 (nivel Max)",
 };
 #define N_ACOES ((int)(sizeof acoes / sizeof acoes[0]))
 static const char *aviso_acao = "";
@@ -680,7 +728,35 @@ static int definir_atributo(u32 criatura, int numero, s32 valor_fx) {
     return 1;
 }
 
+/* Os Chao (CHEATS.md, pasta Chao): 45 registros de 10 bytes a partir do esquadrão +
+ * 0x424, na ordem do número: byte 0 = o número (0 a 44), byte 1 = nível (0 = não tem,
+ * 3 = Max), byte 2 = cópias. O jardim conta quem tem cópias, então "ganhar" põe nível 3
+ * e pelo menos 1 cópia. Os 40 a 44 só chegavam por troca sem fio com outro DS.
+ * Conferimos o byte 0 de cada registro antes: se algum não bate, nada é escrito. */
+#define N_CHAO 45
+static int mexer_chao(int ganhar_todos) {
+    u32 s = esquadrao();
+    if (!s) return -1;
+    volatile u8 *c = (volatile u8 *)(s + 0x424);
+    for (int i = 0; i < N_CHAO; i++)
+        if (c[10 * i] != i) return -1;
+    int feitos = 0;
+    for (int i = 0; i < N_CHAO; i++) {
+        volatile u8 *r = c + 10 * i;
+        if (r[2] == 0 && !ganhar_todos) continue; /* não tem este Chao */
+        if (r[2] == 0) r[2] = 1;
+        r[1] = 3;
+        feitos++;
+    }
+    return feitos;
+}
+
 static void fazer_acao(int a) {
+    if (a >= 3) {
+        int f = mexer_chao(a == 4);
+        aviso_acao = f < 0 ? "recusou (Chao nao achados)" : f ? "feito" : "nenhum Chao";
+        return;
+    }
     u32 cs[MAX_MEMBROS];
     int n = achar_criaturas(a == 0 ? FONTE_GRUPO : FONTE_INIMIGOS, cs);
     int feitos = 0, recusou = 0;
@@ -716,6 +792,118 @@ static void desenhar_acoes(int sel) {
     rodape("A faz", "B volta   START fecha");
 }
 
+/* ---- Truques: instruções do jogo trocadas na RAM (os cheats de código) ----
+ * Os cheats de código do Action Replay (docs/CHEATS.md) trocam algumas instruções do jogo
+ * a cada quadro. O painel faz a mesma troca uma vez, quando você liga, e desfaz quando
+ * desliga. O código do jogo é recarregado do cartão a cada boot, então tudo volta ao
+ * normal ao religar o DS (nada disto vai para o save).
+ * Cada truque é uma lista de endereços (meias-palavras de 16 bits, instruções Thumb) e,
+ * para cada estado, o valor de cada uma; o estado 0 é o original do jogo. O estado atual
+ * é LIDO da memória: se não bater com nenhum (um cheat do cartão mexeu, ou outra versão
+ * do jogo), o painel mostra "?" e não mexe. Endereços e valores conferidos contra o ARM9
+ * da YWSE; o efeito de cada um foi medido no emulador pela sessão dos cheats. */
+typedef struct {
+    const char *nome;
+    u8 n_trocas, n_estados;
+    const u32 *enderecos;
+    const u16 *valores;           /* n_estados x n_trocas */
+    const char *const *rotulos;   /* um por estado */
+} Truque;
+
+
+static const char *const rotulos_lig[] = {"desligado", "LIGADO"};
+static const char *const rotulos_aneis[] = {"x1", "x2", "x5", "x10"};
+static const char *const rotulos_andar[] = {"x1", "x2", "x4"};
+
+/* Itens não acabam: na função que tira um item (0x0202dacc), "ble apagar" e "qtd - 1"
+ * viram "não faz nada". Atenção: vender na loja também passa por ela (vender vira
+ * dinheiro infinito), e a opção "tirar" da página Itens desliga isto por um instante. */
+static const u32 end_itens[] = {0x0202DB4C, 0x0202DB4E};
+static const u16 val_itens[] = {0xDD07, 0x1E49, 0x46C0, 0x46C0};
+/* Pegar todos os anéis da área: os dois testes de distância (X e Y) até o Sonic */
+static const u32 end_coletar[] = {0x02017A56, 0x02017A88};
+static const u16 val_coletar[] = {0xD035, 0xD01C, 0x46C0, 0x46C0};
+/* Loja de graça: o botão "Buy Item" acende sempre, a compra não confere nem desconta */
+static const u32 end_loja[] = {0x020B2EC0, 0x020B3AD0, 0x020B3AD2};
+static const u16 val_loja[] = {0xDC00, 0xDB15, 0x1A51, 0x46C0, 0x46C0, 0x1C11};
+/* POW sem gastar pontos: a loja de golpes não confere nem desconta os pontos */
+static const u32 end_pow[] = {0x0209451C, 0x0209457A};
+static const u16 val_pow[] = {0xDC11, 0x1B01, 0x46C0, 0x1C01};
+/* Anéis por anel pego: "carteira + 1" vira + 2, + 5 ou + 10 (adds r1, #N) */
+static const u32 end_aneis[] = {0x02017648};
+static const u16 val_aneis[] = {0x1C49, 0x3102, 0x3105, 0x310A};
+/* Velocidade de andar: o tempo do quadro em ms << 12 vira << 13 ou << 14 */
+static const u32 end_andar[] = {0x02034B92};
+static const u16 val_andar[] = {0x0320, 0x0360, 0x03A0};
+
+#define T(nome, e, v, r) {nome, (u8)(sizeof e / sizeof e[0]), \
+    (u8)(sizeof v / sizeof v[0] / (sizeof e / sizeof e[0])), e, v, r}
+static const Truque truques[] = {
+    T("Itens nao acabam", end_itens, val_itens, rotulos_lig),
+    T("Pegar aneis da area", end_coletar, val_coletar, rotulos_lig),
+    T("Loja de graca", end_loja, val_loja, rotulos_lig),
+    T("POW sem gastar pontos", end_pow, val_pow, rotulos_lig),
+    T("Aneis por anel", end_aneis, val_aneis, rotulos_aneis),
+    T("Andar mais rapido", end_andar, val_andar, rotulos_andar),
+};
+#undef T
+#define N_TRUQUES ((int)(sizeof truques / sizeof truques[0]))
+static const char *aviso_truque = "";
+
+static int estado_truque(const Truque *t) {
+    for (int e = 0; e < t->n_estados; e++) {
+        int ok = 1;
+        for (int k = 0; k < t->n_trocas && ok; k++)
+            ok = *(volatile u16 *)t->enderecos[k] == t->valores[e * t->n_trocas + k];
+        if (ok) return e;
+    }
+    return -1;
+}
+
+static void por_truque(const Truque *t, int e) {
+    u32 menor = 0xFFFFFFFFu, maior = 0;
+    for (int k = 0; k < t->n_trocas; k++) {
+        u32 a = t->enderecos[k];
+        *(volatile u16 *)a = t->valores[e * t->n_trocas + k];
+        if (a < menor) menor = a;
+        if (a + 2 > maior) maior = a + 2;
+    }
+    sincronizar_codigo(menor, maior);
+}
+
+static void teclas_truques(u16 t, int sel) {
+    int d = 0;
+    if (t & (TECLA_DIREITA | TECLA_A)) d = 1;
+    if (t & TECLA_ESQUERDA) d = -1;
+    if (!d) return;
+    const Truque *q = &truques[sel];
+    int e = estado_truque(q);
+    if (e < 0) { aviso_truque = "mexido por outro cheat: nao mexo"; return; }
+    e += d;
+    if (e < 0) e = q->n_estados - 1;
+    if (e >= q->n_estados) e = 0;
+    por_truque(q, e);
+    aviso_truque = "";
+}
+
+static void desenhar_truques(int sel) {
+    cabecalho("Truques (liga/desliga)");
+    for (int i = 0; i < N_TRUQUES; i++) {
+        int cor = i == sel ? COR_AMARELO : COR_BRANCO;
+        int e = estado_truque(&truques[i]);
+        con_texto(0, LINHA_1 + i, cor, i == sel ? ">" : " ");
+        con_texto(1, LINHA_1 + i, cor, truques[i].nome);
+        con_texto(23, LINHA_1 + i, e > 0 ? COR_VERDE : cor, e < 0 ? "?" : truques[i].rotulos[e]);
+    }
+    con_texto(1, LINHA_1 + N_TRUQUES + 1, COR_VERDE, aviso_truque);
+    con_texto(0, 15, COR_CINZA, "Trocam instrucoes do jogo na");
+    con_texto(0, 16, COR_CINZA, "memoria. Desligar desfaz. Ao");
+    con_texto(0, 17, COR_CINZA, "religar o DS, tudo volta ao");
+    con_texto(0, 18, COR_CINZA, "normal. Nao use junto com o");
+    con_texto(0, 19, COR_CINZA, "mesmo cheat ligado no cartao.");
+    rodape("<> ou A troca o estado", "B volta   START fecha");
+}
+
 /* ---- Laço do painel ---- */
 
 /* Sobe/desce `sel` numa lista de n itens (dando a volta) e acerta a rolagem. */
@@ -749,7 +937,7 @@ static void painel(void) {
             if (t & TECLA_A) {
                 tela = sel_inicio;
                 sel = topo = 0;
-                aviso_item = aviso_acao = "";
+                aviso_item = aviso_acao = aviso_truque = "";
                 esquecer_nomes();
                 if (paginas[tela].tipo == P_GRUPO) {
                     fonte_atual = paginas[tela].n;
@@ -767,6 +955,12 @@ static void painel(void) {
             int n_linhas = 1 + (inv ? n_cheias(inv) : 0);
             if (sel >= n_linhas) sel = n_linhas - 1;
             if (topo > sel) topo = sel;
+        } else if (tela >= 0 && paginas[tela].tipo == P_TRUQUES) {
+            if (t & TECLA_B) tela = TELA_INICIO;
+            int antes = sel;
+            mover(t, &sel, &topo, N_TRUQUES);
+            if (sel != antes) aviso_truque = "";
+            teclas_truques(t, sel);
         } else if (tela >= 0 && paginas[tela].tipo == P_ACOES) {
             if (t & TECLA_B) tela = TELA_INICIO;
             mover(t, &sel, &topo, N_ACOES);
@@ -786,10 +980,12 @@ static void painel(void) {
             mover(t, &sel, &topo, p->n);
             const Campo *c = &p->campos[sel];
             s32 d = 0;
-            if (t & TECLA_DIREITA) d += 1;
-            if (t & TECLA_ESQUERDA) d -= 1;
-            if (t & TECLA_R) d += 10;
-            if (t & TECLA_L) d -= 10;
+            /* números grandes (anéis, XP) andam de 1000 e de 100000; os outros, de 1 e 10 */
+            s32 passo = c->maximo >= 100000 ? 1000 : 1;
+            if (t & TECLA_DIREITA) d += passo;
+            if (t & TECLA_ESQUERDA) d -= passo;
+            if (t & TECLA_R) d += passo * (passo > 1 ? 100 : 10);
+            if (t & TECLA_L) d -= passo * (passo > 1 ? 100 : 10);
             u32 a = endereco(p, c);
             if (d && a) escrever(a, c, ler(a, c->formato) + d);
         }
@@ -808,6 +1004,7 @@ static void painel(void) {
         } else if (paginas[tela].tipo == P_GRUPO) desenhar_grupo(sel_grupo, topo_grupo);
         else if (paginas[tela].tipo == P_ITENS) desenhar_itens(sel, topo);
         else if (paginas[tela].tipo == P_ACOES) desenhar_acoes(sel);
+        else if (paginas[tela].tipo == P_TRUQUES) desenhar_truques(sel);
         else desenhar_pagina(&paginas[tela], paginas[tela].titulo, sel, topo);
     }
 }

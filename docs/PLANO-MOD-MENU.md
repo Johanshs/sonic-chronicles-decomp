@@ -227,7 +227,7 @@ Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) �
 da A2) → B7.
 
 ### Andamento: fase B (08/10/2026)
-O painel está em [`modmenu/`](../modmenu/README.md), versão 0.8, e **roda dentro do jogo
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.9, e **roda dentro do jogo
 no emulador**, inclusive numa batalha. **A v0.5 foi testada no DS** (R4i-SDHC, 08/10/2026):
 todas as páginas funcionaram.
 
@@ -260,6 +260,13 @@ todas as páginas funcionaram.
   Na v0.8 o painel também **tira** itens (pedido do usuário depois do teste no DS),
   pela função que o combate usa ao gastar um item (0x0202dacc); conferido no Inventário
   do jogo e depois de salvar e carregar.
+- **v0.9: o que a bateria de cheats tem (pedido do usuário, 08/10/2026).** Pontos de POW
+  e o nível dos 6 golpes de cada personagem (conferido: a tela "POW Moves" mostrou os
+  pontos dados pelo painel e eles compraram um nível), XP do grupo, ações por rodada,
+  resistências, Chao, e a página **Truques**, que liga e desliga os cheats de código
+  trocando instruções na RAM e limpando os caches do ARM9. Guia de uso campo por campo:
+  [`docs/PAINEL-GUIA.md`](PAINEL-GUIA.md). Falta levar ao DS (a limpeza de cache só se
+  prova lá).
 - **B6, combate: adiantada (v0.6 e v0.7).** Página dos inimigos da batalha (lista fixa
   em 0x02160AF8) e ações rápidas: curar o grupo, inimigos com HP 1 e **nocautear os
   inimigos**. Escrever HP 0 não nocauteia (o inimigo continua lutando); a v0.7 chama a
