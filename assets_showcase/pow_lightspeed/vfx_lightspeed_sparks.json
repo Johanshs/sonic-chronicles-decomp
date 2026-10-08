@@ -1,0 +1,26 @@
+{
+  "name": "Sonic Light Speed Sparks",
+  "blend_mode": "additive",
+  "max_particles": 64,
+  "lifespan_frames": 20,
+  "emission_rate": 6.0,
+  "color_start": [
+    255,
+    240,
+    50,
+    31
+  ],
+  "color_end": [
+    0,
+    180,
+    255,
+    0
+  ],
+  "velocity_range": [
+    -4.0,
+    4.0
+  ],
+  "gravity": 0.0,
+  "texture": "VFX_SpeedStreak",
+  "description": "Faíscas douradas e rastros de luz em velocidade da luz no ataque Light Speed Assault."
+}

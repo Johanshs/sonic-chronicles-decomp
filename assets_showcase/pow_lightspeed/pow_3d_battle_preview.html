@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulação 3D: Golpe POW "Light Speed Assault" (Nintendo DS)</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --accent: #2e66ff;
+      --gold: #f5c518;
+      --border: #30363d;
+      --text: #c9d1d9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+    h1 { font-size: 22px; color: var(--gold); }
+    .badge {
+      background: #1f293d;
+      color: #58a6ff;
+      border: 1px solid rgba(56, 139, 253, 0.4);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+    .viewport-card {
+      background: #000;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    #viewport3d {
+      width: 100%;
+      height: 520px;
+      display: block;
+    }
+    .ds-frame-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ds-tag {
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .touch-minigame {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 140px;
+      height: 140px;
+      background: rgba(0, 20, 60, 0.65);
+      border: 2px solid #00d2ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      pointer-events: none;
+    }
+    .touch-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px dashed #ffe600;
+      border-radius: 50%;
+      animation: shrinkRing 1.2s infinite ease-out;
+    }
+    @keyframes shrinkRing {
+      0% { transform: scale(1.6); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0; }
+    }
+    .touch-text {
+      font-size: 12px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 8px #00e1ff;
+    }
+    .touch-perfect {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 10px #ff9900;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .panel h2 {
+      font-size: 15px;
+      color: var(--gold);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .stat-label { color: #8b949e; }
+    .stat-val { font-weight: bold; color: #fff; }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    button {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: #58a6ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>⚡ Simulação 3D: Light Speed Assault</h1>
+      <p style="font-size: 13px; color: #8b949e;">Visualização da arquitetura de combate do Nintendo DS (BioWare Aurora / Nitro G3D)</p>
+    </div>
+    <div class="badge">POW Move: Sonic Solo</div>
+  </header>
+
+  <div class="layout">
+    <!-- Viewport 3D -->
+    <div class="viewport-card">
+      <canvas id="viewport3d"></canvas>
+      
+      <div class="ds-frame-overlay">
+        <div class="ds-tag">NINTENDO DS: NITRO G3D TOON SHADING</div>
+        <div class="ds-tag" id="camTag">CÂMERA: CINEMÁTICA DE POW</div>
+      </div>
+
+      <div class="touch-minigame">
+        <div class="touch-ring"></div>
+        <div class="touch-text">TOUCH!</div>
+        <div class="touch-perfect">PERFECT!</div>
+      </div>
+    </div>
+
+    <!-- Barra Lateral de Informações e Controles -->
+    <div class="sidebar">
+      <div class="panel">
+        <h2>Parâmetros do Golpe (combo.csv)</h2>
+        <div class="stat-row">
+          <span class="stat-label">Nome:</span>
+          <span class="stat-val">Light Speed Assault</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Dono:</span>
+          <span class="stat-val">Sonic (ID 0)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Custo em PP:</span>
+          <span class="stat-val" style="color: #58a6ff;">5 PP</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Dano L1 / L2 / L3:</span>
+          <span class="stat-val" style="color: var(--gold);">110% / 140% / 185%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Elementos:</span>
+          <span class="stat-val">Vento + Raio</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Propriedades:</span>
+          <span class="stat-val">Armor Piercing, Inescapable</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Status Secundário:</span>
+          <span class="stat-val" style="color: #ff7b72;">Sluggish (Lentidão)</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Controles da Câmera 3D</h2>
+        <div class="btn-group">
+          <button class="active" id="btnPowCam" onclick="setCameraMode('cinematic')">Câmera Cinemática de POW</button>
+          <button id="btnIsoCam" onclick="setCameraMode('isometric')">Câmera Isométrica de Batalha</button>
+          <button id="btnTopCam" onclick="setCameraMode('topdown')">Visão Superior (Top-Down)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Especificações Técnicas Nitro 3D</h2>
+        <p style="font-size: 12px; color: #8b949e; line-height: 1.6;">
+          • <strong>Malha 3D:</strong> Fitas em ziguezague com 48 triângulos e anel de choque concêntrico.<br>
+          • <strong>Toon Table:</strong> 32 níveis de iluminação cel-shaded discretos do DS.<br>
+          • <strong>VFX:</strong> Emissor <code>Additive_VFX</code> com faíscas supersônicas e rastro de luz.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Inicialização do Renderizador 3D em Canvas (Software 3D Engine fiel ao DS)
+    const canvas = document.getElementById('viewport3d');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = 520;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let cameraMode = 'cinematic';
+    let time = 0;
+
+    function setCameraMode(mode) {
+      cameraMode = mode;
+      document.getElementById('btnPowCam').classList.toggle('active', mode === 'cinematic');
+      document.getElementById('btnIsoCam').classList.toggle('active', mode === 'isometric');
+      document.getElementById('btnTopCam').classList.toggle('active', mode === 'topdown');
+      
+      const tag = document.getElementById('camTag');
+      if (mode === 'cinematic') tag.textContent = 'CÂMERA: CINEMÁTICA DE POW';
+      else if (mode === 'isometric') tag.textContent = 'CÂMERA: ISOMÉTRICA DE BATALHA';
+      else tag.textContent = 'CÂMERA: VISÃO SUPERIOR';
+    }
+
+    // Geometria 3D: Caminho de Ziguezague dos Rastros de Luz
+    const trailWaypoints = [
+      [-4.0, 0.4, -4.0],
+      [-1.5, 1.8, -2.5],
+      [2.0, 0.6, -3.0],
+      [0.0, 2.5, 0.0],
+      [-2.5, 1.0, 2.0],
+      [2.5, 0.8, 3.0],
+      [0.0, 0.2, 0.0]   // Alvo central (Inimigo)
+    ];
+
+    // Partículas do VFX
+    const sparks = [];
+    for (let i = 0; i < 40; i++) {
+      sparks.push({
+        x: (Math.random() - 0.5) * 6,
+        y: Math.random() * 2.5,
+        z: (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 0.1,
+        vy: (Math.random() - 0.5) * 0.1,
+        vz: (Math.random() - 0.5) * 0.1,
+        life: Math.random()
+      });
+    }
+
+    function project(x, y, z, cx, cy) {
+      let camX = 0, camY = 3, camZ = 7, pitch = 0.35, yaw = 0;
+
+      if (cameraMode === 'cinematic') {
+        yaw = Math.sin(time * 0.8) * 0.3;
+        camY = 2.2 + Math.cos(time * 0.6) * 0.4;
+        camZ = 5.5;
+        pitch = 0.25;
+      } else if (cameraMode === 'isometric') {
+        camX = 4;
+        camY = 4.5;
+        camZ = 6.5;
+        yaw = -0.4;
+        pitch = 0.5;
+      } else {
+        camX = 0;
+        camY = 9;
+        camZ = 0.1;
+        pitch = 1.45;
+        yaw = 0;
+      }
+
+      // Translação
+      let dx = x - camX;
+      let dy = y - camY;
+      let dz = z - camZ;
+
+      // Rotação Yaw
+      let cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+      let rx = dx * cosY - dz * sinY;
+      let rz = dx * sinY + dz * cosY;
+
+      // Rotação Pitch
+      let cosP = Math.cos(pitch), sinP = Math.sin(pitch);
+      let ry = dy * cosP - rz * sinP;
+      let rdepth = dy * sinP + rz * cosP;
+
+      if (rdepth <= 0.2) return null;
+
+      let fov = 420;
+      let sx = cx + (rx / rdepth) * fov;
+      let sy = cy - (ry / rdepth) * fov;
+
+      return { x: sx, y: sy, depth: rdepth };
+    }
+
+    function render() {
+      ctx.fillStyle = '#080c14';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      time += 0.03;
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + 30;
+
+      // 1. Chão da Arena (Grade Estilo Nintendo DS)
+      ctx.lineWidth = 1;
+      for (let x = -5; x <= 5; x++) {
+        let p1 = project(x, 0, -5, cx, cy);
+        let p2 = project(x, 0, 5, cx, cy);
+        if (p1 && p2) {
+          ctx.strokeStyle = (x === 0) ? '#2e66ff' : '#1b2438';
+          ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+      }
+      for (let z = -5; z <= 5; z++) {
+        let p1 = project(-5, 0, z, cx, cy);
+        let p2 = project(5, 0, z, cx, cy);
+        if (p1 && p2) {
+          ctx.strokeStyle = (z === 0) ? '#2e66ff' : '#1b2438';
+          ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+      }
+
+      // 2. Anéis de Choque Expansivos no Centro (Impact Point)
+      const ringPulse = (time * 2.5) % 3.0;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = `rgba(0, 230, 255, ${Math.max(0, 1 - ringPulse / 3.0)})`;
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) {
+        let ang = (i / 24) * Math.PI * 2;
+        let rx = Math.cos(ang) * ringPulse;
+        let rz = Math.sin(ang) * ringPulse;
+        let p = project(rx, 0.05, rz, cx, cy);
+        if (p) {
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+      }
+      ctx.stroke();
+
+      // 3. Trajetória 3D do Light Speed Dash (Fitas de Luz em Ziguezague)
+      ctx.lineWidth = 5;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ffe600';
+      ctx.strokeStyle = '#fff566';
+
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < trailWaypoints.length; i++) {
+        let pt = trailWaypoints[i];
+        let p = project(pt[0], pt[1], pt[2], cx, cy);
+        if (p) {
+          if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+          else ctx.lineTo(p.x, p.y);
+        }
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 4. Sonic em Alta Velocidade (Esfera Cel-Shaded Azul com Rastro)
+      const sonicProgress = (time * 1.2) % (trailWaypoints.length - 1);
+      const seg = Math.floor(sonicProgress);
+      const tSeg = sonicProgress - seg;
+      const ptA = trailWaypoints[seg];
+      const ptB = trailWaypoints[seg + 1];
+
+      const sonicX = ptA[0] + (ptB[0] - ptA[0]) * tSeg;
+      const sonicY = ptA[1] + (ptB[1] - ptA[1]) * tSeg;
+      const sonicZ = ptA[2] + (ptB[2] - ptA[2]) * tSeg;
+
+      let pSonic = project(sonicX, sonicY, sonicZ, cx, cy);
+      if (pSonic) {
+        // Rastro de Luz Áureo
+        ctx.fillStyle = '#ffea00';
+        ctx.beginPath();
+        ctx.arc(pSonic.x, pSonic.y, 22 / (pSonic.depth * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Núcleo Azul Sonic Cel-Shaded
+        ctx.fillStyle = '#1040d0';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pSonic.x, pSonic.y, 14 / (pSonic.depth * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Brilho / Highlight
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(pSonic.x - 3, pSonic.y - 3, 4 / (pSonic.depth * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 5. Inimigo Alvo (Robô Eggman / Kron no Centro)
+      let pEnemy = project(0, 0.7, 0, cx, cy);
+      if (pEnemy) {
+        // Sombra no chão
+        let pShadow = project(0, 0.05, 0, cx, cy);
+        if (pShadow) {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          ctx.beginPath();
+          ctx.ellipse(pShadow.x, pShadow.y, 24, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Corpo do Robô
+        ctx.fillStyle = '#a01515';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(pEnemy.x, pEnemy.y, 20 / (pEnemy.depth * 0.22), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Olho mecânico amarelo
+        ctx.fillStyle = '#ffe600';
+        ctx.beginPath();
+        ctx.arc(pEnemy.x, pEnemy.y - 2, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dano Pop-up Comic ("CRITICAL! -420 HP")
+        if (ringPulse < 1.0) {
+          ctx.font = 'bold 16px sans-serif';
+          ctx.fillStyle = '#ffea00';
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 3;
+          let txt = 'CRITICAL! -420';
+          ctx.strokeText(txt, pEnemy.x - 45, pEnemy.y - 45 - ringPulse * 20);
+          ctx.fillText(txt, pEnemy.x - 45, pEnemy.y - 45 - ringPulse * 20);
+        }
+      }
+
+      // 6. Faíscas Supersônicas (VFX Additive)
+      ctx.fillStyle = '#ffe600';
+      sparks.forEach(s => {
+        s.life -= 0.02;
+        if (s.life <= 0) {
+          s.x = (Math.random() - 0.5) * 5;
+          s.y = Math.random() * 2;
+          s.z = (Math.random() - 0.5) * 5;
+          s.life = 1.0;
+        }
+        let p = project(s.x, s.y, s.z, cx, cy);
+        if (p) {
+          ctx.globalAlpha = s.life;
+          ctx.fillRect(p.x, p.y, 3, 3);
+        }
+      });
+      ctx.globalAlpha = 1.0;
+
+      requestAnimationFrame(render);
+    }
+    render();
+  </script>
+</body>
+</html>
