@@ -313,6 +313,25 @@ jogo:
 - **O efeito colateral do "Itens não acabam" é real.** Vender um item com ele ligado dá os
   anéis e o item continua lá.
 
+## 18. Pausa: o que ficou pela metade na bateria de cheats
+O projeto foi pausado em 2026-10-08 a pedido do Johans. Tudo que está em `cheats/YWSE.txt`
+foi conferido no emulador. Duas frentes ficaram abertas:
+
+- **Sem encontros.** No mapa, os inimigos aparecem e a luta começa quando o grupo encosta
+  num deles. Um vigia de escrita no "modo pendente" do gerenciador (`0x02109BA8`) mostrou
+  quem pede a luta. A função que começa a batalha está em `0x02032444` e faz a troca de modo
+  em `0x02032A4A`. Ela não é chamada direto: é a posição `+0x4C` da vtable do grupo
+  (`0x020F9C08`, ponteiro em `0x020F9C54`). Quem chama é a função em `0x02031C50`, pela
+  instrução `blx r2` em `0x02031F0C`. Falta ler essa função e achar o teste de "encostou".
+  Também falta conferir se as lutas da história (chefes) passam pelo mesmo caminho, porque
+  um cheat que bloqueie essas lutas pode travar o jogo.
+- **Imunidade a status.** As resistências ficam nas posições 3 a 18 do vetor de atributos.
+  Falta um teste de verdade, porque os golpes que causam status passam pelo minijogo de
+  toques do POW, e o script ainda não sabe tocar nele.
+
+O próximo passo é ler `0x02031C50` até o teste de contato e criar o cheat, com o aviso das
+lutas da história.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
