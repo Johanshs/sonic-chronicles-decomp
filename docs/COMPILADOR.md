@@ -11,7 +11,7 @@ ser provada certa byte a byte.
 | Compilador | **Metrowerks CodeWarrior para DS, mwccarm 2.0** | 3 funções com 100% de match; 1.2 e "DSi" (4.0) erram |
 | Service pack | **2.0 sp2** (as bibliotecas com certeza; o compilador, quase) | o MSL e o Runtime ligados no jogo são os da sp2: [abaixo](#o-service-pack-pelas-bibliotecas) |
 | Otimização | `-O4,p` | `-O4,s` (tamanho) erra 2 das 3; `-O3,p` também acerta |
-| Modo | `-thumb -interworking` | o código do jogo é Thumb; o NitroSDK é ARM |
+| Modo | `-thumb -interworking` | o código do jogo é Thumb (e as bibliotecas da Nintendo também, veja abaixo) |
 | C++ | `-lang=c++ -Cpp_exceptions off -RTTI on` | abaixo |
 | Outras | `-proc arm946e -enum int -char signed` | padrão dos jogos de DS; ainda não testadas uma a uma |
 
@@ -144,7 +144,36 @@ fonte, compila os 169 arquivos do ARM9 e procura cada função no jogo.
   essa conta.
 
 Com o MSL (171) e o SDK (562), as funções com nome automático (`func_...`) caíram de
-5.685 para 4.973 no ARM9.
+5.685 para 4.973 no ARM9 (e para 4.611 com a NitroSystem, abaixo).
+
+## A NitroSystem: 100% da região reconhecida
+
+A NitroSystem é a outra biblioteca da Nintendo: 3D (`NNS_G3d*`, que desenha os
+modelos), 2D (`NNS_G2d*`), som (`NNS_Snd*`), memória (`NNS_Fnd*`) e VRAM (`NNS_Gfd*`).
+Ela também tem decompilação pública ([ntrtwl/NitroSystem](https://github.com/ntrtwl/NitroSystem),
+versão 071126). `decomp/tools/nitrosystem.sh` compila os 96 arquivos dela e procura cada
+função no jogo, como `nitrosdk.sh` faz com o SDK.
+
+- **Onde está:** de `0x020c8278` a `0x020d4394`, logo antes do NitroSDK (o SDK começa
+  em `MTX_Identity22_`, não em `0x020d4000` como eu achava).
+- **Thumb de novo:** em Thumb, 519 funções da biblioteca batem. Em ARM, só batem as dos
+  arquivos que o próprio fonte já força para ARM (`#include <nitro/code32.h>`, como os
+  cálculos de animação e de textura do 3D), que saem iguais nos dois modos.
+- **Compilador:** `2.0/sp2` e `sp2p2` acham 519, `sp1p2` 517, `sp2p3` 513, `2.0/base` 494.
+  As duas funções que só a sp2 acerta são `NNSi_G3dFuncSbc_MAT_InternalDefault` e
+  `NNSi_G3dFuncSbc_NODEDESC`. Igual ao Platinum: a NitroSystem foi compilada com a sp2,
+  e o SDK com a sp1.
+- **A versão é a mesma:** das 464 funções da região, **todas** batem com alguma função da
+  NitroSystem 071126. Nenhuma sobra: o jogo usa exatamente esta versão.
+- **360 nomes novos** (`NNS_G3dDraw`, `NNS_SndArcInit`, `NNS_FndAllocFromExpHeapEx`...).
+  As outras ~100 funções são ambíguas: funções `static` com o mesmo nome em vários
+  arquivos (`texmtxCalc_flagTRS_` existe nos arquivos do Maya, do 3ds Max e do XSI) ou
+  funções idênticas entre si.
+- **Conferido pelas chamadas:** 708 de 708 referências certas (1.848 de 1.848 com o SDK).
+
+Com o MSL, o SDK e a NitroSystem, as funções com nome automático no ARM9 caíram de
+5.685 para 4.611. Na região do SDK, 628 das 631 funções batem com o fonte; as 3 que
+sobram (`0x020d6930`, `0x020e067c`, `0x020e096c`) ainda não sabemos de onde vêm.
 
 ## O que não sabemos (ainda)
 
@@ -152,10 +181,8 @@ Com o MSL (171) e o SDK (562), as funções com nome automático (`func_...`) ca
   em cerca de 30 construções de C++ as versões `2.0/sp1` a `2.0/sp2p4` geraram código
   idêntico; a única diferença achada foi `while (n--)` entre a `2.0/base` e as outras.
   Se uma função futura só bater com outra versão, troca-se em `compilar.sh`.
-- **A NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`) e as outras bibliotecas
-  (o vídeo VX da Actimagine, a de backup): ainda não procuradas. A NitroSystem tem
-  decompilação pública (ntrtwl/NitroSystem, versão 071126); falta saber se é a mesma
-  versão do jogo.
+- **As outras bibliotecas** (o vídeo VX da Actimagine, a de backup): ainda não
+  procuradas, e sem decompilação pública conhecida.
 - `-enum int`, `-char signed`, `-inline`, `-str`, `-ipa`: ainda sem uma função que
   dependa delas.
 

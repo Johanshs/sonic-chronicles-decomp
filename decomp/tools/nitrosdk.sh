@@ -17,7 +17,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 F="${FERRAMENTAS:-$REPO/work/ferramentas}"
 SDK="$REPO/work/NitroSDK"
-OBJ="$REPO/work/build/nitrosdk"
+OBJ="$REPO/work/bibliotecas/nitrosdk"   # fora de work/build: montar_rom.sh apaga aquela
 REV=eaae40f199c0a8827947afbc33227b6ba2f9d45c
 MSL="$F/metroskrew/lib/metroskrew/sdk/ds/2.0/sp1p2/msl/MSL_C"
 cd "$REPO"

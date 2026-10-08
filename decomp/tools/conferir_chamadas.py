@@ -11,12 +11,13 @@ Uso: python3 conferir_chamadas.py arquivo.o [mais.o ...]
 import re, struct, sys
 from elftools.elf.elffile import ELFFile
 
-nomes = {}
+nomes, tamanhos = {}, {}
 for f in ("config/YWSE/arm9/symbols.txt", "config/YWSE/arm9/itcm/symbols.txt"):
     for linha in open(f):
-        m = re.match(r"(\S+) kind:function.* addr:(0x[0-9a-f]+)", linha)
+        m = re.match(r"(\S+) kind:function\(\w+,size=(0x[0-9a-f]+).* addr:(0x[0-9a-f]+)", linha)
         if m:
-            nomes[m.group(1)] = int(m.group(2), 16)
+            nomes[m.group(1)] = int(m.group(3), 16)
+            tamanhos[m.group(1)] = int(m.group(2), 16)
 arm9 = open("work/extract/arm9/arm9.bin", "rb").read()
 BASE = 0x02000000
 
@@ -50,7 +51,10 @@ for caminho in sys.argv[1:]:
         if rel.header.sh_type not in ("SHT_REL", "SHT_RELA"):
             continue
         funcs = [s for s in simbolos if s["st_info"]["type"] == "STT_FUNC"
-                 and s["st_shndx"] == rel.header.sh_info and s.name in nomes]
+                 and s["st_shndx"] == rel.header.sh_info and s.name in nomes
+                 # funções "static" de arquivos diferentes podem ter o mesmo nome
+                 # (AlarmCallback): só vale a do mesmo tamanho que a do jogo
+                 and s["st_size"] == tamanhos[s.name]]
         for r in rel.iter_relocations():
             alvo_nome = simbolos[r["r_info_sym"]].name
             if alvo_nome not in nomes:

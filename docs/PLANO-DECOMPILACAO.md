@@ -84,6 +84,9 @@ precisa ser reescrito do zero.
   4.2.30001, compilado em Thumb com a 2.0/sp1p2); 1.140 de 1.140 chamadas conferem.
   Falta ligar os `.o` do SDK no lugar do código cortado.
 - **2.2 NitroSystem** (`NNS_G3d*`, `NNS_G2d*`, `NNS_Snd*`). Mesma abordagem.
+  🟡 a região `0x020c8278`-`0x020d4394` é 100% NitroSystem 071126 (Thumb, 2.0/sp2);
+  360 funções nomeadas (`decomp/tools/nitrosystem.sh`), 708 de 708 chamadas conferem.
+  Falta ligar os `.o` no lugar do código cortado.
 - **2.3 Runtime C/C++ (MSL).** `memcpy`, `__register_global_object`, exceções,
   iostreams. Em geral, ligar o `.a` original do CodeWarrior já resolve.
   🟡 as bibliotecas são as do CodeWarrior 2.0 sp2; 171 funções já têm o nome verdadeiro

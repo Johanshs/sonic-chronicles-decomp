@@ -217,6 +217,22 @@ O resultado está em [`COMPILADOR.md`](COMPILADOR.md): **mwccarm 2.0, `-O4,p`, T
   batem melhor com a 2.0 sp1 (652 funções) do que com a sp2 (649) que compilou o jogo:
   a Nintendo entrega o SDK já compilado.
 
+## 17. A NitroSystem
+- **Mesmo caminho do SDK.** Compilei a NitroSystem decompilada (versão 071126) em Thumb,
+  já sabendo do Erro nº 9, e 360 funções ganharam nome: o motor de 3D (`NNS_G3d*`), o
+  de som (`NNS_Snd*`), o 2D e os gerenciadores de memória e VRAM.
+- **Uma região inteira explicada.** As 464 funções entre `0x020c8278` e `0x020d4394`
+  batem, todas, com funções da NitroSystem. Não sobra nenhuma: é exatamente a versão
+  que o jogo usa. Isso também corrigiu o começo do SDK, que eu tinha posto em
+  `0x020d4000` só olhando por cima.
+- **Quem compilou o quê:** a NitroSystem bate melhor com a 2.0 sp2 (519 funções) do
+  que com a sp1p2 (517). O SDK é sp1, a NitroSystem e o MSL são sp2, como no Pokémon
+  Platinum.
+- **O conferidor de chamadas errou de novo, e para o lado seguro.** Acusou 3 erros em
+  `AlarmCallback`. Não era o nome: existem duas funções `static` com esse nome
+  (`stream.c` e `capture.c`), e o conferidor comparava as chamadas de uma com o endereço
+  da outra. Agora ele só usa a função do `.o` com o mesmo tamanho da do jogo: 708 de 708.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
