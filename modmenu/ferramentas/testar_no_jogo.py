@@ -1,7 +1,11 @@
 """Testa o painel DENTRO do jogo, numa ROM já enxertada, no DeSmuME sem janela.
 
 Uso: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \\
-     python3 testar_no_jogo.py rom_com_painel.nds pasta_capturas
+     python3 testar_no_jogo.py rom_com_painel.nds pasta_capturas [esquadrao]
+
+`esquadrao` (hexadecimal) é onde a mesma ROM SEM o painel põe o esquadrão; o padrão é o
+do jogo original. Uma ROM com conteúdo novo pode mudar esse endereço sozinha (a do
+PR #39 põe em 0x2226280: as tabelas maiores ocupam mais heap antes dele).
 
 Começa um jogo novo (o roteiro de toques passa pelas telas de abertura até a primeira
 exploração do capítulo 1) e confere:
@@ -16,7 +20,8 @@ exploração do capítulo 1) e confere:
      instruções do jogo e as desfaz;
   4. depois de 5 segundos com o painel aberto, o relógio do jogo NÃO dá o salto (o
      tempo medido na volta seguinte é o de uma volta normal);
-  5. depois de fechar, a tela do motor B volta a ser a do jogo.
+  5. depois de fechar, a tela do motor B volta a ser a do jogo;
+  6. a troca do direcional está ligada (andar é conferido em testar_direcional.py).
 Leva uns 2 minutos. As capturas ficam em pasta_capturas.
 """
 import os
@@ -46,7 +51,7 @@ def confere(cond, msg):
         falhas.append(msg)
 
 
-def main(rom, pasta):
+def main(rom, pasta, esquadrao_esperado=ESQUADRAO_NO_ORIGINAL):
     os.makedirs(pasta, exist_ok=True)
     e = DeSmuME()
     e.open(rom)
@@ -97,8 +102,8 @@ def main(rom, pasta):
     confere(m.read_long(LITERAL_ARENA_INICIO) == 0x021B9500,
             f'começo do heap igual ao original ({m.read_long(LITERAL_ARENA_INICIO):#x})')
     esquadrao = m.read_long(m.read_long(GLOBAL_ESQUADRAO))
-    confere(esquadrao == ESQUADRAO_NO_ORIGINAL,
-            f'esquadrão em {esquadrao:#x}, o mesmo endereço do jogo original')
+    confere(esquadrao == esquadrao_esperado,
+            f'esquadrão em {esquadrao:#x}, o mesmo endereço do jogo sem o painel')
     voltas = [0]
     e.memory.register_exec(GANCHO, lambda a, s: voltas.__setitem__(0, voltas[0] + 1))
     quadros(60)
@@ -239,11 +244,19 @@ def main(rom, pasta):
     confere(m.read_long(0x04001000) != 0x10100, f'a tela do motor B voltou a ser a do jogo ({m.read_long(0x04001000):#x}; antes {disp_jogo:#x})')
     captura('4_fechado')
 
+    print('6. andar pelo direcional')
+    # O painel liga isto sozinho: o "bl" que pergunta pela caneta (0x0204d174) passa a
+    # chamar a função do painel. Sem caneta e com uma seta apertada, o grupo anda.
+    bl = (m.read_short(0x0204D174), m.read_short(0x0204D176))
+    confere(bl != (0xF7B5, 0xFAF8), f'a chamada em 0x0204d174 foi trocada ({bl[0]:04X} {bl[1]:04X})')
+    # Andar de verdade precisa de um save: o começo de um jogo novo é uma cena
+    # roteirizada seguida de conversa. Ver ferramentas/testar_direcional.py.
+
     print(f'\n{"TUDO OK" if not falhas else f"{len(falhas)} FALHA(S)"}; capturas em {pasta}')
     sys.exit(1 if falhas else 0)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         raise SystemExit(__doc__)
-    main(*sys.argv[1:])
+    main(sys.argv[1], sys.argv[2], *(int(a, 16) for a in sys.argv[3:]))

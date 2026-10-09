@@ -1,4 +1,4 @@
-# Guia do painel de controle (v0.9)
+# Guia do painel de controle (v0.10)
 
 Este é o "wiki" do painel: o que cada página, campo, ação e truque faz, como faz e o que
 pode dar errado. O código está em [`modmenu/`](../modmenu/) e a história de como cada
@@ -26,6 +26,13 @@ link só funciona no branch daquele PR).
 ---
 
 ## 1. Abrir e usar
+
+- **Andar pelo direcional (novo na v0.10):** na exploração, as setas do direcional
+  fazem o grupo andar, sem precisar da caneta. No **3DS**, o analógico (Circle Pad) também
+  serve: em modo DS, o 3DS entrega o analógico ao jogo como se fosse o direcional. Isso
+  quer dizer 8 direções e velocidade fixa (não é analógico de verdade); ainda não foi
+  testado num 3DS, só no emulador. A caneta continua
+  funcionando igual. Isto já vem ligado; para desligar, veja a seção 11.
 
 - **Abrir:** segure **L + R + SELECT** por meio segundo. O jogo pausa e a tela do
   "motor B" vira o painel. Na exploração ela é a tela de **cima**. Durante um
@@ -239,8 +246,14 @@ viu o jardim mostrar "45/45, Maxed: 45" com esses mesmos bytes.
 
 ## 10. Itens (inventário)
 
-A primeira linha é **dar**: ◀▶ e L/R escolhem o número do item (0 a 287, as linhas da
-tabela `Items.gda`); o nome aparece embaixo, lido do texto do próprio jogo. A dá 1 unidade.
+A primeira linha é **dar**: ◀▶ e L/R escolhem o número do item (uma linha da tabela
+`Items.gda`); o nome aparece embaixo, lido do texto do próprio jogo. A dá 1 unidade.
+
+**Até que número vai:** o painel pergunta ao jogo quantas linhas a tabela tem. No jogo
+original são 288 (0 a 287). Na ROM com conteúdo novo a tabela é maior: o item **288 é o
+Chili Dog** (cura 321 de HP), e os itens novos que vierem depois aparecem na sequência.
+Por que perguntar: num teste, o jogo aceitou "dar" o item 290, que não existe, então um
+limite fixo maior seria perigoso, e um limite fixo de 287 esconderia os itens novos.
 
 As linhas seguintes são as pilhas da mochila (nome e quantidade):
 - **◀▶ / L/R** mudam a quantidade (1 a 99; o jogo recusa mais de 99);
@@ -269,6 +282,22 @@ religar o DS, tudo volta ao normal.
 | POW sem gastar pontos | desligado / LIGADO | a loja de golpes compra sem conferir nem gastar pontos | `0209451C`: `DC11`→`46C0`, `0209457A`: `1B01`→`1C01` |
 | Aneis por anel | x1 / x2 / x5 / x10 | cada anel pego soma 2, 5 ou 10 na carteira | `02017648`: `1C49`→`3102`/`3105`/`310A` |
 | Andar mais rapido | x1 / x2 / x4 | o grupo anda no mapa 2 ou 4 vezes mais rápido (a colisão continua) | `02034B92`: `0320`→`0360`/`03A0` |
+| Andar pelo direcional | desligado / **LIGADO** (liga sozinho) | as setas (e o analógico do 3DS) andam na exploração | `0204D174`: o `bl` para `0x02002768` vira um `bl` para a função `direcional` do painel |
+
+**Como o direcional funciona.** O jogo não sabe andar pelas setas: a cada quadro da
+exploração, uma função (`0x0204d120`) pergunta "a caneta está na tela, e onde?". Se está,
+ela converte o ponto da tela num ponto do mapa (câmera − (128, 96) + toque), vira o grupo
+para lá e manda andar; quanto mais longe a caneta do Sonic, mais rápido. O truque troca só
+essa pergunta por uma função do painel. Com a caneta na tela, a resposta é a de sempre.
+Sem caneta e com uma seta apertada, a função calcula onde o Sonic está na tela (posição
+no mapa − câmera) e responde "tocando" 72 pixels na direção das setas (51 em cada eixo na
+diagonal, para a velocidade ser a mesma). Virar, andar, bater em parede e passar por
+portas continua sendo o jogo. Os botões da tela e as conversas usam outra leitura do
+toque, então as setas não apertam nada por engano.
+
+Conferido no emulador (save do Capítulo 10): segurando cada seta meio segundo, o grupo
+andou 50 a 76 pixels no sentido certo, e 51 + 51 na diagonal; sem tecla, ficou parado; a
+caneta continuou funcionando.
 
 **Como funcionam (exemplo do "Itens nao acabam"):** a função do jogo que tira um item faz
 "se a quantidade é 1, apague o item" (`DD07`) e "quantidade − 1" (`1E49`). O truque troca
@@ -301,7 +330,7 @@ nao mexo".
 
 | Volta sozinho ao religar o DS | Fica no save se você salvar |
 |---|---|
-| regras de combate, dificuldade, truques | anéis, XP (e os níveis que ele der), atributos do grupo, pontos e níveis de POW, itens, Chao |
+| regras de combate, dificuldade, truques (o direcional se liga de novo sozinho) | anéis, XP (e os níveis que ele der), atributos do grupo, pontos e níveis de POW, itens, Chao |
 
 Faça backup do `.sav` antes de salvar depois de mexer. No R4, o save fica ao lado da ROM
 no cartão SD (mesmo nome, `.sav`).

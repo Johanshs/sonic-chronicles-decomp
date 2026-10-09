@@ -7,13 +7,15 @@ jogo ao vivo. O plano completo está em [`docs/PLANO-MOD-MENU.md`](../docs/PLANO
 
 **Guia de uso, campo por campo:** [`docs/PAINEL-GUIA.md`](../docs/PAINEL-GUIA.md).
 
-**Situação (08/10/2026), versão 0.9:**
+**Situação (09/10/2026), versão 0.10:**
 - **Funciona dentro do jogo, no emulador**: conferido na exploração (num jogo novo e no
   save do Capítulo 10), num diálogo, na tela de perfil e **numa batalha** (ver "Como foi
   testado").
 - **Testado num DS de verdade (v0.5)**: no R4i-SDHC, todas as páginas funcionaram (o
   usuário só evitou mudar as regras de combate). As versões 0.6 a 0.9 ainda não foram
   ao DS.
+- **Andar pelo direcional** (v0.10): na exploração, as setas (e o analógico do 3DS,
+  que em modo DS vira o direcional) fazem o grupo andar. Liga sozinho; é um truque.
 - Páginas: as **74 regras de combate**, a dificuldade dinâmica, os **anéis da carteira
   e o XP do grupo**, e o **grupo inteiro**: a lista de todos os personagens que já
   entraram (11 no fim do jogo), com nome e HP; escolhendo um, os atributos dele (HP, PP,
@@ -48,7 +50,8 @@ jogo/painel.ld                  onde o painel mora na memória do jogo (0x023D80
 teste/                          a ROM de teste: um "jogo de mentira" que chama o painel
 ferramentas/enxertar.py         põe o painel numa cópia da ROM (o `sonic-mod menu` faz o mesmo)
 ferramentas/testar.py           testa o painel na ROM de teste (32 checagens)
-ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (24 checagens)
+ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (25 checagens)
+ferramentas/testar_direcional.py testa o andar pelo direcional com um save (5 checagens)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -98,7 +101,9 @@ um cheat de endereço fixo, como o público `022262F4`, escreveria no lugar erra
 
 ```bash
 make testar                        # ROM de teste, sem precisar do jogo (32 checagens)
-make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (24 checagens)
+make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (25 checagens)
+# o direcional precisa de um save (o começo de um jogo novo é cena e conversa):
+python3 ferramentas/testar_direcional.py sonic_painel.nds seu.sav
 ```
 
 ## Como funciona
@@ -243,6 +248,16 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (24 checagen
   menos 1 cópia, sem mexer nas cópias de quem já tinha.
 - **XP** (v0.9, teste automático): DIREITA soma 1000 ao XP do grupo, ESQUERDA desfaz.
 
+- **Direcional** (v0.10, save do Capítulo 10, `testar_direcional.py`): cada seta
+  segurada meio segundo andou 50 a 76 pixels no sentido certo; a diagonal, 51 + 51; sem
+  tecla o grupo fica parado e a caneta continua valendo. Num jogo novo o teste não serve:
+  o começo é uma cena que anda sozinha e depois uma conversa (nem a caneta anda ali).
+- **ROM com o conteúdo novo** (PR #39 + painel): os testes automáticos passam; a única
+  diferença é que essa ROM, mesmo sem painel, põe o esquadrão em `0x02226280` (as
+  tabelas maiores ocupam mais heap antes dele), por isso `testar_no_jogo.py` aceita o
+  endereço esperado como terceiro argumento. O painel acha tudo por ponteiros e não
+  depende disso; cheats públicos de endereço fixo do heap (`022262F4`) não valem nela.
+
 ## Descobertas e erros pelo caminho
 
 - **O jogo roda a 30 voltas por segundo na exploração e a 60 no diálogo.** A contagem
@@ -286,6 +301,12 @@ make testar-jogo ROM=rom.nds       # enxerta e testa dentro do jogo (24 checagen
   Luck, contei mal quantas vezes descer e o teste mudou o Grit em vez do Luck. A captura
   da tela mostrou a seta no Grit; o Luck é a linha 16, não a 15. O painel estava certo,
   o roteiro de teste não.
+
+- **O jogo aceita dar um item que não existe.** Para testar o limite, deixei o painel
+  ir até 299 e dei o item 290 na ROM original: a função do jogo respondeu "deu". Por
+  isso o limite agora vem da própria tabela (a mesma conferência que a função que cria
+  um item faz: `0x0202dfc4` recusa número >= linhas da tabela 22), e não de um número
+  fixo.
 
 ## Limites conhecidos
 

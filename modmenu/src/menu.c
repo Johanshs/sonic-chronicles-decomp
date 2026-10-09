@@ -12,7 +12,7 @@
  * foi conferido: "emu" = no emulador; "est" = só na análise estática. */
 #include "console.h"
 
-#define VERSAO "0.9"
+#define VERSAO "0.10"
 #define COMBO_ABRIR (TECLA_L | TECLA_R | TECLA_SELECT)
 
 /* src/cache.s: faz o processador ver instruções do jogo que o painel trocou na RAM */
@@ -328,7 +328,25 @@ static u32 endereco(const Pagina *p, const Campo *c) {
  * a função que tira um item do inventário (0x0202dacc) baixa exatamente esse byte. */
 #define VTABLE_INVENTARIO 0x020F93DCu
 #define VTABLE_ITEM 0x020F6120u
-#define ID_MAXIMO 287 /* Items.gda tem 288 linhas */
+/* Quantos itens existem: a tabela Items.gda pode ganhar linhas (o item 288, Chili Dog,
+ * do conteúdo novo), então o painel pergunta ao jogo em vez de supor 288. A função que
+ * cria um item (0x0202dfc4) faz o mesmo: pede a tabela 22 ao gerente de tabelas
+ * (0x0201f1dc(0x02109b00, 22)) e recusa um número >= linhas (método +0x18 da tabela).
+ * Sem essa conferência o jogo aceitou "dar" o item 290, que não existe (visto no
+ * emulador), por isso o limite vem daqui. Se algo não bater, ficamos nos 288 do jogo
+ * original. O bit 0 de 0x02109a0c diz se o gerente já foi construído. */
+#define ITENS_ORIGINAL 288
+static int n_itens(void) {
+    if (!(*(volatile u32 *)0x02109A0Cu & 1)) return ITENS_ORIGINAL;
+    if (*(volatile u16 *)0x0201F1DC != 0xB570 || *(volatile u16 *)0x0201F1DE != 0x1C05) return ITENS_ORIGINAL;
+    u32 (*tabela)(u32, int) = (u32 (*)(u32, int))0x0201F1DDu;
+    u32 t = tabela(0x02109B00u, 22);
+    if (!ponteiro_ok(t) || !ponteiro_ok(*(volatile u32 *)t)) return ITENS_ORIGINAL;
+    u32 metodo = *(volatile u32 *)(*(volatile u32 *)t + 0x18);
+    if (metodo < 0x02000000u || metodo >= 0x02400000u) return ITENS_ORIGINAL;
+    s32 n = ((s32 (*)(u32))metodo)(t);
+    return n >= ITENS_ORIGINAL && n < 4096 ? n : ITENS_ORIGINAL;
+}
 
 static u32 inventario(void) {
     u32 s = esquadrao();
@@ -377,7 +395,7 @@ static int posicao_da(u32 inv, int i) {
  * (push {r4-r7, lr}; sub sp, #0x2c): se não baterem, não é a ROM que conhecemos. */
 static int dar_item(int id) {
     u32 inv = inventario();
-    if (!inv || id < 0 || id > ID_MAXIMO) return 0;
+    if (!inv || id < 0 || id >= n_itens()) return 0;
     if (*(volatile u16 *)0x0202DC6C != 0xB5F0 || *(volatile u16 *)0x0202DC6E != 0xB08B) return 0;
     if (*(volatile u16 *)0x020146D8 != 0xB510) return 0; /* push {r4, lr} */
     int (*adicionar)(u32, int, u32 *, int, int) = (int (*)(u32, int, u32 *, int, int))0x0202DC6Du;
@@ -665,7 +683,7 @@ static void teclas_itens(u16 t, int sel) {
     if (sel == 0) {
         id_dar += d;
         if (id_dar < 0) id_dar = 0;
-        if (id_dar > ID_MAXIMO) id_dar = ID_MAXIMO;
+        if (id_dar >= n_itens()) id_dar = n_itens() - 1;
         if (t & TECLA_A) {
             id_aviso = id_dar;
             aviso_item = dar_item(id_dar) ? "dado!" : "recusou";
@@ -832,6 +850,10 @@ static const u16 val_pow[] = {0xDC11, 0x1B01, 0x46C0, 0x1C01};
 /* Anéis por anel pego: "carteira + 1" vira + 2, + 5 ou + 10 (adds r1, #N) */
 static const u32 end_aneis[] = {0x02017648};
 static const u16 val_aneis[] = {0x1C49, 0x3102, 0x3105, 0x310A};
+/* Andar pelo direcional: veja direcional() abaixo. O estado LIGADO é um "bl" para uma
+ * função do painel, então os dois valores são calculados quando o painel começa. */
+static const u32 end_direcional[] = {0x0204D174, 0x0204D176};
+static u16 val_direcional[] = {0xF7B5, 0xFAF8, 0, 0};
 /* Velocidade de andar: o tempo do quadro em ms << 12 vira << 13 ou << 14 */
 static const u32 end_andar[] = {0x02034B92};
 static const u16 val_andar[] = {0x0320, 0x0360, 0x03A0};
@@ -845,10 +867,91 @@ static const Truque truques[] = {
     T("POW sem gastar pontos", end_pow, val_pow, rotulos_lig),
     T("Aneis por anel", end_aneis, val_aneis, rotulos_aneis),
     T("Andar mais rapido", end_andar, val_andar, rotulos_andar),
+    T("Andar pelo direcional", end_direcional, val_direcional, rotulos_lig),
 };
 #undef T
 #define N_TRUQUES ((int)(sizeof truques / sizeof truques[0]))
 static const char *aviso_truque = "";
+
+/* ---- Andar pelo direcional (e pelo analógico do 3DS) ----
+ * Na exploração o jogo só anda pela caneta. A cada quadro, a função que transforma o
+ * toque em destino (0x0204d120) pergunta ao objeto da tela de toque (0x02109ab0) "a
+ * caneta está na tela, e onde?" chamando 0x02002768(objeto, &x, &y), que devolve
+ * objeto[4] (tocando) e copia objeto[2] e objeto[3]. Se sim, ela converte o ponto da tela
+ * em ponto do mapa (câmera - (128, 96) + toque), vira o grupo para lá e manda andar; a
+ * velocidade cresce com a distância entre o Sonic e a caneta.
+ * O truque troca essa chamada (o "bl" em 0x0204d174) por uma chamada a direcional():
+ * com a caneta na tela, responde o mesmo que o jogo; sem caneta e com o direcional
+ * apertado, responde "tocando" num ponto a DISTANCIA pixels do Sonic, na direção das
+ * setas. O resto (virar, andar, colidir, abrir portas) continua sendo o jogo.
+ * No 3DS, em modo DS, o analógico chega ao jogo como o direcional, então serve também.
+ * Só esta função pergunta pelo direcional: o toque de verdade, que os botões da tela e
+ * as conversas usam, não muda. */
+#define TOQUE_OBJETO 0x02109AB0u
+#define MODE_SWITCHER 0x02109BA0u
+#define MODE_SWITCHER_PRONTO (*(volatile u32 *)0x02109A08u) /* bit 0: já construído */
+#define DISTANCIA 72
+
+u32 direcional(volatile u32 *toque, u32 *x, u32 *y) {
+    if (toque[4]) {
+        *x = toque[2];
+        *y = toque[3];
+        return toque[4];
+    }
+    u16 k = teclas_agora();
+    int dx = !!(k & TECLA_DIREITA) - !!(k & TECLA_ESQUERDA);
+    int dy = !!(k & TECLA_BAIXO) - !!(k & TECLA_CIMA);
+    if (!dx && !dy) return 0;
+    /* Onde o Sonic está NA TELA: posição no mapa menos o canto da câmera, como a função
+     * do jogo faz ao contrário (0x0204d23e: modo atual -> câmera, +0x30 e +0x38). Perto
+     * da borda do mapa a câmera para e o Sonic sai do centro, por isso não dá para
+     * supor o centro. */
+    if (!(MODE_SWITCHER_PRONTO & 1)) return 0;
+    u32 grupo = esquadrao();
+    if (!grupo) return 0;
+    u32 lugar = *(volatile u32 *)(grupo + 0x34);
+    if (!ponteiro_ok(lugar)) return 0;
+    u32 (*modo_atual)(u32) = (u32 (*)(u32))0x020310B5;
+    u32 modo = modo_atual(MODE_SWITCHER);
+    if (!ponteiro_ok(modo)) return 0;
+    u32 (*camera_do_modo)(u32) = (u32 (*)(u32))(*(volatile u32 *)(*(volatile u32 *)modo + 0x1C));
+    u32 cam = camera_do_modo(modo);
+    if (!ponteiro_ok(cam)) return 0;
+    s32 sx = (*(volatile s32 *)(lugar + 4) - *(volatile s32 *)(cam + 0x30)) / 4096 + 128;
+    s32 sy = (*(volatile s32 *)(lugar + 8) - *(volatile s32 *)(cam + 0x38)) / 4096 + 96;
+    /* na diagonal, 72 x 0,7 em cada eixo: a mesma distância (e a mesma velocidade) */
+    s32 passo = dx && dy ? DISTANCIA * 7 / 10 : DISTANCIA;
+    sx += dx * passo;
+    sy += dy * passo;
+    if (sx < 0) sx = 0;
+    if (sx > 255) sx = 255;
+    if (sy < 0) sy = 0;
+    if (sy > 191) sy = 191;
+    *x = (u32)sx;
+    *y = (u32)sy;
+    return 1;
+}
+
+/* Um "bl" Thumb de `de` para `para`: duas meias-palavras (F000 | parte alta, F800 | baixa) */
+static void codificar_bl(u32 de, u32 para, u16 *meias) {
+    s32 d = (s32)((para & ~1u) - (de + 4));
+    meias[0] = (u16)(0xF000 | ((d >> 12) & 0x7FF));
+    meias[1] = (u16)(0xF800 | ((d >> 1) & 0x7FF));
+}
+
+static int estado_truque(const Truque *t);
+static void por_truque(const Truque *t, int e);
+
+/* Na primeira volta do jogo: calcula o "bl" e liga o direcional (se o original estiver
+ * lá; em outra versão do jogo, ou na ROM de teste, fica "?" e nada muda). */
+static void preparar_direcional(void) {
+    static int pronto;
+    if (pronto) return;
+    pronto = 1;
+    codificar_bl(end_direcional[0], (u32)direcional, &val_direcional[2]);
+    const Truque *q = &truques[N_TRUQUES - 1];
+    if (estado_truque(q) == 0) por_truque(q, 1);
+}
 
 static int estado_truque(const Truque *t) {
     for (int e = 0; e < t->n_estados; e++) {
@@ -1013,6 +1116,7 @@ static void painel(void) {
  * fechado: é só uma leitura de registrador e uma comparação. Devolve 1 se o painel
  * abriu (e o jogo ficou parado), para o gancho poder acertar o relógio do jogo. */
 int modmenu_quadro(void) {
+    preparar_direcional();
     if ((teclas_agora() & COMBO_ABRIR) != COMBO_ABRIR) return 0;
     if (!con_abrir()) return 0;
     teclas_antes = teclas_agora(); /* o combo de abrir não conta como tecla nova */
