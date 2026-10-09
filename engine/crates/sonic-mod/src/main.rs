@@ -2,10 +2,12 @@
 //!
 //!   sonic-mod unpack <rom.nds> <projeto>              cria o projeto editável
 //!   sonic-mod pack   <rom.nds> <projeto> <saida.nds>  gera a ROM modificada
+//!   sonic-mod menu   <rom.nds> <saida.nds> [painel.elf] põe o painel de controle no jogo
 //!
 //! O projeto tem planilhas CSV (tabelas do jogo), textos por idioma e arquivos
 //! soltos. O `pack` compara cada coisa com a ROM original e só regrava o que mudou.
 
+mod menu;
 mod pack;
 mod unpack;
 
@@ -18,12 +20,16 @@ fn main() {
     let result = match args.first().map(String::as_str) {
         Some("unpack") if args.len() == 3 => unpack::run(&args[1], &args[2]),
         Some("pack") if args.len() == 4 => pack::run(&args[1], &args[2], &args[3]),
+        Some("menu") if args.len() == 3 || args.len() == 4 => {
+            menu::run(&args[1], &args[2], args.get(3).map(String::as_str))
+        }
         _ => {
             eprintln!(
                 "sonic-mod {}: modding do Sonic Chronicles (DS)\n\n\
-                 uso:\n  sonic-mod unpack <rom.nds> <projeto>\n  sonic-mod pack   <rom.nds> <projeto> <saida.nds>\n\n\
+                 uso:\n  sonic-mod unpack <rom.nds> <projeto>\n  sonic-mod pack   <rom.nds> <projeto> <saida.nds>\n  sonic-mod menu   <rom.nds> <saida.nds> [painel_jogo.elf]\n\n\
                  Edite as planilhas em <projeto>/tabelas, os textos em <projeto>/textos e\n\
-                 coloque arquivos novos ou substitutos em <projeto>/arquivos. Veja <projeto>/LEIA-ME.md.",
+                 coloque arquivos novos ou substitutos em <projeto>/arquivos. Veja <projeto>/LEIA-ME.md.\n\n\
+                 `menu` põe o painel de controle (L + R + SELECT no jogo) numa cópia da ROM.",
                 env!("CARGO_PKG_VERSION")
             );
             process::exit(2);

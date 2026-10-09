@@ -1,7 +1,7 @@
 # Plano: mod menu dentro do jogo e cheats para R4
 
-Branch: `mod-menu`. Status: **plano**. Nada aqui foi construído ainda, exceto onde está
-escrito "conferido".
+Branch: `mod-menu`. Status: **em andamento**. Vale só o que está marcado como "conferido"
+ou descrito nas seções "Andamento".
 
 O objetivo é ter um **painel de administração dentro do jogo**: aperta-se uma
 combinação de botões, o jogo pausa, aparece um menu na tela de baixo e dá para mudar
@@ -225,6 +225,67 @@ O jogo é um programa NitroSDK. Para pôr código novo:
 
 Ordem e dependências: B0 → B1 → B2 → B3 (só endereços que já temos) → B4/B5/B6 (precisam
 da A2) → B7.
+
+### Andamento: fase B (08/10/2026)
+O painel está em [`modmenu/`](../modmenu/README.md), versão 0.9, e **roda dentro do jogo
+no emulador**, inclusive numa batalha. **A v0.5 foi testada no DS** (R4i-SDHC, 08/10/2026):
+todas as páginas funcionaram.
+
+- **B0, ambiente: feito, por outro caminho.** Em vez de devkitARM + NCPatcher, o painel é
+  compilado com o **clang e o ld.lld** do LLVM, que já geram código para o ARM946E-S. Sem
+  libnds nem NitroSDK: o código escreve direto nos registradores. O enxerto (o papel do
+  NCPatcher) é `modmenu/ferramentas/enxertar.py`.
+- **B1, gancho: feito no emulador.** `contar_funcoes.py` contou as execuções de cada uma
+  das ~10 mil funções. O laço principal (`main`, 0x02000c8e) chama a leitura dos botões
+  (`func_02002708`) uma vez por volta: 30 voltas por segundo na exploração, 60 no
+  diálogo. O gancho troca essa chamada (0x02000d50). Conferido na exploração, no diálogo
+  e na tela de perfil e, com o save do Capítulo 10, numa batalha (achada por um robô
+  que anda ao acaso). Faltam os 30 minutos do critério.
+- **B2, console: feito no emulador.** A tela volta idêntica byte a byte depois de 100
+  aberturas na ROM de teste, e a tela de perfil do jogo volta perfeita.
+- **B3: feito.** Todas as 74 regras (mapa de `analise/tools/mapa_regras.py`), com os 5
+  formatos, e a dificuldade dinâmica. Falta ver uma regra mudar uma batalha.
+- **B4: adiantada.** A carteira de anéis e os atributos de **todos** os personagens (a
+  lista com nome e HP; 11 no Capítulo 10). Conferido: o painel mostra os mesmos números da
+  tela de perfil e da tela de save; mudar o HP do Sonic numa batalha mudou o HP na tela
+  da batalha. A v0.2 tinha dois erros que a sessão dos cheats achou: os anéis eram o
+  contador do HUD (0x02160EB0), não a carteira, e o grupo tinha só 4 posições.
+- **B5, itens: feito (v0.4, v0.5 e v0.8; a v0.5 também no DS).** O inventário é um `CGameObjectInventory`
+  apontado pelo esquadrão (+0x40), com uma lista de `CGameItem`. O painel dá itens
+  chamando a função do próprio jogo (0x0202dc6c, a das recompensas) e muda a
+  quantidade de cada pilha. Conferido: o item dado aparece no Inventário do jogo
+  ("POW Candy (2)"). Na v0.5 o painel mostra o nome de cada item, pedido ao próprio
+  jogo (as funções da mensagem "você ganhou um item"). Critério cumprido no emulador: o item
+  dado continuou no inventário depois de salvar pelo menu do jogo, reiniciar e carregar.
+  Na v0.8 o painel também **tira** itens (pedido do usuário depois do teste no DS),
+  pela função que o combate usa ao gastar um item (0x0202dacc); conferido no Inventário
+  do jogo e depois de salvar e carregar.
+- **v0.9: o que a bateria de cheats tem (pedido do usuário, 08/10/2026).** Pontos de POW
+  e o nível dos 6 golpes de cada personagem (conferido: a tela "POW Moves" mostrou os
+  pontos dados pelo painel e eles compraram um nível), XP do grupo, ações por rodada,
+  resistências, Chao, e a página **Truques**, que liga e desliga os cheats de código
+  trocando instruções na RAM e limpando os caches do ARM9. Guia de uso campo por campo:
+  [`docs/PAINEL-GUIA.md`](PAINEL-GUIA.md). Falta levar ao DS (a limpeza de cache só se
+  prova lá).
+- **B6, combate: adiantada (v0.6 e v0.7).** Página dos inimigos da batalha (lista fixa
+  em 0x02160AF8) e ações rápidas: curar o grupo, inimigos com HP 1 e **nocautear os
+  inimigos**. Escrever HP 0 não nocauteia (o inimigo continua lutando); a v0.7 chama a
+  função que todo golpe usa para mudar um atributo (0x02007e60), e o jogo faz o resto:
+  os 4 inimigos caíram e a batalha terminou em vitória normal (VICTORY, XP, item,
+  subida de nível). Conferido em 6 encontros, todos contra 4 Nocturne Decurion; falta
+  um inimigo de outro tipo e um chefe. Faltam também forçar emboscada e ver o ajuste
+  de dificuldade no inimigo.
+- **B8: feito o enxerto e o `sonic-mod menu`; falta o teste no DS.** Novo bloco de
+  autoload nos últimos 32 KB do heap (0x023D8000), fim do heap baixado para lá, ARM7
+  mudado para o fim da ROM. O `sonic-mod menu rom.nds saida.nds` faz o enxerto sem
+  Python; a saída é idêntica byte a byte à do `enxertar.py`. A release compila o painel
+  e o põe no pacote, ao lado do `sonic-mod`; a CI compila o painel a cada push. Na
+  v0.2 o painel ficava no começo do heap e deslocava todos os objetos do jogo, o que
+  quebrava os cheats que usam endereços do heap; na v0.3 eles ficam nos mesmos
+  endereços da ROM original (conferido num boot do zero).
+- **Achado no caminho:** o jogo move tudo pelo tempo real entre voltas (objeto Time,
+  0x02109b60). Sem cuidado, fechar o painel dava um salto no tempo; o gancho acerta o
+  relógio ao fechar.
 
 ## 5. Riscos e cuidados
 
