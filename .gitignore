@@ -1,4 +1,9 @@
 # nunca versionar nada do jogo
+*.nsbmd
+*.nsbtx
+*.nsbtp
+*.nsbca
+*.small
 *.nds
 *.sav
 work/
