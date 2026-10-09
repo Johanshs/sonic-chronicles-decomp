@@ -192,8 +192,12 @@ você tem) vira o stream.
    PCM8 a 32 kHz (o dobro da taxa e o mesmo tamanho por segundo que o PCM16 a 16 kHz).
 
 Espaço: em PCM16 a 32728 Hz, um minuto ocupa 3,9 MB. Dez músicas de 1,5 min dão uns
-60 MB; a ROM vai de 128 para 256 MB, o que você já disse que não é problema (e a ROM
-do conteúdo novo, de 256 MB, já abriu no seu DS).
+60 MB, e a ROM passaria de 128 MB. **Cuidado:** depois de copiar a ROM de 256 MB do
+Sonic Boom, o menu do R4 passou a abrir em tela branca (suspeita, ainda sem
+confirmação). Até isso ser resolvido, as ROMs de música devem ficar em 128 MB: há uns
+5 MB livres no cartucho, a frente do painel tem um compactador que reorganiza os
+arquivos, e PCM8 a 32 kHz ocupa metade do PCM16. As duas ROMs de teste têm 128 MB
+(as músicas novas couberam no lugar das antigas).
 
 **Estéreo (a provar):** exige ensinar o tocador de streams a usar 2 canais de
 hardware, mexendo na definição `PLAYER_STRM` do SDAT. É um passo separado e pequeno, mas
