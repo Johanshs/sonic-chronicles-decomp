@@ -22,6 +22,7 @@ link só funciona no branch daquele PR).
 12. [O que fica no save e o que volta sozinho](#12-o-que-fica-no-save-e-o-que-volta-sozinho)
 13. [Cheats do cartão e o painel](#13-cheats-do-cartão-e-o-painel)
 14. [Palavras que aparecem aqui](#14-palavras-que-aparecem-aqui)
+15. [A ROM unificada (painel + conteúdo novo)](#15-a-rom-unificada-painel--conteúdo-novo)
 
 ---
 
@@ -373,3 +374,56 @@ painel grava **uma vez** e o jogo segue dali.
   aqui são Thumb, de 2 bytes cada, escritas em hexadecimal.
 - **Esquadrão:** o objeto do jogo que guarda o grupo do jogador: carteira, mochila, XP,
   Chao.
+
+## 15. A ROM unificada (painel + conteúdo novo)
+
+A ROM "unificada" é o jogo com o **conteúdo novo** (PR #39, frente "Criar conteúdo novo")
+e o **painel** juntos. O que ela tem além do painel:
+
+| O quê | Número | O que faz | Onde aparece | Conferido |
+|---|---|---|---|---|
+| Chili Dog | item 288 | cura 321 de HP | nas 5 lojas (15 anéis); painel → Itens | emulador: cura exatamente 321 |
+| Phase Shifter | item 289 | acessório: **Phased**, todo ataque atravessa (não leva dano) | nas 5 lojas (50 anéis); painel → Itens | emulador (frente do conteúdo novo) |
+| Evasion Band | item 290 | acessório: **Evading**, desvia de todo ataque que dá para desviar | idem | idem |
+| Repair Module | item 291 | acessório: recupera 10% do HP a cada rodada | idem | idem |
+| Immunity Core | item 292 | acessório: **Immunity**, a imunidade dos inimigos mais fortes | idem | idem |
+| Sonic Boom | golpe POW 155 | golpe do Sonic, no lugar do **Axe Kick** (o 1º golpe da lista): 2 acertos de 300/350/400% do Attack, elemento Vento, não erra, 3 PP | loja de POW do Sonic; na batalha, a lista de POW | **só no emulador**: a loja abre com "Sonic Boom III" e na batalha o golpe dá 2 acertos e termina |
+
+Esses quatro acessórios dão aos personagens as **habilidades que só os inimigos tinham**
+(códigos 25, 26, 27 e 31 da tabela de habilidades, [`docs/COMBATE.md`](COMBATE.md) seção
+11). O Phase Shifter, em especial, deixa quem o usa sem levar dano: é quase um modo deus.
+
+> **Cuidados:**
+> - **O Sonic Boom é experimental.** A primeira versão dele travava (o golpe não
+>   terminava e o Sonic se deformava, no teste no DS). A versão desta ROM foi refeita e
+>   termina normalmente no emulador, mas ainda não foi testada num DS. Se travar, use o
+>   painel para baixar o nível dele (Grupo → Sonic → "Golpe POW 1" = 0) e não o use.
+> - **O Axe Kick saiu** do Sonic nesta ROM (o Sonic Boom ficou no lugar dele). No painel,
+>   "Golpe POW 1" passa a ser o nível do Sonic Boom.
+> - **Cheats públicos de endereço fixo não valem nesta ROM.** As tabelas maiores ocupam
+>   mais memória, e o jogo põe o esquadrão em `0x022262C0` (no original, `0x022261E0`).
+>   O painel e os cheats do projeto que seguem o ponteiro (`0x02160C18`) não dependem disso.
+> - Saves: o save do jogo original carrega nesta ROM (testado com o do Capítulo 10). Um
+>   save feito nesta ROM com os itens novos, aberto no jogo original, pode estranhar os
+>   itens 288 a 292, que lá não existem. Guarde um backup do `.sav` original.
+
+**Tamanho: 128 MB.** O `sonic-mod pack` grava cada pacote alterado no fim da ROM e deixa
+o antigo sem uso no meio, o que levou a ROM do conteúdo novo a 172 MB usados num cartão de
+256 MB. A ROM unificada passa por `modmenu/ferramentas/compactar.py`, que copia os
+arquivos um atrás do outro e corta no menor tamanho: 124,5 MB usados, cartão de 128 MB,
+como o jogo original. A conferência do próprio script compara cada arquivo com a entrada;
+compactar o jogo original dá exatamente o mesmo arquivo (mesmo md5), o que mostra que ele
+não muda nada além do lugar dos arquivos.
+
+**Como montar** (precisa da sua ROM original e deste repositório):
+
+```bash
+sonic-mod unpack original.nds projeto
+# o item 288 (Chili Dog): a receita está em docs/MODDING.md, no PR #39
+python3 conteudo/sonic-boom/aplicar.py projeto dump/herf/test
+python3 conteudo/itens-de-inimigo/aplicar.py projeto
+sonic-mod pack original.nds projeto conteudo.nds          # sonic-mod do branch do PR #39
+python3 modmenu/ferramentas/enxertar.py conteudo.nds modmenu/build/painel_jogo.elf com_painel.nds
+python3 modmenu/ferramentas/compactar.py com_painel.nds unificada.nds
+```
+

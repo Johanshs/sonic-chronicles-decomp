@@ -52,6 +52,7 @@ ferramentas/enxertar.py         põe o painel numa cópia da ROM (o `sonic-mod m
 ferramentas/testar.py           testa o painel na ROM de teste (32 checagens)
 ferramentas/testar_no_jogo.py   testa o painel dentro do jogo enxertado (25 checagens)
 ferramentas/testar_direcional.py testa o andar pelo direcional com um save (5 checagens)
+ferramentas/compactar.py        tira o espaço morto de uma ROM (a do conteúdo novo: 256 -> 128 MB)
 ferramentas/contar_funcoes.py   conta quantas vezes cada função roda (como o gancho foi achado)
 ferramentas/mknds.py            monta o .nds da ROM de teste
 ```
@@ -252,6 +253,10 @@ python3 ferramentas/testar_direcional.py sonic_painel.nds seu.sav
   segurada meio segundo andou 50 a 76 pixels no sentido certo; a diagonal, 51 + 51; sem
   tecla o grupo fica parado e a caneta continua valendo. Num jogo novo o teste não serve:
   o começo é uma cena que anda sozinha e depois uma conversa (nem a caneta anda ali).
+- **ROM unificada** (conteúdo novo v2 do PR #39 + painel, compactada): os testes
+  automáticos passam (esquadrão em `0x022262C0`); a loja de POW do Sonic abre com o Sonic
+  Boom; o painel dá os itens 288 a 292 com os nomes certos e para no 292. Ver a seção 15
+  de `docs/PAINEL-GUIA.md`.
 - **ROM com o conteúdo novo** (PR #39 + painel): os testes automáticos passam; a única
   diferença é que essa ROM, mesmo sem painel, põe o esquadrão em `0x02226280` (as
   tabelas maiores ocupam mais heap antes dele), por isso `testar_no_jogo.py` aceita o
