@@ -116,6 +116,8 @@ Outras ferramentas:
 | `tools/ghidra_symbols.py` | converte os símbolos do dsd para o Ghidra |
 | `tools/manifest_pairs.py` | lista hash/nome de um manifesto (para os testes em C) |
 | `tools/combate_tabelas.py projeto [saida]` | lê um projeto do `sonic-mod unpack` e gera em Markdown os golpes, efeitos (`.SPL`), itens (`.ITM`), criaturas e regras de combate, já decodificados (ver [COMBATE.md](COMBATE.md)) |
+| `tools/som.py listar\|extrair\|trocar\|tons\|qual ...` | o som: lista o `sound_data.sdat`, salva as músicas de batalha em WAV, troca uma música de batalha por qualquer áudio (via ffmpeg), e descobre qual stream toca onde (tons de teste). Ver [SOM.md](SOM.md) |
+| `tools/gravar_som.py rom.nds estado.dst saida.wav [QUADROS]` | grava em WAV o som do jogo no DeSmuME a partir de um savestate (prova de ouvido e com números) |
 
 Exemplo de teste de mod no emulador (chega à tela da citação de abertura):
 ```

@@ -146,8 +146,32 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 23. A trilha sonora
+O Johans achou a trilha fraca e quer recriar partes com base em outros jogos do Sonic.
+Antes de planejar, era preciso saber como o som é guardado. Detalhes em [SOM.md](SOM.md).
+
+- **Um presente da BioWare.** Ao lado do `sound_data.sdat` está o `sound_data.sadl`, um
+  cabeçalho C com o nome de cada música e efeito. Sem ele, seriam "sequência 7" e
+  "stream 5"; com ele, `bgm08` e `battle03`.
+- **Dois mundos.** As músicas de batalha são streams (áudio gravado, PCM de 8 bits a
+  16 kHz, masterizado alto demais); as de exploração são sequências (partituras com
+  6 a 17 amostras curtas). Isso dividiu o plano: a batalha aceita qualquer gravação já;
+  a exploração precisa de outro caminho.
+- **Ouvir sem ouvidos.** O DeSmuME exporta `WAV_Begin`, que grava o chip de som em
+  sincronia com a emulação. Com ele, a prova deixou de ser "parece que tocou" e virou
+  um número: a gravação bate com a música de teste com correlação 0,98.
+- **Tons como etiqueta.** Para saber qual dos 10 streams toca numa batalha, cada um
+  virou um tom puro de frequência diferente. A batalha de Nocturne tocou 800 Hz:
+  `battle03`. Uma pergunta sobre o código respondida sem ler o código.
+- **Trocar no lugar.** O jogo guarda na RAM a tabela de arquivos do SDAT quando liga.
+  Gravando o stream novo no espaço do antigo, nenhum arquivo anda, e o savestate da ROM
+  original continua servindo. É a mesma lição do Erro nº 7 (savestate e tabelas), vista
+  de outro lado: aqui ela vira uma vantagem.
+- **Ainda falta o DS.** As duas ROMs de teste (8 bits e 16 bits a 32 kHz) só passaram
+  no emulador. O Sonic Boom ensinou que isso não basta.
+
 ## O que ainda não sabemos
-Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
+Vídeos `.vx` (codec Actimagine), onde toca cada música de batalha, layout das telas `.gui`, paletas dos Chao, 311 nomes de
 colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
 itens, de personagens), a versão exata do compilador e as partes do combate listadas em
 [COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
