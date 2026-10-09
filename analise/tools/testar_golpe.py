@@ -1,27 +1,36 @@
-"""Mostra, no DeSmuME sem janela, qual linha de `combo.gda` o jogo usa num golpe POW.
+"""Mostra, no DeSmuME sem janela, qual linha de `combo.gda` o jogo usa num golpe POW
+e quais efeitos visuais (linhas de `VFX.gda`) ele pede.
 
 Uso: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \\
-     python3 testar_golpe.py rom_mod.nds estado.dst LINHA pasta_capturas [QUADROS]
+     python3 testar_golpe.py rom_mod.nds estado.dst LINHA pasta [QUADROS] [--vfx N] [--auto]
 
-  estado.dst  um savestate do DeSmuME parado no momento em que o golpe foi escolhido
-              (a tela "Choose a target" ou o começo do minijogo)
+  estado.dst  um savestate do DeSmuME feito COM ESTA MESMA ROM, depois de escolher o golpe
+              (e as ações dos outros), antes do golpe começar. Atenção: o jogo lê as
+              tabelas quando liga, então um savestate de outra ROM ainda usa as antigas.
   LINHA       a linha de `combo.gda` esperada (ex.: 155 para um golpe novo)
+  --vfx N     confere também que o jogo pediu o efeito visual N (ex.: 467)
+  --auto      faz como se o personagem tivesse o Chao 38 ("POW sempre perfeito"): o
+              minijogo de toque se resolve sozinho. Só na memória do emulador, a ROM
+              não muda.
 
 O que faz:
   - fica de olho em `Combat_PowDamage` (0x02010810) e anota o 3º argumento, que é a
     linha de `combo.gda` do golpe: é a prova de que o jogo leu a linha nova;
-  - joga o minijogo de toque: a cada quadro procura o anel VERDE (o jogo pinta o anel
+  - fica de olho na função que cria um efeito visual (0x0202f47c; r1 = linha de
+    `VFX.gda`, chamada pelo evento 46 de `AnimationEvents.gda`);
+  - salva a tela de baixo (onde fica a batalha) a cada 2 quadros em pasta/q00000.png...;
+  - sem --auto, joga o minijogo: a cada quadro procura o anel VERDE (o jogo pinta o anel
     de verde no momento em que o toque conta) e toca no centro do maior grupo verde.
-
-Atenção: este jogador automático acerta poucos anéis. Com poucos acertos o jogo marca
-"Missed!" e o dano sai 0, mesmo com o golpe tendo sido escolhido e calculado. Para medir
-o dano de verdade ainda é preciso jogar o minijogo à mão.
+    Esse jogador acerta poucos anéis; para medir dano, use --auto.
 """
+import os
 import sys
 
 from desmume.emulator import DeSmuME
 
-POW_DAMAGE = 0x02010810          # Combat_PowDamage(this, alvo, linha_de_combo, ...)
+POW_DAMAGE = 0x02010810          # Combat_PowDamage(this, resultado, linha_de_combo, ...)
+CRIA_VFX = 0x0202F47C            # cria um efeito visual: r1 = linha de VFX.gda
+CHAO38_TESTE = 0x0207B884        # "ble" depois de perguntar a habilidade 0 (POW perfeito)
 VERDE = lambda r, g, b: g > 190 and g > r + 80 and g > b + 80
 
 
@@ -41,21 +50,36 @@ def grupos(pts, dist=10):
     return saida
 
 
-def main(rom, estado, linha, pasta, quadros=700):
+def main(rom, estado, linha, pasta, quadros=700, vfx=None, auto=False):
     linha, quadros = int(linha), int(quadros)
+    os.makedirs(pasta, exist_ok=True)
     e = DeSmuME()
     e.open(rom)
     e.volume_set(0)
     e.savestate.load_file(estado)
     reg = e.memory.register_arm9
-    chamadas = []
+    q = 0
+    chamadas, efeitos = [], []
     e.memory.register_exec(POW_DAMAGE, lambda a, s: chamadas.append(reg.r2))
+    e.memory.register_exec(CRIA_VFX, lambda a, s: efeitos.append((q, reg.r1)))
+    if auto:
+        # o jogo pergunta "o personagem tem a habilidade 0?" e pula se não tiver;
+        # trocar o pulo (0xDD00, ble) por um nop (0x46C0) faz a resposta ser sempre "sim"
+        # (0x46C0 = o savestate já foi feito com --auto ligado)
+        assert e.memory.unsigned.read_short(CHAO38_TESTE) in (0xDD00, 0x46C0), 'código diferente do esperado'
+        e.memory.write_short(CHAO38_TESTE, 0x46C0)
 
-    toques, q, livre = [], 0, 0
-    while q < quadros:
+    def quadro():
+        nonlocal q
         e.cycle(with_joystick=False)
         q += 1
-        if q < livre:
+        if q % 2 == 0:
+            e.screenshot().crop((0, 192, 256, 384)).save(f'{pasta}/q{q:05d}.png')
+
+    toques, livre = [], 0
+    while q < quadros:
+        quadro()
+        if auto or q < livre:
             continue
         px = e.screenshot().crop((0, 192, 256, 384)).convert('RGB').load()
         pts = [(x, y) for y in range(0, 192, 2) for x in range(0, 256, 2) if VERDE(*px[x, y])]
@@ -66,20 +90,34 @@ def main(rom, estado, linha, pasta, quadros=700):
             continue
         xs, ys = [p[0] for p in g], [p[1] for p in g]
         e.input.touch_set_pos((min(xs) + max(xs)) // 2, (min(ys) + max(ys)) // 2)
-        e.cycle(with_joystick=False)
-        q += 1
+        quadro()
         e.input.touch_release()
         toques.append(q)
         livre = q + 8
-    e.screenshot().save(f'{pasta}/golpe_fim.png')
-    print(f'anéis acertados: {len(toques)} (quadros {toques})')
+    if not auto:
+        print(f'anéis acertados: {len(toques)} (quadros {toques})')
     print(f'Combat_PowDamage chamada {len(chamadas)} vez(es), linha de combo.gda: {chamadas}')
-    certo = chamadas and all(c == linha for c in chamadas)
+    print(f'efeitos visuais pedidos (quadro, linha de VFX.gda): {efeitos}')
+    certo = bool(chamadas) and all(c == linha for c in chamadas)
     print('  OK      ' if certo else '  FALHOU  ', f'o jogo usou a linha {linha}')
+    if vfx is not None:
+        pedidos = [f for f, v in efeitos if v == vfx]
+        certo = certo and bool(pedidos)
+        print('  OK      ' if pedidos else '  FALHOU  ', f'o jogo pediu o efeito {vfx}'
+              + (f' (quadro {pedidos[0]}: veja {pasta}/q{pedidos[0] + pedidos[0] % 2:05d}.png e seguintes)'
+                 if pedidos else ''))
     sys.exit(0 if certo else 1)
 
 
 if __name__ == '__main__':
-    if not 5 <= len(sys.argv) <= 6:
+    args, vfx, auto = sys.argv[1:], None, False
+    if '--auto' in args:
+        args.remove('--auto')
+        auto = True
+    if '--vfx' in args:
+        i = args.index('--vfx')
+        vfx = int(args[i + 1])
+        del args[i:i + 2]
+    if not 4 <= len(args) <= 5:
         raise SystemExit(__doc__)
-    main(*sys.argv[1:])
+    main(*args, vfx=vfx, auto=auto)
