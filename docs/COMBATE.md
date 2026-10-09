@@ -551,7 +551,10 @@ indicação.
 | 31 | imunidade (inimigos) | | |
 
 Os itens 211–230 e 277–285 não aparecem no inventário: são as habilidades dos inimigos,
-equipadas neles.
+equipadas neles. Um acessório com esses códigos também funciona num herói: com os itens
+de `conteudo/itens-de-inimigo/`, a consulta (0x02013a7c) respondeu 25, 26, 27 e 31 para
+os heróis que os usavam, e a Evasion Band fez o "Leech Wave" de um inimigo errar a Tails
+(DIARIO seção 24).
 
 ## 12. Itens
 
@@ -717,6 +720,6 @@ completa, com valores, sai de `combate_tabelas.py` (`regras.md`). As conhecidas:
 | um valor de tabela | `sonic-mod unpack` e abra a planilha; `combate_tabelas.py` decodifica os `.SPL`/`.ITM` |
 | no jogo | mude um valor (ex.: regra 44, o k do grupo) com o `sonic-mod pack` e compare o dano no emulador |
 | um item novo numa loja | `analise/tools/testar_item_loja.py rom_mod.nds save.sav ITEM LOJA PRECO CURA pasta` abre a loja pelo tratador do jogo, compra e usa o item, e confere anéis, inventário e HP na RAM |
-| um golpe novo e o efeito dele | `analise/tools/testar_golpe.py rom_mod.nds estado.dst 155 pasta 500 --vfx 467 --auto` mostra a linha de `combo.gda` usada e os efeitos (`VFX.gda`) pedidos |
+| um golpe novo e o efeito dele | `analise/tools/testar_golpe.py rom_mod.nds estado.dst 155 pasta 1500 --vfx 467 --auto --acertos 2` mostra a linha de `combo.gda` usada, quantas vezes o dano foi calculado e os efeitos (`VFX.gda`) pedidos |
 
 A história de como cada parte foi descoberta está no [diário](DIARIO.md#11-o-combate).

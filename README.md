@@ -21,7 +21,7 @@ descobertas em [`docs/DIARIO.md`](docs/DIARIO.md).
 
 | Frente | Situação |
 |---|---|
-| **Modding** | ✅ `sonic-mod`: edite itens, criaturas, lojas e textos em planilhas e gere a ROM. Testado no emulador, inclusive um **item novo** vendido numa loja, comprado e usado, e um **golpe POW novo** com animação e efeito visual próprios (arte nossa). |
+| **Modding** | ✅ `sonic-mod`: edite itens, criaturas, lojas e textos em planilhas e gere a ROM. Testado no emulador, inclusive um **item novo** vendido numa loja, comprado e usado, um **golpe POW novo** com efeito visual próprio (arte nossa) e **acessórios** que dão aos heróis habilidades de inimigo (Phased, Evading...). |
 | **Assets** | ✅ `sonic-dump`: 62 cenários, 3.444 sprites, 342 retratos, textos em 5 idiomas, 660 tabelas, em ~7 s |
 | **Formatos** | ✅ ROM, HERF, LZ10, GFF4, TLK, GDA, 2DA, NCGR/NCLR e cenários: lidos **e escritos** byte a byte |
 | **Código** | 🟡 6.820 funções mapeadas, 290 classes C++ recuperadas, ~2.230 funções nomeadas, pseudo-C de tudo |

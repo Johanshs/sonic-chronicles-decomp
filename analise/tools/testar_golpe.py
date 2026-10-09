@@ -2,13 +2,16 @@
 e quais efeitos visuais (linhas de `VFX.gda`) ele pede.
 
 Uso: SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \\
-     python3 testar_golpe.py rom_mod.nds estado.dst LINHA pasta [QUADROS] [--vfx N] [--auto]
+     python3 testar_golpe.py rom_mod.nds estado.dst LINHA pasta [QUADROS] [--vfx N] [--auto] [--acertos N]
 
   estado.dst  um savestate do DeSmuME feito COM ESTA MESMA ROM, depois de escolher o golpe
               (e as ações dos outros), antes do golpe começar. Atenção: o jogo lê as
               tabelas quando liga, então um savestate de outra ROM ainda usa as antigas.
   LINHA       a linha de `combo.gda` esperada (ex.: 155 para um golpe novo)
   --vfx N     confere também que o jogo pediu o efeito visual N (ex.: 467)
+  --acertos N confere que o jogo calculou o dano exatamente N vezes (ex.: 2 num golpe "2x").
+              Use QUADROS 1500 ou mais: um golpe que se repete sem parar (seção 23 do
+              diário) só aparece assim, com o dano calculado mais vezes que o esperado.
   --auto      faz como se o personagem tivesse o Chao 38 ("POW sempre perfeito"): o
               minijogo de toque se resolve sozinho. Só na memória do emulador, a ROM
               não muda.
@@ -50,7 +53,7 @@ def grupos(pts, dist=10):
     return saida
 
 
-def main(rom, estado, linha, pasta, quadros=700, vfx=None, auto=False):
+def main(rom, estado, linha, pasta, quadros=700, vfx=None, auto=False, acertos=None):
     linha, quadros = int(linha), int(quadros)
     os.makedirs(pasta, exist_ok=True)
     e = DeSmuME()
@@ -106,11 +109,16 @@ def main(rom, estado, linha, pasta, quadros=700, vfx=None, auto=False):
         print('  OK      ' if pedidos else '  FALHOU  ', f'o jogo pediu o efeito {vfx}'
               + (f' (quadro {pedidos[0]}: veja {pasta}/q{pedidos[0] + pedidos[0] % 2:05d}.png e seguintes)'
                  if pedidos else ''))
+    if acertos is not None:
+        ok = len(chamadas) == acertos
+        certo = certo and ok
+        print('  OK      ' if ok else '  FALHOU  ', f'dano calculado {len(chamadas)} vez(es), esperado {acertos}'
+              + ('' if ok else ' (mais vezes = o golpe está se repetindo)'))
     sys.exit(0 if certo else 1)
 
 
 if __name__ == '__main__':
-    args, vfx, auto = sys.argv[1:], None, False
+    args, vfx, auto, acertos = sys.argv[1:], None, False, None
     if '--auto' in args:
         args.remove('--auto')
         auto = True
@@ -118,6 +126,10 @@ if __name__ == '__main__':
         i = args.index('--vfx')
         vfx = int(args[i + 1])
         del args[i:i + 2]
+    if '--acertos' in args:
+        i = args.index('--acertos')
+        acertos = int(args[i + 1])
+        del args[i:i + 2]
     if not 4 <= len(args) <= 5:
         raise SystemExit(__doc__)
-    main(*args, vfx=vfx, auto=auto)
+    main(*args, vfx=vfx, auto=auto, acertos=acertos)
