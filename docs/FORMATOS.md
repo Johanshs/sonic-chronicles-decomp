@@ -74,6 +74,12 @@ e ícones vêm em 4 peças 64×64 (`_0`..`_3`, em 2×2). Paleta de cada imagem: 
 `12002` nós `NTRY`: `12201` texto (TlkString), `12202` retrato (`prtl_<personagem><emoção>`),
 `12208`/`12209` condição e ação (`PLOT`), `12400` links. `12000` entradas `STRT`.
 
+## Som (`sound_data.sdat`)
+SDAT padrão do NitroSDK (SSEQ, SSAR, SBNK, SWAR, STRM); o `ndspy` lê e regrava o original
+byte a byte idêntico. `sound_data.sadl` é um cabeçalho C com os nomes (`#define bgm01 0`).
+Streams: PCM8 mono 16364 Hz, um bloco só. Detalhes e onde cada coisa toca: [SOM.md](SOM.md).
+*Validado (regravação idêntica; troca de stream ouvida no emulador).*
+
 ## Ainda não decifrados
 Vídeos `.vx` (Actimagine), layout das telas `.gui` (peças esticadas/repetidas),
 paletas dos Chao, 311 nomes de colunas GDA.
