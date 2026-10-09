@@ -69,13 +69,26 @@ pub fn run(rom_path: &str, dir: &str, out_path: &str) -> Res<()> {
                     if !name.is_ascii() {
                         return Err(format!("{}: o nome do arquivo precisa ser ASCII (sem acentos)", path.display()).into());
                     }
-                    let hash = herf::hash_resource_name(name.as_bytes());
+                    // Embala como os arquivos do mesmo tipo: o jogo procura os modelos e
+                    // texturas 3D só como "nome.small" (comprimido); um .nsbmd solto não é achado.
+                    let small = small_like(&items, &name);
+                    let stored = if small.is_some() { format!("{name}.small") } else { name.clone() };
+                    let hash = herf::hash_resource_name(stored.as_bytes());
                     if items.iter().any(|it| it.hash == hash) {
                         return Err(format!("{name}: o hash do nome colide com outro arquivo; escolha outro nome").into());
                     }
-                    report.push(format!("arquivo  {pack}/{name} (NOVO)"));
-                    new_names.push((hash, name.clone()));
-                    items.push(Item { hash, name, raw: data.clone(), small: None, content: data });
+                    let raw = match small {
+                        Some(lz) => compression::make_small(&data, lz),
+                        None => data.clone(),
+                    };
+                    let how = match small {
+                        Some(true) => ", guardado como .small LZ10",
+                        Some(false) => ", guardado como .small",
+                        None => "",
+                    };
+                    report.push(format!("arquivo  {pack}/{name} (NOVO{how})"));
+                    new_names.push((hash, stored));
+                    items.push(Item { hash, name, raw, small, content: data });
                     changed += 1;
                 }
             }
@@ -163,6 +176,26 @@ fn set_content(it: &mut Item, content: Vec<u8>) {
     it.content = content;
 }
 
+/// Como o pacote guarda os arquivos com a mesma extensão de `name`: a embalagem da
+/// maioria (`Some(true)` = .small LZ10, `Some(false)` = .small cru, `None` = comum).
+fn small_like(items: &[Item], name: &str) -> Option<bool> {
+    let ext = |n: &str| n.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase());
+    let mine = ext(name)?;
+    let (mut plain, mut raw, mut lz) = (0, 0, 0);
+    for it in items.iter().filter(|it| ext(&it.name).as_deref() == Some(mine.as_str())) {
+        match it.small {
+            None => plain += 1,
+            Some(false) => raw += 1,
+            Some(true) => lz += 1,
+        }
+    }
+    if plain >= raw + lz {
+        None
+    } else {
+        Some(lz >= raw)
+    }
+}
+
 fn files_in(dir: &Path, ext: &str) -> Vec<PathBuf> {
     let mut v: Vec<PathBuf> = fs::read_dir(dir)
         .map(|rd| rd.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| p.is_file()).collect())
@@ -208,5 +241,31 @@ fn warn_duplicate_ids(path: &Path, rows: &[Vec<sonic_formats::gda::Cell>]) {
                 eprintln!("aviso: {}: ID {id} aparece nas linhas de dados {} e {}", path.display(), prev + 1, i + 1);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn item(name: &str, small: Option<bool>) -> Item {
+        Item { hash: 0, name: name.into(), raw: vec![], small, content: vec![] }
+    }
+
+    #[test]
+    fn arquivo_novo_segue_a_embalagem_do_tipo() {
+        let items = vec![
+            item("FX_A.nsbtx", Some(true)),
+            item("FX_B.nsbtx", Some(true)),
+            item("FX_C.NSBTX", None),
+            item("Item1.ITM", None),
+            item("Item2.itm", None),
+            item("x.gff", Some(false)),
+        ];
+        assert_eq!(small_like(&items, "FX_Novo.nsbtx"), Some(true));
+        assert_eq!(small_like(&items, "Item288.ITM"), None);
+        assert_eq!(small_like(&items, "novo.gff"), Some(false));
+        assert_eq!(small_like(&items, "sem_tipo_conhecido.xyz"), None);
+        assert_eq!(small_like(&items, "sem_extensao"), None);
     }
 }

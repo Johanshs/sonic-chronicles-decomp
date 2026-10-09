@@ -146,9 +146,217 @@ O resultado está em [`COMBATE.md`](COMBATE.md). O caminho:
 - O gerador `analise/tools/combate_tabelas.py` transforma as tabelas e os arquivos de
   efeito em Markdown legível, para conferir tudo isto na sua cópia.
 
+## 20. Conteúdo novo: um item à venda numa loja
+O `sonic-mod` já editava tabelas e textos; faltava provar que um item **novo** (uma linha
+que não existia em `Items.gda`) funciona no jogo. O teste: o item 288 "Chili Dog", com
+dois textos novos e um `Item288.ITM` novo (`HealHP 321`), posto nas 5 lojas.
+
+- **O problema: chegar a uma loja.** O save de teste está no capítulo 10, em Nocturne, e
+  andar até uma loja com toques roteirizados seria longo e frágil. Procurei como o jogo
+  abre uma loja. Nos dados, só a conversa `kron_store` tem uma ação com o código 40 e o
+  dado 2, e a loja 2 é a "Kron Quartermaster". Os códigos de evento das conversas são os
+  mesmos dos gatilhos das áreas (`EventID` de `Conversations.gda` também usa 23, por
+  exemplo), então 40 parecia "abrir a loja N".
+- **No código.** A troca de modos de jogo (`0x02030604`) é um `switch` (em `0x02030d18`)
+  que cria um objeto por modo; o caso 11 cria o `GameModeStore`. Procurei quem pede o
+  modo 11 a `0x020305a4` (a função que pede um modo): só uma função, `0x0207be48`. Ela
+  grava o seu argumento `r3` em `GameModeStateStore+4` e pede o modo 11. É o tratador do
+  evento 40, e o argumento é a linha de `stores.gda`.
+- **Chamar uma função do jogo de fora.** Primeiro tentei mudar o PC do emulador dentro
+  de um *callback* de execução: não funcionou: o tratador nunca rodou (provavelmente porque o
+  DeSmuME já tinha buscado a próxima instrução). Funcionou trocar, por um quadro, o `bl` do laço principal por
+  um `bl` para um trampolim de 24 bytes numa área livre da RAM, que chama o tratador e
+  segue para a função original. **Erro nº 6:** no primeiro trampolim errei o
+  deslocamento do `ldr r2, [pc, #...]` (no Thumb, o `pc` lido é o endereço da instrução
+  + 4, arredondado para baixo a múltiplo de 4), o jogo pulou direto para a função
+  original e a RAM virou lixo. Corrigido, a Overmart abriu.
+- **O resultado.** O Chili Dog aparece na loja (no topo da lista, embora seja a última
+  linha da tabela), com o nome, a descrição e o "HP +321" que o jogo monta a partir do
+  `.ITM`. Comprado, custou 15 anéis e entrou no inventário (`288: 1` na RAM). Usado no
+  Sonic pelo inventário, o HP foi de 100 para 421: **+321, exatamente**. O roteiro
+  `analise/tools/testar_item_loja.py` refaz tudo e confere na RAM; com a ROM original
+  (sem o item) ele falha, como deve: o primeiro da lista é o Med Emitter, que custa 20 e
+  cura 250.
+- Uma surpresa no caminho: aberta na tela de título (sem jogo carregado), a loja mostra o
+  tutorial "Welcome to a store!" e um grupo vazio com tudo em 99.
+
+## 21. Conteúdo novo: um golpe POW novo
+Depois do item, um golpe: a linha 155 de `combo.gda`, "Sonic Boom", 3 PP, 300/350/400%
+de dano, com nome, descrição e textos de dano novos, posta no `Combo7` do Sonic
+(`creatures.gda`), que estava vazio (a seção 23 mostra que isso travava a tela "POW Moves").
+
+- Na batalha, "Sonic Boom · 3 PP" aparece na lista de POW Moves do Sonic, abaixo dos
+  seis golpes de sempre, e escolhê-lo gasta 3 PP (27 → 24): o custo veio da linha nova.
+- Para provar que não é só a interface, pus um gancho em `Combat_PowDamage`
+  (0x02010810): ele foi chamado **duas vezes com o terceiro argumento 155**. Duas
+  chamadas batem com o "2x" do texto de dano, e 155 é a linha nova.
+- **O que não consegui:** medir o dano. O dano de um POW depende do minijogo de toque, e
+  o jogador automático de `analise/tools/testar_golpe.py` (acha o anel quando o jogo o
+  pinta de verde e toca no centro) acerta 4 dos 5 anéis no melhor caso; com isso o jogo
+  marca "Missed!" e o dano sai 0. Fica registrado como está: o golpe novo existe e é
+  calculado pelo jogo, mas o dano ainda precisa de alguém jogando o minijogo à mão.
+- **Pendente (projeto pausado em 2026-10-08):** medir o dano do Sonic Boom jogando o
+  minijogo à mão (a seção 22 achou um jeito de pular o minijogo, o Chao 38); depois, os próximos conteúdos planejados, ainda não começados: uma
+  variação de inimigo (`creatures.gda`/`squads.gda`) e um diálogo editado.
+
+## 22. Conteúdo novo: animação e efeito visual para o Sonic Boom
+O Sonic Boom da seção 21 era uma cópia do Axe Kick com outro nome. Agora ele tem uma
+animação do Sonic que nenhum POW usava e uma onda de choque desenhada por nós.
+
+**Como um POW chega à tela.** Seguindo números entre tabelas, e conferindo com ganchos
+no emulador:
+- `combo.gda`, coluna `col_9185ff28`, é a linha de `animations.gda` (Axe Kick = 21, cujo
+  arquivo para o Sonic é `SON_CB_KD`; Whirlwind = 12, `SON_CB_AttackC`);
+- `AnimationEvents.gda` diz o que acontece em cada quadro dessa animação. Pus um gancho
+  em todas as funções do `VisualEffectManager` e só uma recebeu números que batiam com
+  linhas de `VFX.gda`: **0x0202f47c, com r1 = linha do efeito**. No Sonic Boom ela foi
+  chamada com 89 (`FX_Son_Shock`), que é o `EventData` do evento **46** da animação 21,
+  esqueleto 0. Então o evento 46 = "crie o efeito N".
+
+**Dois testes que derrubaram planos.**
+- Efeitos 2D (`Type` 1: `.NCGR` + `.NCER` + `.NANR`, sprites "de verdade") seriam o
+  natural para sprites novos. Troquei o efeito 89 pelo único efeito tipo 1 do jogo
+  (`FX_ImpactFlash`): a função foi chamada, mas **nada apareceu**. Já um efeito tipo 3
+  (modelo 3D + textura) no mesmo lugar apareceu. Conclusão: na batalha, só tipo 3.
+- Uma linha **nova** em `animations.gda` (a 56) **travou a batalha** na vez do Sonic.
+  A linha 13 (`SON_CB_PAttack02`) já existia, tinha arquivo para o Sonic e nenhum POW a
+  usava: com ela e os eventos do Axe Kick copiados, o golpe rodou com outra animação.
+
+**O efeito.** Um subagente desenhou 8 quadros de 32x32 (arte nossa, gerada por código em
+`conteudo/sonic-boom/desenhar_sprites.py`, 7 cores). O jeito de pô-los no jogo sem fazer
+um modelo 3D do zero: o `FX_SmokePuff` do jogo é um quadrado no chão que troca de
+textura 8 vezes (um "flipbook"). `analise/tools/montar_vfx.py` copia o modelo e o
+flipbook e troca só o desenho das 8 texturas pelos nossos quadros, no formato A3I5 do DS
+(5 bits de cor numa paleta de 32 + 3 bits de transparência). Antes de usar, conferi a
+conversão decodificando o arquivo gerado de volta para PNG.
+
+**Erro nº 7: savestate não serve para testar tabelas.** Os primeiros testes partiam de um
+savestate feito com a ROM anterior, e nenhuma mudança em `VFX.gda` aparecia. O jogo lê as
+tabelas quando liga; o savestate guarda a RAM com as tabelas velhas. Passei a entrar na
+batalha a partir do save, com a ROM nova (`testar_golpe.py` avisa disso no uso).
+
+**Erro nº 8: arquivo novo que o jogo não acha.** Com tudo ligado, o efeito novo não
+aparecia, mas o mesmo desenho gravado por cima do `FX_SmokePuff.nsbtx` aparecia. A
+diferença: no pacote, os arquivos 3D estão como `FX_SmokePuff.nsbtx.small` (comprimidos
+com LZ10), e o jogo procura os 3D só por esse nome. O `sonic-mod pack` guardava arquivos
+novos sempre "soltos". Corrigido: um arquivo novo agora é guardado como os outros do mesmo
+tipo (`.nsbmd`, `.nsbtx`, `.nsbtp` viram `.small` LZ10; `.ITM` continua solto).
+
+**Resultado.** Com a ROM final (Chili Dog + Sonic Boom + efeito), entrando na batalha a
+partir do save, `testar_golpe.py final.nds estado.dst 155 pasta 500 --vfx 467 --auto`
+deu OK nas duas coisas: o jogo usou a linha 155 e pediu o efeito 467. A onda de choque
+aparece no chão, em volta do Sonic, e se abre em anel. Na ROM anterior, o mesmo teste dá
+FALHOU para o 467 (o jogo pede o 89), que é a prova negativa.
+
+**O Chao 38.** O Johans lembrou que o Chao 38 faz o minijogo sozinho. No código, o
+minijogo pergunta "o personagem tem a habilidade 0?" (0x0207b87a) e pula se não tiver
+(0x0207b884). O `--auto` troca esse pulo por um "nop" na memória do emulador: todo
+personagem age como se tivesse o Chao 38. Com isso os anéis do minijogo nem aparecem.
+
+**Ainda em aberto.** O dano do Sonic Boom continua sem medida: nesta batalha os Nocturne
+Decurions voltam a 340 de HP na tela e não achei onde ler o dano direto. A animação 13
+ganhou eventos no esqueleto 0; se algum inimigo usar a animação 13 com esse esqueleto,
+ele também mostrará o efeito (não vi nenhum, mas não provei que não existe).
+
+## 23. Como um POW funciona de verdade (e o Sonic Boom consertado)
+O Johans testou a ROM da seção 22 e o Sonic Boom "ficou bem travado, o ataque era
+interminável", com o Sonic distorcendo. Ao mesmo tempo, a frente do painel achou outro
+travamento: com essa ROM, a tela "POW Moves" do perfil do Sonic (onde se gastam os pontos
+de POW) fica só com o fundo. Os dois vinham de não sabermos como um POW é montado.
+
+**Erro nº 9: provei o começo do golpe, não o fim.** O teste da seção 22 rodava 500
+quadros e conferia só que o efeito 467 foi pedido. Rodando até o fim (3000 quadros) a
+partir do save, o dano é calculado de novo a cada ~60 a 120 quadros, para sempre: 7300,
+7303, 7417, 7420, 7881... e o efeito 467 volta junto. O golpe nunca termina. O
+`testar_golpe.py` ganhou `--acertos N`, que falha quando o dano é calculado mais vezes
+que o esperado.
+
+**Seis vagas, cada uma com a sua coreografia.** Cruzando `combo.gda` com
+`AnimationEvents.gda`: a coluna `col_9185ff28` dos golpes 0, 6, 12, 18... (o 1º golpe de
+cada herói) é sempre 21; a dos golpes 1, 7, 13, 19... (o 2º) é sempre 12; depois 23, 24,
+25 e 26. Ou seja, as linhas 21, 12, 23, 24, 25 e 26 de `animations.gda` são as **6
+vagas de POW**, iguais para todos os heróis, e o `Skeleton` de `AnimationEvents.gda` diz
+de qual herói é cada roteiro (0 = Sonic). Os nomes das linhas enganam: a 21 se chama
+`CB_KD`, mas o arquivo do Sonic, `SON_CB_KD`, é o *Kick Down*, o Axe Kick. Num roteiro de
+vaga aparecem sempre os mesmos eventos: 10003 e 10004 (abrem e fecham o minijogo), 10001
+(um acerto: no Axe Kick, aos quadros 65 e 100, os "2x"), 10006 (fim do golpe), 2 (som),
+12 (câmera) e 46 (efeito visual). Os significados de 10001 a 10006 são **média**: vêm de
+onde aparecem e da contagem de danos, não do código.
+
+A linha 13 que eu tinha escolhido não é vaga: ela e a 22 só têm o evento 10005, para
+todos os esqueletos. Com ela, o golpe se repete; tirando o 10005, o Sonic fica parado
+para sempre (testado). Os arquivos `.gff` com nome de golpe (`Son_AxeKick.gff`...) não
+são a coreografia: são os caminhos dos anéis do minijogo de toque (pontos na tela e
+curvas de tempo).
+
+**Erro nº 10: um 7º golpe.** Nenhuma criatura de `creatures.gda` tem mais de 6 golpes, a
+ficha do herói na memória guarda o nível de só 6 (0x114 a 0x128, achado pela frente do painel) e há só 6 vagas.
+Com o Sonic Boom no `Combo7`, a lista da batalha mostrava o golpe, mas a tela "POW Moves"
+travava. Reproduzido: com a mesma rota de toques, a ROM com 7 golpes fica no fundo e a
+ROM nova abre a tela.
+
+**O conserto.** O Sonic Boom entra numa vaga que já existe e usa a coreografia dela,
+trocando só o efeito do Sonic nela. Escolhi o padrão de pôr o golpe no lugar do Axe Kick
+(`Combo1`, coreografia 21, efeito 89 → 467), porque ele foi feito a partir do Axe Kick e
+essa coreografia já tinha terminado certo na seção 21; o `aplicar.py` também aceita
+`--no-lugar-do whirlwind` (`Combo2`, coreografia 12, efeito 85). Os eventos do esqueleto
+0 são só do Sonic, e o Axe Kick sai da lista dele, então nada mais muda. O nível do golpe
+vem da vaga: no save do Johans, o Sonic Boom já aparece no nível III.
+
+**Resultado** (ROM com Chili Dog, Sonic Boom e os itens da seção 24, entrando na batalha
+pelo save):
+- o Sonic corre até o inimigo, a onda de choque nova abre no chão, saem **dois acertos
+  de 178** e ele volta; o dano é calculado exatamente 2 vezes (quadros 5810 e 5884) e a
+  batalha segue para a vez dos inimigos e para a rodada 2;
+- 178 por acerto é a primeira medida do Sonic Boom: o Sonic tem Atk 44 e o golpe está no
+  nível III (400%), e 4 × 44 = 176. Bate quase exato, mas a fórmula do dano de POW não foi
+  conferida no código (**inferido**);
+- a tela "POW Moves" abre com "Sonic Boom III", "PP Cost: 3", "Damage: 2x 400% of Attack
+  damage", "Effect: Can't miss, Element: Wind".
+
+## 24. Conteúdo novo: itens com habilidades que só os inimigos têm
+O Johans pediu itens que deem aos heróis efeitos de inimigo, "tipo phased ou immune".
+
+**De onde vêm essas habilidades.** Os inimigos não têm Phased por mágica: eles "equipam"
+itens escondidos de `Items.gda` (211–230 e 277–285) cujas colunas `col_ab33ab1a`
+(código) e `col_dee49bb0` (valor) dão a habilidade (seção 11 do COMBATE). Ex.: 220
+"Phase" = (25, 1), 285 "Immunity" = (31, 100). O mesmo par de colunas existe em qualquer
+acessório, então basta um acessório que um herói possa usar com esses códigos.
+
+**Os itens.** `conteudo/itens-de-inimigo/aplicar.py` cria quatro acessórios a partir da
+linha 63 (Refresher, um acessório comum que já usa a coluna de habilidade), com nome e
+descrição novos, um `.ITM` sem efeito extra e preço 50 nas 5 lojas:
+
+| Item | Habilidade | O que faz (seção 5.1 do COMBATE) |
+|---|---|---|
+| 289 Phase Shifter | 25, Phased | todo ataque erra, até os "Can't miss" |
+| 290 Evasion Band | 26, Agile ("Evading") | erra todo ataque que não seja "Can't miss" |
+| 291 Repair Module | 27, auto-reparo | recupera HP a cada rodada (só visto em inimigos) |
+| 292 Immunity Core | 31, imunidade | efeito ainda não lido no código |
+
+**Provas no emulador** (save do Capítulo 10):
+- os 4 aparecem na Overmart por 50, com nome e descrição, e a compra tira 50 anéis cada;
+- no inventário, o Sonic, a Tails, o Omega e a Rouge conseguem equipar cada um (o ícone
+  do herói aparece ao lado do item, o botão vira "Unequip Item");
+- **o jogo diz que o herói tem a habilidade.** Na batalha, nas consultas que o jogo já faz
+  à função "quanto desta habilidade a criatura tem?" (0x02013a7c) para um herói, troquei
+  o código pedido por 25, 26, 27 e 31 e anotei a resposta. Com os itens: Sonic (Phase
+  Shifter) só 25, Tails (Evasion Band) só 26, Rouge (Repair Module) só 27, Omega
+  (Immunity Core) só 31. Sem os itens, tudo 0;
+- **o efeito na batalha.** Na mesma batalha, o inimigo usa o POW "Leech Wave" na Tails e
+  na Rouge. Sem itens, a Tails leva 49. Com a Evasion Band, o jogo pergunta "a Tails tem
+  Evading?", ouve 1 e mostra "Missed! Missed!" nos dois acertos dela; a Rouge continua
+  levando 49 (o Repair Module não é esquiva).
+
+**O que falta provar.** Nenhum inimigo atacou o Sonic nas batalhas testadas, então o
+Phase Shifter foi provado só até a resposta do jogo (25 = 1), e não na tela. A resposta
+da função é 1 também para o Repair Module e o Immunity Core, não 10 ou 100: ela parece
+dizer "tem" e não o valor, e não vi o auto-reparo agir num herói nem achei o que a
+imunidade (31) faz.
+
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de
-colunas GDA, se um item novo numa loja funciona, os limites que o código impõe (número de
-itens, de personagens), a versão exata do compilador e as partes do combate listadas em
+colunas GDA, onde quatro das cinco lojas ficam no jogo, os limites que o código impõe (número
+máximo de itens, de personagens), a versão exata do compilador e as partes do combate listadas em
 [COMBATE.md](COMBATE.md#16-o-que-ainda-não-sabemos). Os próximos passos estão no
 [plano](PLANO-DECOMPILACAO.md).
