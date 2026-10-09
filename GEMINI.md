@@ -29,7 +29,8 @@ então: confira com `git fetch origin` e `git branch -r` (seção 4).
 ## 2. Regras que não se negociam
 
 1. **Nada do jogo no Git.** Nunca faça commit de ROM (`.nds`), save (`.sav`), savestate
-   (`.dst`), imagens ou CSVs extraídos do jogo, assembly ou pseudo-C gerado. Isso fica em
+   (`.dst`), arquivos 3D do jogo (`.nsbmd`, `.nsbtx`, `.nsbtp`, `.nsbca`, `.small`), mesmo
+   editados, imagens ou CSVs extraídos do jogo, assembly ou pseudo-C gerado. Isso fica em
    `work/`, `saida/`, `modproj/` (já estão no `.gitignore`). Pode entrar: código nosso,
    documentação, endereços, nomes de funções e descrições de formato.
    Antes de todo commit, rode `git status` e confira a lista de arquivos.
@@ -170,6 +171,10 @@ de ida e volta: converter um arquivo original e voltar tem que dar **os mesmos b
   retrato original, converter o PNG de volta, comparar com o original.
 
 **Etapa 3: o Silver como personagem a mais (sem tirar o Shadow). Ninguém testou ainda.**
+Depende do PR #39 (seção 5.5): o jogo só acha arquivos 3D **novos** se eles estiverem
+guardados comprimidos (`.small`), e só o `sonic-mod pack` daquele PR faz isso sozinho.
+Antes do PR #39 entrar em `dev`, um `.nsbmd` de nome novo vai para a ROM mas o jogo não o
+encontra. (Trocar um arquivo que já existe, como na Etapa 1, já funciona hoje.)
 Ideia a provar: copiar `GenSha_AA.nsbmd` e o `.nsbtx` recolorido com nomes novos
 (ex.: `GenSil_AA.nsbmd`, `GenSil_AA.nsbtx`) em `arquivos/test/` (o `pack` **adiciona**
 arquivos de nome novo), criar uma linha em `appearances.csv` com esse modelo e o mesmo
@@ -182,16 +187,43 @@ e o código pode limitar o número de jogáveis. Teste um passo de cada vez.
 editar o `.nsbmd` e criar `.nsbca`. Não temos leitor nem escritor desses formatos. Converse
 com o Johans antes de começar; é um projeto grande por si só.
 
-### 5.5 A outra frente de conteúdo novo (do Claude): não refaça, não mexa
+### 5.5 A outra frente de conteúdo novo (do Claude, PR #39): use, mas não mexa
 
-- **Pronto (PR #39):** item 288 "Chili Dog" nas lojas e golpe POW 155 "Sonic Boom" no Sonic.
-  Textos novos com ids `990100` em diante.
-- **Em andamento agora:** um POW novo com animação, efeito visual (VFX) e sprites novos. A
-  ligação já achada: `combo.csv` → `animations.csv` → `AnimationEvents.csv` → `VFX.csv`; a
-  função que cria cada efeito está em `0x0202f47c`. Quando esse PR sair, ele vai dizer como
-  fazer o efeito de um golpe; use isso para os golpes do Silver em vez de descobrir de novo.
-- **Para não colidir:** use ids de texto de **995000 a 995999** (o Claude usa 990xxx). Numa
-  linha nova de tabela, use o próximo número livre e anote no PR qual número usou.
+O PR #39 (branch `claude/conteudo-novo-*`) já fez um item novo, o golpe POW 155 "Sonic
+Boom" e, por último, **a animação e o efeito visual próprios desse golpe**, provados no
+emulador. O que ele descobriu vale para os golpes do Silver:
+
+- **Na batalha só aparecem efeitos 3D** (`Type` 3 em `VFX.csv`: modelo `.nsbmd` + textura
+  `.nsbtx` + troca de textura `.nsbtp`). Efeitos 2D (`Type` 1, `.NCGR`/`.NCER`/`.NANR`) não
+  são desenhados. Ou seja: sprites 2D não servem nem para os efeitos.
+- **A cadeia de um POW:** `combo.csv` (coluna `col_9185ff28` = a animação) →
+  `animations.csv` (o arquivo `.nsbca` de cada esqueleto) → `AnimationEvents.csv` (o que
+  acontece em cada quadro; o **evento 46** cria o efeito da linha `EventData`) → `VFX.csv`
+  (o efeito). **Não crie linhas novas em `animations.csv`**: a linha 56 nova travou a
+  batalha. Use uma linha existente que nenhum POW use.
+- **O `sonic-mod pack` foi corrigido** para guardar arquivos 3D novos comprimidos
+  (`.small`), senão o jogo não os acha. Esse conserto só está no PR #39.
+- **Ferramentas novas do PR #39** (leia com `git show origin/claude/conteudo-novo-uea5jk:CAMINHO`):
+  `analise/tools/montar_vfx.py` monta um efeito com 8 quadros PNG de 32×32 (até 32 cores)
+  usando a fumaça do jogo como molde; `analise/tools/testar_golpe.py ... --vfx N --auto`
+  confere que o jogo pediu o efeito N e liga o "POW sempre perfeito" do Chao 38 só na
+  memória do emulador, sem precisar jogar o minijogo de toque. O savestate usado tem de
+  ser feito com a mesma ROM, porque o jogo lê as tabelas quando liga.
+- A receita completa está na seção "Dar animação e efeito visual próprios a um golpe" do
+  `docs/MODDING.md` daquele branch.
+
+**Enquanto o PR #39 não entrar em `dev`:** para usar o `pack` corrigido, compile-o a partir
+daquele branch numa pasta à parte, sem fazer commit nem push nele:
+
+```bash
+git worktree add ../sonic-pr39 origin/claude/conteudo-novo-uea5jk
+cd ../sonic-pr39/engine && cargo build --release && cd -
+# use ../sonic-pr39/engine/target/release/sonic-mod no lugar do engine/target/release/sonic-mod
+```
+
+**Para não colidir:** use ids de texto de **995000 a 995999** (o Claude usa 990xxx). O
+Sonic Boom usa a linha 155 de `combo.csv` e a 467 de `VFX.csv`; numa linha nova de tabela,
+use o próximo número livre e anote no PR qual número usou.
 
 ## 6. Comandos prontos
 
