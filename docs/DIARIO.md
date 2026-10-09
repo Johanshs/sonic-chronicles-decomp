@@ -196,8 +196,67 @@ de dano, com nome, descrição e textos de dano novos, posta no `Combo7` do Soni
   marca "Missed!" e o dano sai 0. Fica registrado como está: o golpe novo existe e é
   calculado pelo jogo, mas o dano ainda precisa de alguém jogando o minijogo à mão.
 - **Pendente (projeto pausado em 2026-10-08):** medir o dano do Sonic Boom jogando o
-  minijogo à mão; depois, os próximos conteúdos planejados, ainda não começados: uma
+  minijogo à mão (a seção 22 achou um jeito de pular o minijogo, o Chao 38); depois, os próximos conteúdos planejados, ainda não começados: uma
   variação de inimigo (`creatures.gda`/`squads.gda`) e um diálogo editado.
+
+## 22. Conteúdo novo: animação e efeito visual para o Sonic Boom
+O Sonic Boom da seção 21 era uma cópia do Axe Kick com outro nome. Agora ele tem uma
+animação do Sonic que nenhum POW usava e uma onda de choque desenhada por nós.
+
+**Como um POW chega à tela.** Seguindo números entre tabelas, e conferindo com ganchos
+no emulador:
+- `combo.gda`, coluna `col_9185ff28`, é a linha de `animations.gda` (Axe Kick = 21, cujo
+  arquivo para o Sonic é `SON_CB_KD`; Whirlwind = 12, `SON_CB_AttackC`);
+- `AnimationEvents.gda` diz o que acontece em cada quadro dessa animação. Pus um gancho
+  em todas as funções do `VisualEffectManager` e só uma recebeu números que batiam com
+  linhas de `VFX.gda`: **0x0202f47c, com r1 = linha do efeito**. No Sonic Boom ela foi
+  chamada com 89 (`FX_Son_Shock`), que é o `EventData` do evento **46** da animação 21,
+  esqueleto 0. Então o evento 46 = "crie o efeito N".
+
+**Dois testes que derrubaram planos.**
+- Efeitos 2D (`Type` 1: `.NCGR` + `.NCER` + `.NANR`, sprites "de verdade") seriam o
+  natural para sprites novos. Troquei o efeito 89 pelo único efeito tipo 1 do jogo
+  (`FX_ImpactFlash`): a função foi chamada, mas **nada apareceu**. Já um efeito tipo 3
+  (modelo 3D + textura) no mesmo lugar apareceu. Conclusão: na batalha, só tipo 3.
+- Uma linha **nova** em `animations.gda` (a 56) **travou a batalha** na vez do Sonic.
+  A linha 13 (`SON_CB_PAttack02`) já existia, tinha arquivo para o Sonic e nenhum POW a
+  usava: com ela e os eventos do Axe Kick copiados, o golpe rodou com outra animação.
+
+**O efeito.** Um subagente desenhou 8 quadros de 32x32 (arte nossa, gerada por código em
+`conteudo/sonic-boom/desenhar_sprites.py`, 7 cores). O jeito de pô-los no jogo sem fazer
+um modelo 3D do zero: o `FX_SmokePuff` do jogo é um quadrado no chão que troca de
+textura 8 vezes (um "flipbook"). `analise/tools/montar_vfx.py` copia o modelo e o
+flipbook e troca só o desenho das 8 texturas pelos nossos quadros, no formato A3I5 do DS
+(5 bits de cor numa paleta de 32 + 3 bits de transparência). Antes de usar, conferi a
+conversão decodificando o arquivo gerado de volta para PNG.
+
+**Erro nº 7: savestate não serve para testar tabelas.** Os primeiros testes partiam de um
+savestate feito com a ROM anterior, e nenhuma mudança em `VFX.gda` aparecia. O jogo lê as
+tabelas quando liga; o savestate guarda a RAM com as tabelas velhas. Passei a entrar na
+batalha a partir do save, com a ROM nova (`testar_golpe.py` avisa disso no uso).
+
+**Erro nº 8: arquivo novo que o jogo não acha.** Com tudo ligado, o efeito novo não
+aparecia, mas o mesmo desenho gravado por cima do `FX_SmokePuff.nsbtx` aparecia. A
+diferença: no pacote, os arquivos 3D estão como `FX_SmokePuff.nsbtx.small` (comprimidos
+com LZ10), e o jogo procura os 3D só por esse nome. O `sonic-mod pack` guardava arquivos
+novos sempre "soltos". Corrigido: um arquivo novo agora é guardado como os outros do mesmo
+tipo (`.nsbmd`, `.nsbtx`, `.nsbtp` viram `.small` LZ10; `.ITM` continua solto).
+
+**Resultado.** Com a ROM final (Chili Dog + Sonic Boom + efeito), entrando na batalha a
+partir do save, `testar_golpe.py final.nds estado.dst 155 pasta 500 --vfx 467 --auto`
+deu OK nas duas coisas: o jogo usou a linha 155 e pediu o efeito 467. A onda de choque
+aparece no chão, em volta do Sonic, e se abre em anel. Na ROM anterior, o mesmo teste dá
+FALHOU para o 467 (o jogo pede o 89), que é a prova negativa.
+
+**O Chao 38.** O Johans lembrou que o Chao 38 faz o minijogo sozinho. No código, o
+minijogo pergunta "o personagem tem a habilidade 0?" (0x0207b87a) e pula se não tiver
+(0x0207b884). O `--auto` troca esse pulo por um "nop" na memória do emulador: todo
+personagem age como se tivesse o Chao 38. Com isso os anéis do minijogo nem aparecem.
+
+**Ainda em aberto.** O dano do Sonic Boom continua sem medida: nesta batalha os Nocturne
+Decurions voltam a 340 de HP na tela e não achei onde ler o dano direto. A animação 13
+ganhou eventos no esqueleto 0; se algum inimigo usar a animação 13 com esse esqueleto,
+ele também mostrará o efeito (não vi nenhum, mas não provei que não existe).
 
 ## O que ainda não sabemos
 Vídeos `.vx` (codec Actimagine), layout das telas `.gui`, paletas dos Chao, 311 nomes de

@@ -95,6 +95,34 @@ aparece na lista de POW Moves com o nome, o custo e a descrição novos, gasta e
 Confira com `analise/tools/testar_golpe.py`. O dano em si depende do minijogo de toque,
 que ainda não sabemos jogar bem de forma automática.
 
+### Dar animação e efeito visual próprios a um golpe
+Um POW tem três camadas, ligadas por números:
+
+| Tabela | O que diz |
+|---|---|
+| `combo.csv`, coluna `col_9185ff28` | a **animação** que o personagem toca (linha de `animations.csv`) |
+| `animations.csv` | o arquivo de animação 3D de cada esqueleto (`?` = prefixo + nome da linha; ex.: linha 13 do Sonic = `SON_CB_PAttack02`) |
+| `AnimationEvents.csv` | o que acontece em cada quadro da animação: `Animation`, `Skeleton`, `Frame`, `EventID`, `EventData`. O evento **46** cria o efeito visual da linha `EventData` de `VFX.csv` |
+| `VFX.csv` | o efeito: `Type` 3 = modelo 3D (`.nsbmd`) + textura (`.nsbtx`) + troca de textura (`.nsbtp`), com `LifeTime`, `Target`, `Scale`... |
+
+Receita (é o que `conteudo/sonic-boom/aplicar.py` faz para o Sonic Boom):
+1. Escolha uma linha de `animations.csv` que nenhum POW use e que tenha animação para o
+   personagem. **Não crie linhas novas** em `animations.csv`: testamos a 56 e a batalha
+   travou quando chegou a vez do golpe.
+2. Em `AnimationEvents.csv`, copie os eventos da animação de um golpe parecido (ex.:
+   `Animation` 21, `Skeleton` 0 = Axe Kick) para a animação escolhida, com `ID`s novos
+   no fim, e troque o `EventData` do evento 46 pelo seu efeito.
+3. Em `VFX.csv`, uma linha nova no fim (o jogo vai até 466) com os seus arquivos.
+4. Os arquivos do efeito vão em `arquivos/test/`. Para desenhar a textura com quadros
+   PNG seus, use `analise/tools/montar_vfx.py` (8 quadros de 32x32, até 32 cores; ele usa
+   a fumaça do jogo como molde e troca só o desenho).
+5. Em `combo.csv`, ponha a animação escolhida em `col_9185ff28` do golpe.
+
+Efeitos 2D (`Type` 1, `.NCGR`/`.NCER`/`.NANR`) **não aparecem** na batalha; use o tipo 3.
+Para testar sem jogar o minijogo: `testar_golpe.py ... --vfx N --auto` (o `--auto` faz
+como o Chao 38, que acerta o minijogo sozinho). O savestate tem de ser da mesma ROM: o
+jogo lê as tabelas ao ligar.
+
 ### Remover um item
 Prefira **tirar o item das lojas e recompensas** a apagar a linha de `Items.csv`.
 Outras tabelas se referem aos itens pelo ID, e apagar a linha pode deixar
