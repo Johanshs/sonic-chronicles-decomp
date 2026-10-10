@@ -70,6 +70,8 @@ docs/                toda a documentação (abaixo)
 | [`docs/COMBATE.md`](docs/COMBATE.md) | **o combate por dentro**: fórmulas, golpes, status, itens, Chao, dificuldade |
 | [`docs/DIARIO.md`](docs/DIARIO.md) | a história das descobertas, incluindo os erros e as correções |
 | [`docs/PLANO-DECOMPILACAO.md`](docs/PLANO-DECOMPILACAO.md) | o plano da decompilação real, fase por fase |
+| [`docs/PLANO-MOD-MENU.md`](docs/PLANO-MOD-MENU.md) | plano do painel de admin dentro do jogo e dos cheats para R4 (Pico Loader) |
+| [`docs/CHEATS.md`](docs/CHEATS.md) | **a bateria de cheats**: o que cada um faz, por que funciona, confiança e como testar no DS |
 | [`docs/hierarquia_classes.md`](docs/hierarquia_classes.md) | as 290 classes C++ do jogo |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | regras para contribuir |
 

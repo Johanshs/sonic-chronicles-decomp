@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronicles Studio - Visualizador de Assets</title>
+  <style>
+    :root {
+      --bg-color: #12151c;
+      --card-bg: #1c212c;
+      --accent: #2e66ff;
+      --accent-hover: #4d80ff;
+      --gold: #f5c518;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --border: #30363d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    header {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 24px;
+      color: var(--gold);
+      letter-spacing: 0.5px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .preview-box {
+      background: #090b0e;
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    canvas {
+      image-rendering: pixelated;
+    }
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      margin-top: 10px;
+    }
+    .palette-swatch {
+      height: 28px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      text-shadow: 0 1px 2px #000;
+    }
+    .swatch-0 {
+      background: repeating-linear-gradient(45deg, #ff00ff, #ff00ff 4px, #440044 4px, #440044 8px);
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    button:hover { background: var(--accent-hover); }
+    .quad-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 140px;
+      margin: 0 auto;
+    }
+    .quad-piece {
+      border: 1px dashed var(--accent);
+      text-align: center;
+      font-size: 11px;
+      padding: 4px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>⚡ Chronicles Studio - Visualizador de Assets</h1>
+      <p>Estúdio de testes e renderização em tempo real (Nintendo DS / BioWare Aurora)</p>
+    </div>
+    <div style="font-size: 12px; color: var(--gold); background: #2a2200; padding: 6px 12px; border-radius: 4px; border: 1px solid #775500;">
+      Branch: <strong>gemini/asset-pipeline-framework</strong>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- 1. Sprites & Paleta BGR555 -->
+    <div class="card">
+      <h2>1. Sprites & Paleta Nitro BGR555 (15-bit)</h2>
+      <div class="preview-box">
+        <canvas id="spriteCanvas" width="128" height="128" style="width: 128px; height: 128px;"></canvas>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+        Grade de 16 cores (4bpp). O <strong>Índice 0</strong> é reservado pelo hardware como transparente (magenta/alfa 0).
+      </p>
+      <div class="palette-grid" id="paletteGrid"></div>
+    </div>
+
+    <!-- 2. Retratos Compostos 2x2 (128x128) -->
+    <div class="card">
+      <h2>2. Retratos Compostos 2×2 (128×128)</h2>
+      <div class="preview-box">
+        <canvas id="portraitCanvas" width="128" height="128" style="width: 128px; height: 128px; border: 2px solid var(--accent);"></canvas>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+        Arquitetura do jogo: 4 blocos NCGR 64×64 integrados em um quadro 128×128:
+      </p>
+      <div class="quad-grid">
+        <div class="quad-piece"><code>_0.ncgr</code> (0,0)</div>
+        <div class="quad-piece"><code>_1.ncgr</code> (64,0)</div>
+        <div class="quad-piece"><code>_2.ncgr</code> (0,64)</div>
+        <div class="quad-piece"><code>_3.ncgr</code> (64,64)</div>
+      </div>
+    </div>
+
+    <!-- 3. Simulador de Partículas VFX (.emit) -->
+    <div class="card">
+      <h2>3. Simulador de Partículas VFX (.emit)</h2>
+      <div class="preview-box" style="background: #000;">
+        <canvas id="vfxCanvas" width="300" height="200" style="width: 100%; height: 200px;"></canvas>
+      </div>
+      <div class="controls">
+        <button onclick="setVfxPreset('chaos_energy')">Chaos Energy</button>
+        <button onclick="setVfxPreset('fire_burst')">Fire Burst</button>
+        <button onclick="setVfxPreset('heal_sparkle')">Heal Sparkle</button>
+      </div>
+    </div>
+
+    <!-- 4. Visualizador 3D Low-Poly (DS Cel-Shading) -->
+    <div class="card">
+      <h2>4. Visualizador 3D Nitro G3D (Toon Cel-Shading)</h2>
+      <div class="preview-box" style="background: #0b0f19;">
+        <canvas id="meshCanvas" width="240" height="200" style="width: 100%; height: 200px;"></canvas>
+      </div>
+      <p style="font-size: 12px; color: var(--text-muted);">
+        Malha 3D low-poly da <em>Chaos Emerald</em> (8 vértices, 8 faces trianguladas). Rotação em tempo real com iluminação Toon Table.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // 1. Renderiza Sprite 32x32 com escala 4x
+    const sCanvas = document.getElementById('spriteCanvas');
+    const sCtx = sCanvas.getContext('2d');
+    sCtx.imageSmoothingEnabled = false;
+
+    // Paleta BGR555 clássica do Sonic Chronicles (16 cores)
+    const dsPalette = [
+      "transparent", "#000000", "#1040D0", "#3070FF", "#082070",
+      "#FF5050", "#E01818", "#800808", "#FFA000", "#FFD040",
+      "#C06000", "#FFFFFF", "#F5C518", "#00E6FF", "#00C850", "#404040"
+    ];
+
+    const palGrid = document.getElementById('paletteGrid');
+    dsPalette.forEach((col, i) => {
+      const sw = document.createElement('div');
+      sw.className = `palette-swatch ${i === 0 ? 'swatch-0' : ''}`;
+      if (i > 0) sw.style.backgroundColor = col;
+      sw.textContent = i;
+      palGrid.appendChild(sw);
+    });
+
+    // Desenha ícone do Anel de Energia ampliado
+    sCtx.fillStyle = "#1040D0";
+    sCtx.beginPath();
+    sCtx.arc(64, 64, 48, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.lineWidth = 8;
+    sCtx.strokeStyle = "#F5C518";
+    sCtx.stroke();
+    sCtx.fillStyle = "#00E6FF";
+    sCtx.beginPath();
+    sCtx.arc(64, 64, 20, 0, Math.PI * 2);
+    sCtx.fill();
+
+    // 2. Retrato Composto 128x128
+    const pCanvas = document.getElementById('portraitCanvas');
+    const pCtx = pCanvas.getContext('2d');
+    // Fundo azul escuro
+    pCtx.fillStyle = "#142850";
+    pCtx.fillRect(0, 0, 128, 128);
+    // Rosto do Sonic
+    pCtx.fillStyle = "#1040D0";
+    pCtx.beginPath();
+    pCtx.arc(64, 64, 46, 0, Math.PI * 2);
+    pCtx.fill();
+    pCtx.lineWidth = 3;
+    pCtx.strokeStyle = "#000000";
+    pCtx.stroke();
+    // Olhos
+    pCtx.fillStyle = "#FFFFFF";
+    pCtx.beginPath(); pCtx.ellipse(48, 56, 12, 18, 0, 0, Math.PI * 2); pCtx.fill(); pCtx.stroke();
+    pCtx.beginPath(); pCtx.ellipse(78, 56, 12, 18, 0, 0, Math.PI * 2); pCtx.fill(); pCtx.stroke();
+    // Pupilas
+    pCtx.fillStyle = "#00C850";
+    pCtx.beginPath(); pCtx.arc(52, 60, 6, 0, Math.PI * 2); pCtx.fill();
+    pCtx.beginPath(); pCtx.arc(74, 60, 6, 0, Math.PI * 2); pCtx.fill();
+    // Pele
+    pCtx.fillStyle = "#FFC8A0";
+    pCtx.beginPath(); pCtx.ellipse(64, 82, 22, 14, 0, 0, Math.PI * 2); pCtx.fill(); pCtx.stroke();
+    pCtx.fillStyle = "#000"; pCtx.beginPath(); pCtx.arc(64, 76, 4, 0, Math.PI * 2); pCtx.fill();
+
+    // Linhas de demarcação dos 4 quadrantes 64x64
+    pCtx.strokeStyle = "rgba(46, 102, 255, 0.6)";
+    pCtx.setLineDash([4, 4]);
+    pCtx.beginPath();
+    pCtx.moveTo(64, 0); pCtx.lineTo(64, 128);
+    pCtx.moveTo(0, 64); pCtx.lineTo(128, 64);
+    pCtx.stroke();
+    pCtx.setLineDash([]);
+
+    // 3. Simulador de Partículas VFX
+    const vfxCanvas = document.getElementById('vfxCanvas');
+    const vfxCtx = vfxCanvas.getContext('2d');
+    let currentVfx = "chaos_energy";
+    let particles = [];
+
+    const presets = {
+      chaos_energy: { color: "#00FFC8", blend: "lighter", gravity: 0.05, speed: 2 },
+      fire_burst: { color: "#FFA000", blend: "lighter", gravity: -0.15, speed: 3 },
+      heal_sparkle: { color: "#78FF78", blend: "lighter", gravity: -0.08, speed: 1.5 }
+    };
+
+    function setVfxPreset(name) {
+      currentVfx = name;
+      particles = [];
+    }
+
+    function updateVfx() {
+      vfxCtx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      vfxCtx.fillRect(0, 0, vfxCanvas.width, vfxCanvas.height);
+
+      const cfg = presets[currentVfx];
+      vfxCtx.globalCompositeOperation = cfg.blend;
+
+      if (particles.length < 35) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = (Math.random() * 0.8 + 0.2) * cfg.speed;
+        particles.push({
+          x: vfxCanvas.width / 2,
+          y: vfxCanvas.height / 2 + 20,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          life: 1.0,
+          size: Math.random() * 6 + 3
+        });
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += cfg.gravity;
+        p.life -= 0.03;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        vfxCtx.fillStyle = cfg.color;
+        vfxCtx.globalAlpha = p.life;
+        vfxCtx.beginPath();
+        vfxCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        vfxCtx.fill();
+      }
+
+      vfxCtx.globalAlpha = 1.0;
+      vfxCtx.globalCompositeOperation = "source-over";
+      requestAnimationFrame(updateVfx);
+    }
+    updateVfx();
+
+    // 4. Renderizador 3D Wireframe/Toon da Chaos Emerald
+    const mCanvas = document.getElementById('meshCanvas');
+    const mCtx = mCanvas.getContext('2d');
+    let angle3D = 0;
+
+    // Vértices da Chaos Emerald
+    const vertices = [
+      [0.0, 1.2, 0.0],
+      [-0.8, 0.4, -0.8],
+      [0.8, 0.4, -0.8],
+      [0.8, 0.4, 0.8],
+      [-0.8, 0.4, 0.8],
+      [0.0, -1.0, 0.0]
+    ];
+    const faces = [
+      [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1],
+      [5, 2, 1], [5, 3, 2], [5, 4, 3], [5, 1, 4]
+    ];
+
+    function drawMesh() {
+      mCtx.clearRect(0, 0, mCanvas.width, mCanvas.height);
+      angle3D += 0.02;
+
+      const cosA = Math.cos(angle3D);
+      const sinA = Math.sin(angle3D);
+      const scale = 55;
+      const cx = mCanvas.width / 2;
+      const cy = mCanvas.height / 2;
+
+      const projected = vertices.map(([x, y, z]) => {
+        // Rotação Y
+        const rx = x * cosA - z * sinA;
+        const rz = x * sinA + z * cosA;
+        return [cx + rx * scale, cy - y * scale, rz];
+      });
+
+      // Ordenação básica por Z (Painter's algorithm)
+      const sortedFaces = faces.map(f => {
+        const zAvg = (projected[f[0]][2] + projected[f[1]][2] + projected[f[2]][2]) / 3;
+        return { face: f, z: zAvg };
+      }).sort((a, b) => b.z - a.z);
+
+      sortedFaces.forEach(({ face }) => {
+        const p0 = projected[face[0]];
+        const p1 = projected[face[1]];
+        const p2 = projected[face[2]];
+
+        mCtx.beginPath();
+        mCtx.moveTo(p0[0], p0[1]);
+        mCtx.lineTo(p1[0], p1[1]);
+        mCtx.lineTo(p2[0], p2[1]);
+        mCtx.closePath();
+
+        // Shading Toon ciano da esmeralda
+        mCtx.fillStyle = face[0] === 0 ? "rgba(0, 230, 255, 0.65)" : "rgba(0, 140, 200, 0.55)";
+        mCtx.fill();
+
+        // Linha preta estilo Nintendo DS / Comic
+        mCtx.lineWidth = 1.5;
+        mCtx.strokeStyle = "#002040";
+        mCtx.stroke();
+      });
+
+      requestAnimationFrame(drawMesh);
+    }
+    drawMesh();
+  </script>
+</body>
+</html>

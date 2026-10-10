@@ -1,0 +1,8 @@
+2DA V2.0
+
+Label	ID	EffectId	Data	SData1	SData2	SData3	Pulse
+SpellData	0	0	****	****	****	****	****
+CollectionData	1	0	0	0	****	****	****
+VisualEffect	2	5	103	****	****	****	****
+ElementMask	3	1	3145728	110	0	****	****
+ApplySluggish	4	1	-15	23	0	****	****

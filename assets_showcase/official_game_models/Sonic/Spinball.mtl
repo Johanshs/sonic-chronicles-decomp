@@ -1,0 +1,16 @@
+newmtl spin_in
+Ka 0.5647059 0.5647059 0.5647059
+Kd 0.5647059 0.5647059 0.5647059
+d 1
+Tr 1
+map_Ka Spinball_f1.png
+map_Kd Spinball_f1.png
+map_d Spinball_f1.png
+newmtl spikes
+Ka 0.5647059 0.5647059 0.5647059
+Kd 0.5647059 0.5647059 0.5647059
+d 1
+Tr 1
+map_Ka Spinball_spikes.png
+map_Kd Spinball_spikes.png
+map_d Spinball_spikes.png

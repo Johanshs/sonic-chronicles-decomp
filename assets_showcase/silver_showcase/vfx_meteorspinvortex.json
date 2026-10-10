@@ -1,0 +1,26 @@
+{
+  "name": "VFX_MeteorSpinVortex",
+  "blend_mode": "additive",
+  "max_particles": 40,
+  "lifespan_frames": 22,
+  "emission_rate": 3.5,
+  "color_start": [
+    0,
+    180,
+    255,
+    31
+  ],
+  "color_end": [
+    180,
+    100,
+    30,
+    0
+  ],
+  "velocity_range": [
+    -3.0,
+    3.0
+  ],
+  "gravity": 0.08,
+  "texture": "VFX_SpinDebris",
+  "description": "Vórtice supersônico combinando Spin Dash com detritos telecinéticos."
+}

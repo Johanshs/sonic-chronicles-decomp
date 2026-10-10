@@ -1,0 +1,7 @@
+2DA V2.0
+
+Label	ID	EffectId	Data	SData1	SData2	SData3	Pulse
+SpellData	0	1	****	****	****	****	****
+CollectionData_Use	1	0	0	0	****	****	****
+HealHP	2	1	200	0	0	****	****
+RestorePP	3	1	10	28	0	****	****

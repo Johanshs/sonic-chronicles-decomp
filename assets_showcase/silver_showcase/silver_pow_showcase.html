@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silver the Hedgehog - Vitrine dos 5 Golpes POW (Sonic Chronicles)</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #151d2a;
+      --accent: #00e5ff;
+      --gold: #f5c518;
+      --border: #27354a;
+      --text: #e6edf3;
+      --text-muted: #8b9bb4;
+      --ds-bezel: #1b2028;
+      --ds-screen: #06090e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h1 span { color: var(--accent); }
+    .badge-header {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(0, 229, 255, 0.4);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .pow-nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      .pow-nav { grid-template-columns: 1fr; }
+    }
+    .pow-btn {
+      background: var(--card);
+      border: 2px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .pow-btn:hover {
+      border-color: var(--accent);
+      background: #1c2738;
+    }
+    .pow-btn.active {
+      border-color: var(--accent);
+      background: rgba(0, 229, 255, 0.12);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.25);
+    }
+    .pow-btn .p-num { font-size: 11px; color: var(--accent); font-weight: bold; text-transform: uppercase; }
+    .pow-btn .p-name { font-size: 14px; font-weight: bold; margin: 2px 0; color: #fff; }
+    .pow-btn .p-type { font-size: 11px; color: var(--text-muted); }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 520px 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1050px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Emulador de Tela Dupla DS */
+    .ds-housing {
+      background: var(--ds-bezel);
+      border: 3px solid #333d4e;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .ds-screen-frame {
+      width: 480px;
+      height: 320px;
+      background: var(--ds-screen);
+      border: 2px solid #000;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    }
+    .ds-label {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      z-index: 10;
+    }
+    .ds-hinge {
+      width: 380px;
+      height: 10px;
+      background: #11141a;
+      border-radius: 5px;
+      border-top: 1px solid #333d4e;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Painel de Dados Técnicos */
+    .info-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .card h2 {
+      font-size: 16px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      font-size: 13px;
+    }
+    .spec-item {
+      background: rgba(255,255,255,0.03);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .spec-item .k { color: var(--text-muted); font-size: 11px; text-transform: uppercase; }
+    .spec-item .v { color: #fff; font-weight: 600; margin-top: 2px; }
+
+    .assets-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .pixel-box {
+      background: #06090e;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 6px;
+      text-align: center;
+    }
+    .pixel-box img {
+      image-rendering: pixelated;
+      display: block;
+      margin: 0 auto 4px auto;
+    }
+    .pixel-box span {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .code-preview {
+      background: #090d14;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: "Consolas", monospace;
+      font-size: 12px;
+      color: #9cdcfe;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.4;
+      max-height: 160px;
+    }
+
+    .hud-timing {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      border: 1px solid var(--accent);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #fff;
+      pointer-events: none;
+      transition: all 0.2s;
+    }
+    .hud-timing.perfect { color: #00e5ff; text-shadow: 0 0 10px #00e5ff; }
+    .hud-timing.miss { color: #ff5252; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span>Silver the Hedgehog</span> • Vitrine dos 5 Golpes POW</h1>
+    <div class="badge-header">NitroSystem G3D + Aurora 2DA Engine</div>
+  </header>
+
+  <!-- Navegador de Golpes -->
+  <div class="pow-nav">
+    <button class="pow-btn active" onclick="selectPow(0)">
+      <div class="p-num">POW 1 • Solo</div>
+      <div class="p-name">Psychokinesis Slam</div>
+      <div class="p-type">Arremesso • Dano & Stun</div>
+    </button>
+    <button class="pow-btn" onclick="selectPow(1)">
+      <div class="p-num">POW 2 • Solo AOE</div>
+      <div class="p-name">ESP Stasis Wave</div>
+      <div class="p-type">Onda de Estase • Sluggish</div>
+    </button>
+    <button class="pow-btn" onclick="selectPow(2)">
+      <div class="p-num">POW 3 • Suporte</div>
+      <div class="p-name">Psycho Shield</div>
+      <div class="p-type">Barreira • Escudo & Reflexão</div>
+    </button>
+    <button class="pow-btn" onclick="selectPow(3)">
+      <div class="p-num">POW 4 • Combo Duplo</div>
+      <div class="p-name">Meteor Spin Vortex</div>
+      <div class="p-type">Silver + Sonic • Armor Break</div>
+    </button>
+    <button class="pow-btn" onclick="selectPow(4)">
+      <div class="p-num">POW 5 • Ultimate</div>
+      <div class="p-name">Event Horizon</div>
+      <div class="p-type">Singularidade • Devastação Total</div>
+    </button>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- Emulador Nintendo DS -->
+    <div class="ds-housing">
+      <!-- Tela Superior: 3D Battle Arena -->
+      <div class="ds-screen-frame">
+        <div class="ds-label">TELA SUPERIOR • G3D BATTLE RENDERER</div>
+        <canvas id="cvsTop"></canvas>
+      </div>
+
+      <!-- Dobradiça do DS -->
+      <div class="ds-hinge"></div>
+
+      <!-- Tela Inferior: Stylus Minigame -->
+      <div class="ds-screen-frame" style="cursor: crosshair;">
+        <div class="ds-label">TELA INFERIOR • STYLUS ACTION COMMAND</div>
+        <canvas id="cvsBottom"></canvas>
+        <div id="hudTiming" class="hud-timing">TOQUE OU ARRASTE PARA JOGAR</div>
+      </div>
+    </div>
+
+    <!-- Painel de Especificações Técnicas -->
+    <div class="info-pane">
+
+      <div class="card">
+        <h2>
+          <span id="txtPowTitle">Psychokinesis Slam</span>
+          <span id="txtPowCost" style="font-size: 13px; color: var(--gold);">4 PP</span>
+        </h2>
+        <div class="specs-grid">
+          <div class="spec-item"><div class="k">Tipo / Alvo</div><div class="v" id="txtTarget">Inimigo Único (Target 0)</div></div>
+          <div class="spec-item"><div class="k">Parceria</div><div class="v" id="txtPartners">Solo (Silver)</div></div>
+          <div class="spec-item"><div class="k">Dano L1 / L2 / L3</div><div class="v" id="txtDamage">140% / 185% / 240%</div></div>
+          <div class="spec-item"><div class="k">Propriedade Especial</div><div class="v" id="txtSpecial">Armor Piercing (Ignora Grit)</div></div>
+          <div class="spec-item"><div class="k">Efeito Secundário</div><div class="v" id="txtStatus">Stun (Atordoamento 1 turno)</div></div>
+          <div class="spec-item"><div class="k">Minigame Stylus</div><div class="v" id="txtMinigame">Drag & Flick (Arrastar e Estalar)</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Assets Gráficos Nitro (NCGR / NCLR)</h2>
+        <div class="assets-row">
+          <div class="pixel-box">
+            <img id="imgBadge" src="POW_PsychokinesisSlam_32.png" width="64" height="64" alt="Badge 32x32">
+            <span>Badge 32×32 (NCGR)</span>
+          </div>
+          <div class="pixel-box">
+            <img id="imgPortrait" src="POW_PsychokinesisSlam_128.png" width="96" height="96" alt="Portrait 128x128">
+            <span>Composite 2×2 (4× 64×64)</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            <p><strong>Formato:</strong> Nitro Character Graphic (NCGR 4bpp)</p>
+            <p><strong>Paleta:</strong> Nitro Color (NCLR BGR555)</p>
+            <p><strong>Partículas:</strong> <code id="txtVfxFile" style="color: var(--accent);">vfx_psychokinesisslam.emit</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Script de Batalha Aurora (2DA .SPL)</h2>
+        <div class="code-preview" id="txtSplPreview">2DA V2.0
+
+Label	ID	EffectId	Data	SData1	SData2	SData3	Pulse
+SpellData	0	0	****	****	****	****	****
+CollectionData	1	0	0	0	****	****	****
+VisualEffect	2	5	14	****	****	****	****
+ApplyStatus	3	1	1	4	0	****	****</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const POW_DATA = [
+      {
+        name: "Psychokinesis Slam",
+        title_pt: "Arremesso Psicocinético",
+        cost: "4 PP",
+        target: "Inimigo Único (Target 0)",
+        partners: "Solo (Silver)",
+        damage: "140% / 185% / 240%",
+        special: "Armor Piercing (Ignora Grit)",
+        status: "Stun (Atordoamento 1 turno)",
+        minigame: "Drag & Flick (Arrastar e Estalar)",
+        badge: "POW_PsychokinesisSlam_32.png",
+        portrait: "POW_PsychokinesisSlam_128.png",
+        vfx: "vfx_psychokinesisslam.emit",
+        color: "#00e5ff",
+        spl: "2DA V2.0\n\nLabel\tID\tEffectId\tData\tSData1\tSData2\tSData3\tPulse\nSpellData\t0\t0\t****\t****\t****\t****\t****\nCollectionData\t1\t0\t0\t0\t****\t****\t****\nVisualEffect\t2\t5\t14\t****\t****\t****\t****\nApplyStatus\t3\t1\t1\t4\t0\t****\t****"
+      },
+      {
+        name: "ESP Stasis Wave",
+        title_pt: "Onda de Estase Psíquica",
+        cost: "7 PP",
+        target: "Todos os Inimigos (Target 2)",
+        partners: "Solo (Silver)",
+        damage: "95% / 135% / 180%",
+        special: "Área Total (Não esquivável)",
+        status: "Sluggish (-50% Speed / Atraso na fila)",
+        minigame: "Rapid Tap Pulse (Toques Rápidos)",
+        badge: "POW_ESPStasisWave_32.png",
+        portrait: "POW_ESPStasisWave_128.png",
+        vfx: "vfx_espstasiswave.emit",
+        color: "#5eead4",
+        spl: "2DA V2.0\n\nLabel\tID\tEffectId\tData\tSData1\tSData2\tSData3\tPulse\nSpellData\t0\t2\t****\t****\t****\t****\t****\nCollectionData\t1\t0\t0\t0\t****\t****\t****\nVisualEffect\t2\t5\t18\t****\t****\t****\t****\nApplyStatus\t3\t1\t1\t3\t0\t****\t****"
+      },
+      {
+        name: "Psycho Shield",
+        title_pt: "Barreira Telecinética",
+        cost: "5 PP",
+        target: "Um Aliado ou Si Mesmo (Target 1)",
+        partners: "Solo (Silver)",
+        damage: "Absorção: (Grit*2.2 + Power*1.5)",
+        special: "35% Chance de Reflexão Balística",
+        status: "Shield Buff + Imunidade a Status",
+        minigame: "3-Point Precision Ring Tap",
+        badge: "POW_PsychoShield_32.png",
+        portrait: "POW_PsychoShield_128.png",
+        vfx: "vfx_psychoshield.emit",
+        color: "#4ade80",
+        spl: "2DA V2.0\n\nLabel\tID\tEffectId\tData\tSData1\tSData2\tSData3\tPulse\nSpellData\t0\t1\t****\t****\t****\t****\t****\nCollectionData\t1\t0\t0\t0\t****\t****\t****\nVisualEffect\t2\t5\t20\t****\t****\t****\t****\nApplyStatus\t3\t1\t2\t7\t0\t****\t****"
+      },
+      {
+        name: "Meteor Spin Vortex",
+        title_pt: "Vórtice Meteórico",
+        cost: "12 PP (8 Silver / 4 Sonic)",
+        target: "Inimigo Único (Target 0)",
+        partners: "Silver + Sonic (ID 0)",
+        damage: "260% / 340% / 440%",
+        special: "Armor Piercing + Dispel (Quebra Escudo)",
+        status: "Armor Break (Reduz armadura a 0 por 2 turnos)",
+        minigame: "Spin Tracing + 4 Rhythmic Hits",
+        badge: "POW_MeteorSpinVortex_32.png",
+        portrait: "POW_MeteorSpinVortex_128.png",
+        vfx: "vfx_meteorspinvortex.emit",
+        color: "#38bdf8",
+        spl: "2DA V2.0\n\nLabel\tID\tEffectId\tData\tSData1\tSData2\tSData3\tPulse\nSpellData\t0\t0\t****\t****\t****\t****\t****\nCollectionData\t1\t0\t0\t0\t****\t****\t****\nVisualEffect\t2\t5\t22\t****\t****\t****\t****\nApplyStatus\t3\t1\t1\t8\t0\t****\t****"
+      },
+      {
+        name: "Event Horizon",
+        title_pt: "Horizonte de Eventos",
+        cost: "14 PP",
+        target: "Todos os Inimigos (Target 2)",
+        partners: "Solo (Silver Ultimate)",
+        damage: "220% / 310% / 420%",
+        special: "Ignora 100% de Armor e Resistências",
+        status: "Confusion (50%) + Sluggish nos sobreviventes",
+        minigame: "Tri-Phase Master Minigame",
+        badge: "POW_EventHorizon_32.png",
+        portrait: "POW_EventHorizon_128.png",
+        vfx: "vfx_eventhorizon.emit",
+        color: "#c084fc",
+        spl: "2DA V2.0\n\nLabel\tID\tEffectId\tData\tSData1\tSData2\tSData3\tPulse\nSpellData\t0\t2\t****\t****\t****\t****\t****\nCollectionData\t1\t0\t0\t0\t****\t****\t****\nVisualEffect\t2\t5\t25\t****\t****\t****\t****\nApplyStatus\t3\t1\t1\t9\t0\t****\t****"
+      }
+    ];
+
+    let currentPowIdx = 0;
+
+    function selectPow(idx) {
+      currentPowIdx = idx;
+      document.querySelectorAll('.pow-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+      });
+
+      const d = POW_DATA[idx];
+      document.getElementById('txtPowTitle').textContent = d.name + " (" + d.title_pt + ")";
+      document.getElementById('txtPowCost').textContent = d.cost;
+      document.getElementById('txtTarget').textContent = d.target;
+      document.getElementById('txtPartners').textContent = d.partners;
+      document.getElementById('txtDamage').textContent = d.damage;
+      document.getElementById('txtSpecial').textContent = d.special;
+      document.getElementById('txtStatus').textContent = d.status;
+      document.getElementById('txtMinigame').textContent = d.minigame;
+      document.getElementById('imgBadge').src = d.badge;
+      document.getElementById('imgPortrait').src = d.portrait;
+      document.getElementById('txtVfxFile').textContent = d.vfx;
+      document.getElementById('txtSplPreview').textContent = d.spl;
+
+      resetMinigame();
+    }
+
+    // Canvas da Tela Superior (3D Battle Animation)
+    const cvsTop = document.getElementById('cvsTop');
+    const ctxTop = cvsTop.getContext('2d');
+    cvsTop.width = 480; cvsTop.height = 320;
+
+    // Canvas da Tela Inferior (Stylus Minigame)
+    const cvsBottom = document.getElementById('cvsBottom');
+    const ctxBottom = cvsBottom.getContext('2d');
+    cvsBottom.width = 480; cvsBottom.height = 320;
+
+    let animTime = 0;
+    const particles = [];
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * 480,
+        y: Math.random() * 320,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        size: Math.random() * 3 + 1,
+        life: Math.random()
+      });
+    }
+
+    // Minigame State
+    let mgScore = 0;
+    let mgHits = 0;
+    let ringRadius = 80;
+    let ringShrinking = true;
+    let isDragging = false;
+    let dragY = 240;
+
+    function resetMinigame() {
+      mgHits = 0;
+      ringRadius = 80;
+      dragY = 240;
+      const hud = document.getElementById('hudTiming');
+      hud.textContent = "EXECUTE O COMANDO DE AÇÃO!";
+      hud.className = "hud-timing";
+    }
+
+    cvsBottom.addEventListener('mousedown', (e) => {
+      const rect = cvsBottom.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (480 / rect.width);
+      const y = (e.clientY - rect.top) * (320 / rect.height);
+      handleTouch(x, y);
+    });
+
+    function handleTouch(x, y) {
+      const hud = document.getElementById('hudTiming');
+      if (currentPowIdx === 0) { // Drag & Flick
+        if (Math.abs(ringRadius - 20) < 15) {
+          hud.textContent = "★ PERFECT! (2.0x DANO & STUN GARANTIDO)";
+          hud.className = "hud-timing perfect";
+        } else {
+          hud.textContent = "GOOD! (1.4x DANO)";
+          hud.className = "hud-timing";
+        }
+      } else if (currentPowIdx === 1) { // Rapid Tap
+        mgHits++;
+        hud.textContent = `PULSOS ACUMULADOS: ${mgHits} / 10`;
+        hud.className = mgHits >= 10 ? "hud-timing perfect" : "hud-timing";
+      } else if (currentPowIdx === 2) { // Shield 3-point
+        mgHits = (mgHits + 1) % 4;
+        hud.textContent = `NÓ DE FORÇA ${mgHits}/3 SINTONIZADO!`;
+        if (mgHits === 3) { hud.textContent = "★ ESCUDO MÁXIMO 100% ATIVO!"; hud.className = "hud-timing perfect"; }
+      } else if (currentPowIdx === 3) { // Meteor Spin
+        mgHits++;
+        hud.textContent = `TURBO SPINDASH: x${mgHits}`;
+        hud.className = "hud-timing perfect";
+      } else if (currentPowIdx === 4) { // Event Horizon
+        mgHits++;
+        hud.textContent = `SINGULARIDADE CONDENSADA: ${mgHits * 10}%`;
+        hud.className = mgHits >= 10 ? "hud-timing perfect" : "hud-timing";
+      }
+    }
+
+    // Loop de Animação
+    function loop() {
+      animTime += 0.03;
+
+      // 1. Renderiza Tela Superior
+      ctxTop.fillStyle = "#0a0e17";
+      ctxTop.fillRect(0, 0, 480, 320);
+
+      // Chão do grid DS
+      ctxTop.strokeStyle = "#1b2738";
+      ctxTop.lineWidth = 1;
+      for (let y = 180; y < 320; y += 20) {
+        ctxTop.beginPath();
+        ctxTop.moveTo(0, y);
+        ctxTop.lineTo(480, y);
+        ctxTop.stroke();
+      }
+
+      // Silver Floating Animation
+      const silX = 140;
+      const silY = 160 + Math.sin(animTime * 2) * 8;
+      const powCol = POW_DATA[currentPowIdx].color;
+
+      // Aura Psíquica Embaixo
+      let auraGrad = ctxTop.createRadialGradient(silX, silY, 10, silX, silY, 45);
+      auraGrad.addColorStop(0, powCol);
+      auraGrad.addColorStop(1, "transparent");
+      ctxTop.fillStyle = auraGrad;
+      ctxTop.beginPath();
+      ctxTop.arc(silX, silY, 45, 0, Math.PI * 2);
+      ctxTop.fill();
+
+      // Silhueta Low-Poly do Silver
+      ctxTop.fillStyle = "#eceef2";
+      ctxTop.strokeStyle = "#111";
+      ctxTop.lineWidth = 2;
+      // Cabeça
+      ctxTop.beginPath();
+      ctxTop.arc(silX, silY - 20, 16, 0, Math.PI * 2);
+      ctxTop.fill(); ctxTop.stroke();
+      // 5 Espinhos Frontais
+      for (let i = -2; i <= 2; i++) {
+        let a = -Math.PI / 2 + i * 0.35;
+        ctxTop.beginPath();
+        ctxTop.moveTo(silX + Math.cos(a) * 14, silY - 20 + Math.sin(a) * 14);
+        ctxTop.lineTo(silX + Math.cos(a) * 38, silY - 20 + Math.sin(a) * 38);
+        ctxTop.lineTo(silX + Math.cos(a + 0.15) * 14, silY - 20 + Math.sin(a + 0.15) * 14);
+        ctxTop.fillStyle = "#eceef2";
+        ctxTop.fill(); ctxTop.stroke();
+      }
+      // Focinho pêssego
+      ctxTop.fillStyle = "#ffc8a0";
+      ctxTop.beginPath();
+      ctxTop.arc(silX + 6, silY - 16, 7, 0, Math.PI * 2);
+      ctxTop.fill(); ctxTop.stroke();
+
+      // Corpo & Botas
+      ctxTop.fillStyle = "#ffffff"; // Gola felpuda
+      ctxTop.fillRect(silX - 12, silY - 4, 24, 12);
+      ctxTop.fillStyle = "#162238"; // Botas
+      ctxTop.fillRect(silX - 10, silY + 16, 8, 14);
+      ctxTop.fillRect(silX + 2, silY + 16, 8, 14);
+
+      // Efeito Específico do Golpe na Tela Superior
+      if (currentPowIdx === 0) { // Slam
+        ctxTop.strokeStyle = powCol;
+        ctxTop.lineWidth = 3;
+        ctxTop.beginPath();
+        ctxTop.arc(340, 200, 20 + Math.sin(animTime * 4) * 5, 0, Math.PI * 2);
+        ctxTop.stroke();
+      } else if (currentPowIdx === 1) { // Wave
+        ctxTop.strokeStyle = powCol;
+        ctxTop.lineWidth = 2;
+        let r = ((animTime * 60) % 250);
+        ctxTop.beginPath();
+        ctxTop.arc(silX, silY, r, 0, Math.PI * 2);
+        ctxTop.stroke();
+      } else if (currentPowIdx === 2) { // Shield
+        ctxTop.strokeStyle = powCol;
+        ctxTop.lineWidth = 3;
+        ctxTop.beginPath();
+        for (let i = 0; i < 6; i++) {
+          let a = i * Math.PI / 3 + animTime;
+          let px = silX + Math.cos(a) * 55;
+          let py = silY + Math.sin(a) * 55;
+          if (i === 0) ctxTop.moveTo(px, py); else ctxTop.lineTo(px, py);
+        }
+        ctxTop.closePath();
+        ctxTop.stroke();
+      } else if (currentPowIdx === 3) { // Meteor
+        // Sonic Spin Ball
+        let sx = 300 + Math.cos(animTime * 6) * 60;
+        let sy = 160 + Math.sin(animTime * 6) * 30;
+        ctxTop.fillStyle = "#0066cc";
+        ctxTop.beginPath();
+        ctxTop.arc(sx, sy, 16, 0, Math.PI * 2);
+        ctxTop.fill();
+        ctxTop.strokeStyle = powCol;
+        ctxTop.stroke();
+      } else if (currentPowIdx === 4) { // Event Horizon
+        let bhGrad = ctxTop.createRadialGradient(320, 150, 4, 320, 150, 40);
+        bhGrad.addColorStop(0, "#000");
+        bhGrad.addColorStop(0.5, "#4c1d95");
+        bhGrad.addColorStop(1, "transparent");
+        ctxTop.fillStyle = bhGrad;
+        ctxTop.beginPath();
+        ctxTop.arc(320, 150, 40, 0, Math.PI * 2);
+        ctxTop.fill();
+      }
+
+      // Partículas
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = 480; if (p.x > 480) p.x = 0;
+        if (p.y < 0) p.y = 320; if (p.y > 320) p.y = 0;
+        ctxTop.fillStyle = powCol;
+        ctxTop.fillRect(p.x, p.y, p.size, p.size);
+      });
+
+      // 2. Renderiza Tela Inferior (Stylus Minigame)
+      ctxBottom.fillStyle = "#080c14";
+      ctxBottom.fillRect(0, 0, 480, 320);
+
+      // Linhas da Touchscreen
+      ctxBottom.strokeStyle = "#162030";
+      ctxBottom.lineWidth = 1;
+      ctxBottom.strokeRect(20, 20, 440, 280);
+
+      // Anéis de Ação do Minigame
+      ringRadius -= 0.8;
+      if (ringRadius < 10) ringRadius = 90;
+
+      const cx = 240, cy = 160;
+      ctxBottom.strokeStyle = powCol;
+      ctxBottom.lineWidth = 3;
+      ctxBottom.beginPath();
+      ctxBottom.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+      ctxBottom.stroke();
+
+      // Alvo interno
+      ctxBottom.strokeStyle = "#ffffff";
+      ctxBottom.lineWidth = 2;
+      ctxBottom.beginPath();
+      ctxBottom.arc(cx, cy, 20, 0, Math.PI * 2);
+      ctxBottom.stroke();
+
+      // Estilo do Stylus
+      ctxBottom.fillStyle = "rgba(0, 229, 255, 0.2)";
+      ctxBottom.beginPath();
+      ctxBottom.arc(cx, cy, 20, 0, Math.PI * 2);
+      ctxBottom.fill();
+
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+
+</body>
+</html>

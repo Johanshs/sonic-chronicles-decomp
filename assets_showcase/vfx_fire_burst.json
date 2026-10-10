@@ -1,0 +1,26 @@
+{
+  "name": "Fire Burst",
+  "blend_mode": "additive",
+  "max_particles": 32,
+  "lifespan_frames": 24,
+  "emission_rate": 3.0,
+  "color_start": [
+    255,
+    200,
+    0,
+    31
+  ],
+  "color_end": [
+    255,
+    0,
+    0,
+    0
+  ],
+  "velocity_range": [
+    -2.0,
+    2.0
+  ],
+  "gravity": -0.1,
+  "texture": "VFX_Flame",
+  "description": "Labaredas e faíscas de fogo para golpes elementais."
+}
